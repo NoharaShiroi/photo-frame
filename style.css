@@ -2,41 +2,50 @@ body {
     margin: 0;
     background: black;
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
+    justify-content: center;
     height: 100vh;
     overflow: hidden;
+    color: white;
+    font-family: Arial, sans-serif;
 }
 
-#authorize-btn {
-    position: absolute;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 10px 20px;
-    font-size: 18px;
+#authorize-btn, #set-album-btn, #random-btn, #set-time-btn {
+    padding: 10px 15px;
+    font-size: 16px;
     cursor: pointer;
     background-color: #4285F4;
     color: white;
     border: none;
     border-radius: 5px;
+    margin: 5px;
+}
+
+#album-id-input, #slideshow-start, #slideshow-end {
+    padding: 8px;
+    font-size: 16px;
+    margin: 5px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
 }
 
 #main-photo {
     width: 100vw;
-    height: 100vh;
+    height: 60vh;
     object-fit: cover;
     display: block;
+    margin-top: 10px;
 }
 
 #photo-gallery {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
+    max-height: 30vh;
+    overflow-y: auto;
+    padding: 10px;
+    width: 100%;
 }
 
 .photo-item {
