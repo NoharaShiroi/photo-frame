@@ -7,7 +7,7 @@ let slideshowInterval = null;
 
 // **🔹 初始化 Google OAuth**
 document.getElementById("authorize-btn").addEventListener("click", () => {
-    const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${CLIENT_ID}&redirect_uri=https://你的GitHub帳號.github.io/photo-frame/&response_type=token&scope=${SCOPES}`;
+    const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${CLIENT_ID}&redirect_uri=https://noharashiroi.github.io/photo-frame/&response_type=token&scope=${SCOPES}`;
     window.location.href = authUrl;
 });
 
