@@ -1,18 +1,24 @@
 const CLIENT_ID = "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com";
+const CLIENT_ID = "你的_CLIENT_ID";
+const REDIRECT_URI = "https://noharashiroi.github.io/photo-frame/";
 const SCOPES = "https://www.googleapis.com/auth/photoslibrary.readonly";
-const REDIRECT_URI = "https://noharashiroi.github.io/photo-frame/"; 
 let accessToken = null;
-let albumId = null; // 如果想指定某個相簿，請填入相簿 ID，否則為 null
+let albumId = null;
 let photos = [];
 let currentPhotoIndex = 0;
 let slideshowInterval = null;
 let nextPageToken = null;
 let isFullscreen = false;
+let isRandomOrder = false;
+let slideshowStartTime = "08:00";
+let slideshowEndTime = "22:00";
 
-// **🔹 初始化 Google OAuth**
+// **🔹 初始化 Google OAuth & 事件監聽**
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("authorize-btn").addEventListener("click", authorizeUser);
     document.getElementById("fullscreen-btn").addEventListener("click", enterFullscreenSlideshow);
+    document.getElementById("random-btn").addEventListener("click", toggleSlideshowOrder);
+    document.getElementById("album-id-input").addEventListener("change", updateAlbumId);
     getAccessToken();
 });
 
@@ -72,6 +78,13 @@ window.addEventListener("scroll", () => {
     }
 });
 
+// **🔹 更新相簿 ID**
+function updateAlbumId() {
+    albumId = document.getElementById("album-id-input").value;
+    photos = [];
+    fetchPhotos();
+}
+
 // **🔹 顯示相片縮略圖**
 function displayPhotos() {
     const gallery = document.getElementById("photo-gallery");
@@ -86,11 +99,12 @@ function displayPhotos() {
     });
 }
 
-// **🔹 自動輪播**
+// **🔹 開始輪播**
 function startSlideshow() {
     if (slideshowInterval) clearInterval(slideshowInterval);
     if (photos.length === 0) return console.warn("沒有可顯示的相片");
 
+    if (isRandomOrder) shufflePhotos();
     changePhoto(0);
     slideshowInterval = setInterval(() => {
         currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
@@ -98,8 +112,22 @@ function startSlideshow() {
     }, 5000);
 }
 
+// **🔹 切換隨機/順序播放**
+function toggleSlideshowOrder() {
+    isRandomOrder = !isRandomOrder;
+    startSlideshow();
+}
+
+// **🔹 設定全螢幕輪播時間**
+function isWithinSlideshowTime() {
+    let now = new Date();
+    let currentTime = `${now.getHours()}:${now.getMinutes()}`;
+    return currentTime >= slideshowStartTime && currentTime <= slideshowEndTime;
+}
+
 // **🔹 進入全螢幕輪播模式**
 function enterFullscreenSlideshow() {
+    if (!isWithinSlideshowTime()) return;
     isFullscreen = true;
     document.documentElement.requestFullscreen();
     startSlideshow();
@@ -111,27 +139,4 @@ document.addEventListener("fullscreenchange", () => {
         isFullscreen = false;
         clearInterval(slideshowInterval);
     }
-});
-
-// **🔹 切換相片**
-function changePhoto(index) {
-    document.getElementById("main-photo").src = photos[index].baseUrl;
-}
-
-// **🔹 放大相片**
-function openLightbox(index) {
-    const lightbox = document.getElementById("lightbox");
-    const lightboxImg = document.getElementById("lightbox-img");
-    document.getElementById("fullscreen-btn").style.display = "block";
-
-    lightbox.style.display = "flex";
-    lightboxImg.src = photos[index].baseUrl;
-    clearInterval(slideshowInterval);
-}
-
-// **🔹 點擊關閉 Lightbox**
-document.getElementById("lightbox").addEventListener("click", () => {
-    document.getElementById("lightbox").style.display = "none";
-    document.getElementById("fullscreen-btn").style.display = "none";
-    if (!isFullscreen) startSlideshow();
 });
