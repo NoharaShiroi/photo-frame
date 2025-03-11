@@ -1,1 +1,1 @@
-# ipadminiphotoframe
+# photo-frame
