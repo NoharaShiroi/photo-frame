@@ -3,18 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="script-src 'self' https://apis.google.com;">
-    <title>Google 相簿相框</title>
+    <title>Google 相簿數位相框</title>
+    <link rel="stylesheet" href="style.css">
     <script defer src="script.js"></script>
 </head>
 <body>
-    <h1>Google 相簿相框</h1>
-    <button id="auth">授權 Google 相簿</button>
-    <div id="photos"></div>
+    <h1>Google 相簿數位相框</h1>
+    <button id="authorize-btn">授權 Google Photos</button>
     <div id="photo-gallery"></div>
-<div id="lightbox" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); justify-content:center; align-items:center;">
-    <img id="lightbox-img" style="max-width:90%; max-height:90%;" />
-</div>
 
+    <!-- Lightbox 彈窗 -->
+    <div id="lightbox">
+        <img id="lightbox-img" />
+    </div>
 </body>
 </html>
