@@ -25,3 +25,35 @@ async function fetchPhotos() {
 }
 
 fetchPhotos();
+let nextPageToken = null; // 存下一頁的 token
+
+async function fetchPhotos(pageToken = '') {
+    const url = `https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=50${pageToken ? '&pageToken=' + pageToken : ''}`;
+    try {
+        const response = await fetch(url, {
+            headers: {
+                Authorization: `Bearer ${accessToken}`,
+            }
+        });
+        const data = await response.json();
+
+        if (data.mediaItems) {
+            displayPhotos(data.mediaItems);
+        }
+
+        // 記錄下一頁 token
+        nextPageToken = data.nextPageToken || null;
+    } catch (error) {
+        console.error('Error fetching photos:', error);
+    }
+}
+
+// 監聽滾動事件，自動載入更多相片
+window.onscroll = () => {
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 && nextPageToken) {
+        fetchPhotos(nextPageToken);
+    }
+};
+
+// 第一次載入
+fetchPhotos();
