@@ -5,7 +5,7 @@ let nextPageToken = null;
 
 // 初始化 Google OAuth 授權
 document.getElementById("authorize-btn").addEventListener("click", () => {
-    const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${CLIENT_ID}&redirect_uri=${window.location.origin}&response_type=token&scope=${SCOPES}`;
+    const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${CLIENT_ID}&redirect_uri=https://noharashiroi.github.io/photo-frame/&response_type=token&scope=${SCOPES}`;
     window.location.href = authUrl;
 });
 
