@@ -1,5 +1,5 @@
 document.getElementById("auth").addEventListener("click", () => {
-    window.location.href = `https://accounts.google.com/o/oauth2/auth?client_id=1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com&redirect_uri=https://noharashiroi.github.io/ipadminiphotoframe//&scope=https://www.googleapis.com/auth/photoslibrary.readonly&response_type=token`;
+    window.location.href = `https://accounts.google.com/o/oauth2/auth?client_id=1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com&redirect_uri=https://noharashiroi.github.io/photo-frame/&scope=https://www.googleapis.com/auth/photoslibrary.readonly&response_type=token`;
 });
 
 async function fetchPhotos() {
