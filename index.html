@@ -8,6 +8,16 @@
 </head>
 <body>
     <button id="authorize-btn">授權 Google Photos</button>
+    <input type="text" id="album-id-input" placeholder="輸入 Google 相簿 ID (選填)">
+    <button id="set-album-btn">設定相簿</button>
+    <button id="random-btn">切換隨機/順序播放</button>
+    <br>
+    <label for="slideshow-start">開始時間:</label>
+    <input type="time" id="slideshow-start" value="08:00">
+    <label for="slideshow-end">結束時間:</label>
+    <input type="time" id="slideshow-end" value="22:00">
+    <button id="set-time-btn">設定時間</button>
+    
     <img id="main-photo" src="" alt="輪播相片">
     <div id="photo-gallery"></div>
     
