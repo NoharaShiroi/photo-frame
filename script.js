@@ -1,5 +1,5 @@
 document.getElementById("auth").addEventListener("click", () => {
-    window.location.href = `https://accounts.google.com/o/oauth2/auth?client_id=你的CLIENT_ID&redirect_uri=https://你的GitHub帳號.github.io/photo-frame/&scope=https://www.googleapis.com/auth/photoslibrary.readonly&response_type=token`;
+    window.location.href = `https://accounts.google.com/o/oauth2/auth?client_id=你的CLIENT_ID&redirect_uri=https://noharashiroi.github.io/ipadminiphotoframe//&scope=https://www.googleapis.com/auth/photoslibrary.readonly&response_type=token`;
 });
 
 async function fetchPhotos() {
