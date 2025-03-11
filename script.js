@@ -2,6 +2,9 @@ const CLIENT_ID = "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleuse
 const SCOPES = "https://www.googleapis.com/auth/photoslibrary.readonly";
 let accessToken = null;
 let nextPageToken = null;
+let photos = [];
+let currentPhotoIndex = 0;
+let slideshowInterval = null;
 
 // 初始化 Google OAuth 授權
 document.getElementById("authorize-btn").addEventListener("click", () => {
@@ -13,9 +16,12 @@ document.getElementById("authorize-btn").addEventListener("click", () => {
 function getAccessToken() {
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     accessToken = hashParams.get("access_token");
+
     if (accessToken) {
         document.getElementById("authorize-btn").style.display = "none";
         fetchPhotos();
+    } else {
+        console.error("無法獲取 access_token，請確認 OAuth 設定");
     }
 }
 
@@ -31,7 +37,9 @@ async function fetchPhotos(pageToken = '') {
         const data = await response.json();
 
         if (data.mediaItems) {
-            displayPhotos(data.mediaItems);
+            photos = [...photos, ...data.mediaItems]; // 存入全域變數
+            displayPhotos();
+            startSlideshow(); // 🚀 確保獲取相片後啟動輪播
         }
         nextPageToken = data.nextPageToken || null;
     } catch (error) {
@@ -39,39 +47,56 @@ async function fetchPhotos(pageToken = '') {
     }
 }
 
-// 顯示相片到畫面
-function displayPhotos(photos) {
-    const gallery = document.getElementById("photo-gallery");
+// **🚀 自動輪播相片**
+function startSlideshow() {
+    if (slideshowInterval) clearInterval(slideshowInterval); // 確保不會有多個計時器
 
-    photos.forEach(photo => {
+    if (photos.length > 0) {
+        changePhoto(0); // 顯示第一張
+        slideshowInterval = setInterval(() => {
+            currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
+            changePhoto(currentPhotoIndex);
+        }, 5000); // ⏳ 每 5 秒切換一次
+    }
+}
+
+// **🔄 切換相片**
+function changePhoto(index) {
+    const img = document.getElementById("main-photo");
+    img.src = photos[index].baseUrl;
+}
+
+// **顯示所有相片 (縮略圖)**
+function displayPhotos() {
+    const gallery = document.getElementById("photo-gallery");
+    gallery.innerHTML = ""; // 清空內容
+
+    photos.forEach((photo, index) => {
         const img = document.createElement("img");
         img.src = photo.baseUrl;
         img.classList.add("photo-item");
-        img.onclick = () => openLightbox(photo.baseUrl);
+        img.onclick = () => {
+            openLightbox(index);
+            clearInterval(slideshowInterval); // 🛑 停止輪播，避免影響預覽
+        };
         gallery.appendChild(img);
     });
 }
 
-// 監聽滾動事件，自動載入更多相片
-window.onscroll = () => {
-    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 && nextPageToken) {
-        fetchPhotos(nextPageToken);
-    }
-};
-
-// 開啟 Lightbox
-function openLightbox(imageUrl) {
+// **點擊相片放大 (Lightbox)**
+function openLightbox(index) {
     const lightbox = document.getElementById("lightbox");
     const lightboxImg = document.getElementById("lightbox-img");
 
     lightbox.style.display = "flex";
-    lightboxImg.src = imageUrl;
+    lightboxImg.src = photos[index].baseUrl;
 }
 
-// 關閉 Lightbox
+// **關閉 Lightbox 並重新啟動輪播**
 document.getElementById("lightbox").addEventListener("click", () => {
     document.getElementById("lightbox").style.display = "none";
+    startSlideshow(); // 📢 重新啟動輪播
 });
 
-// 初始化時檢查 Access Token
+// **初始化時檢查 Access Token**
 getAccessToken();
