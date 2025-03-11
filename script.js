@@ -1,5 +1,4 @@
 const CLIENT_ID = "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com";
-const CLIENT_ID = "你的_CLIENT_ID";
 const REDIRECT_URI = "https://noharashiroi.github.io/photo-frame/";
 const SCOPES = "https://www.googleapis.com/auth/photoslibrary.readonly";
 let accessToken = null;
