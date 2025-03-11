@@ -82,6 +82,48 @@ function displayPhotos() {
         gallery.appendChild(img);
     });
 }
+document.addEventListener("DOMContentLoaded", async () => {
+    const photoContainer = document.getElementById("photo-container");
+    let photos = [];
+    let currentPhotoIndex = 0;
+
+    async function fetchPhotos() {
+        try {
+            const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=100", {
+                headers: { "Authorization": `Bearer ${localStorage.getItem("access_token")}` }
+            });
+            const data = await response.json();
+            if (data.mediaItems) {
+                photos = data.mediaItems.filter(item => item.mimeType.startsWith("image"));
+                shufflePhotos();
+                showPhoto();
+            }
+        } catch (error) {
+            console.error("Error fetching photos:", error);
+        }
+    }
+
+    function shufflePhotos() {
+        for (let i = photos.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [photos[i], photos[j]] = [photos[j], photos[i]];
+        }
+    }
+
+    function showPhoto() {
+        if (photos.length === 0) return;
+        photoContainer.style.backgroundImage = `url(${photos[currentPhotoIndex].baseUrl})`;
+        currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
+    }
+
+    setInterval(showPhoto, 5000);
+
+    if (!localStorage.getItem("access_token")) {
+        window.location.href = "authorize.html"; // 需設置 Google OAuth 授權頁面
+    } else {
+        fetchPhotos();
+    }
+});
 
 // **點擊相片放大 (Lightbox)**
 function openLightbox(index) {
