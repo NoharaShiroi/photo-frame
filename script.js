@@ -8,7 +8,7 @@ let currentPhotoIndex = 0;
 let slideshowInterval = null;
 let nextPageToken = null;
 let isFullscreen = false;
-let isRandomOrder = false;
+let slideshowSpeed = 5000;
 let slideshowStartTime = "08:00";
 let slideshowEndTime = "22:00";
 
@@ -16,8 +16,10 @@ let slideshowEndTime = "22:00";
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("authorize-btn").addEventListener("click", authorizeUser);
     document.getElementById("fullscreen-btn").addEventListener("click", enterFullscreenSlideshow);
-    document.getElementById("random-btn").addEventListener("click", toggleSlideshowOrder);
-    document.getElementById("album-id-input").addEventListener("change", updateAlbumId);
+    document.getElementById("set-album-btn").addEventListener("click", updateAlbumId);
+    document.getElementById("slideshow-speed").addEventListener("change", updateSlideshowSpeed);
+    document.getElementById("slideshow-start").addEventListener("change", updateSlideshowTime);
+    document.getElementById("slideshow-end").addEventListener("change", updateSlideshowTime);
     getAccessToken();
 });
 
@@ -31,20 +33,19 @@ function authorizeUser() {
 function getAccessToken() {
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     accessToken = hashParams.get("access_token");
-
+    
     if (accessToken) {
         localStorage.setItem("access_token", accessToken);
-        document.getElementById("authorize-btn").style.display = "none";
+        document.getElementById("auth-container").style.display = "none";
+        document.getElementById("app-container").style.display = "block";
         fetchPhotos();
-    } else {
-        console.warn("未找到 access_token，請先授權 Google Photos");
     }
 }
 
 // **🔹 取得 Google Photos 相片**
 async function fetchPhotos(pageToken = '') {
     let token = localStorage.getItem("access_token");
-    if (!token) return console.error("未找到 access_token");
+    if (!token) return;
 
     let url = "https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=50";
     if (albumId) url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
@@ -58,7 +59,7 @@ async function fetchPhotos(pageToken = '') {
             body: requestBody
         });
         const data = await response.json();
-
+        
         if (data.mediaItems) {
             photos = [...photos, ...data.mediaItems.filter(item => item.mimeType.startsWith("image"))];
             displayPhotos();
@@ -101,32 +102,23 @@ function displayPhotos() {
 // **🔹 開始輪播**
 function startSlideshow() {
     if (slideshowInterval) clearInterval(slideshowInterval);
-    if (photos.length === 0) return console.warn("沒有可顯示的相片");
+    if (photos.length === 0) return;
 
-    if (isRandomOrder) shufflePhotos();
     changePhoto(0);
     slideshowInterval = setInterval(() => {
         currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
         changePhoto(currentPhotoIndex);
-    }, 5000);
+    }, slideshowSpeed);
 }
 
-// **🔹 切換隨機/順序播放**
-function toggleSlideshowOrder() {
-    isRandomOrder = !isRandomOrder;
+// **🔹 更新輪播速度**
+function updateSlideshowSpeed() {
+    slideshowSpeed = document.getElementById("slideshow-speed").value * 1000;
     startSlideshow();
-}
-
-// **🔹 設定全螢幕輪播時間**
-function isWithinSlideshowTime() {
-    let now = new Date();
-    let currentTime = `${now.getHours()}:${now.getMinutes()}`;
-    return currentTime >= slideshowStartTime && currentTime <= slideshowEndTime;
 }
 
 // **🔹 進入全螢幕輪播模式**
 function enterFullscreenSlideshow() {
-    if (!isWithinSlideshowTime()) return;
     isFullscreen = true;
     document.documentElement.requestFullscreen();
     startSlideshow();
