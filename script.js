@@ -11,6 +11,16 @@ let slideshowSpeed = 5000;
 let slideshowStartTime = "08:00";
 let slideshowEndTime = "22:00";
 
+// **更新相簿 ID**
+function updateAlbumId() {
+    const inputAlbumId = prompt("請輸入 Google 相簿 ID:");
+    if (inputAlbumId) {
+        albumId = inputAlbumId;
+        localStorage.setItem("albumId", albumId);
+        fetchPhotos(); // 重新載入相片
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("authorize-btn").addEventListener("click", authorizeUser);
     document.getElementById("fullscreen-btn").addEventListener("click", enterFullscreenSlideshow);
