@@ -7,24 +7,31 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <button id="authorize-btn">授權 Google Photos</button>
-    <input type="text" id="album-id-input" placeholder="輸入 Google 相簿 ID (選填)">
-    <button id="set-album-btn">設定相簿</button>
-    <button id="random-btn">切換隨機/順序播放</button>
-    <br>
-    <label for="slideshow-start">開始時間:</label>
-    <input type="time" id="slideshow-start" value="08:00">
-    <label for="slideshow-end">結束時間:</label>
-    <input type="time" id="slideshow-end" value="22:00">
-    <button id="set-time-btn">設定時間</button>
+    <div id="auth-container">
+        <button id="authorize-btn">授權 Google Photos</button>
+    </div>
     
-    <img id="main-photo" src="" alt="輪播相片">
-    <div id="photo-gallery"></div>
+    <div id="app-container" style="display: none;">
+        <div id="album-selection">
+            <input type="text" id="album-id-input" placeholder="輸入 Google 相簿 ID (選填)">
+            <button id="set-album-btn">設定相簿</button>
+        </div>
+        <img id="main-photo" src="" alt="輪播相片">
+        <div id="photo-gallery"></div>
+    </div>
     
-    <!-- Lightbox & 全螢幕輪播按鈕 -->
+    <!-- Lightbox & 設定按鈕 -->
     <div id="lightbox">
         <img id="lightbox-img" src="" alt="放大相片">
-        <button id="fullscreen-btn" style="display: none;">全螢幕輪播</button>
+        <div id="lightbox-controls">
+            <button id="fullscreen-btn">全螢幕輪播</button>
+            <label for="slideshow-speed">輪播秒數:</label>
+            <input type="number" id="slideshow-speed" min="1" max="20" value="5"> 秒
+            <label for="slideshow-start">開始時間:</label>
+            <input type="time" id="slideshow-start" value="08:00">
+            <label for="slideshow-end">結束時間:</label>
+            <input type="time" id="slideshow-end" value="22:00">
+        </div>
     </div>
     
     <script src="script.js"></script>
