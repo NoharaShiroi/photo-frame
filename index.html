@@ -14,27 +14,22 @@
     <div id="app-container" style="display: none;">
         <div id="album-selection-container">
             <button id="set-album-btn">選擇相簿</button>
-            <label for="slideshow-speed">幻燈片速度:</label>
-            <input type="number" id="slideshow-speed" value="5000">
-            <label for="slideshow-start">開始時間:</label>
-            <input type="time" id="slideshow-start" value="08:00">
-            <label for="slideshow-end">結束時間:</label>
-            <input type="time" id="slideshow-end" value="22:00">
+            <label for="slideshow-speed">幻燈片速度 (秒):</label>
+            <input type="number" id="slideshow-speed" value="5" min="1">
         </div>
 
         <div id="photo-gallery"></div>
     </div>
 
-    <div id="lightbox" onclick="closeLightbox()" style="display: none;">
+    <div id="lightbox" style="display: none;">
         <img id="lightbox-img" src="" alt="Large view of photo">
         <div id="lightbox-controls">
-            <button id="prev-btn" onclick="currentPhotoIndex = (currentPhotoIndex - 1 + photos.length) % photos.length; showPhotoInLightbox(currentPhotoIndex);">上一張</button>
-            <button id="next-btn" onclick="currentPhotoIndex = (currentPhotoIndex + 1) % photos.length; showPhotoInLightbox(currentPhotoIndex);">下一張</button>
+            <button id="prev-btn">上一張</button>
+            <button id="next-btn">下一張</button>
+            <button id="lightbox-fullscreen-btn">全螢幕播放</button>
         </div>
     </div>
 
-    <button id="fullscreen-btn">啟動全螢幕幻燈片</button>
-    <button id="lightbox-fullscreen-btn">全螢幕播放</button>
     <script src="script.js"></script>
 </body>
 </html>
