@@ -7,8 +7,6 @@ let photos = [];
 let currentPhotoIndex = 0;
 let slideshowInterval = null;
 let slideshowSpeed = 5000;
-let slideshowStartTime = "08:00";
-let slideshowEndTime = "22:00";
 let nextPageToken = null;
 
 // **更新相簿 ID**
@@ -18,17 +16,16 @@ function updateAlbumId() {
         albumId = inputAlbumId;
         localStorage.setItem("albumId", albumId);
         photos = []; // 清空舊照片
+        nextPageToken = null;
         fetchPhotos(); // 重新載入相片
     }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("authorize-btn").addEventListener("click", authorizeUser);
-    document.getElementById("fullscreen-btn").addEventListener("click", enterFullscreenSlideshow);
     document.getElementById("set-album-btn").addEventListener("click", updateAlbumId);
-    document.getElementById("slideshow-speed").addEventListener("change", updateSlideshowSpeed);
-    document.getElementById("slideshow-start").addEventListener("change", updateSlideshowTime);
-    document.getElementById("slideshow-end").addEventListener("change", updateSlideshowTime);
+    document.getElementById("lightbox-fullscreen-btn").addEventListener("click", enterFullscreenSlideshow); // 修正：將按鈕放在 Lightbox
+    window.addEventListener("scroll", handleScroll); // 監聽滾動載入相片
     getAccessToken();
 });
 
@@ -58,11 +55,9 @@ function fetchPhotos() {
         return;
     }
     const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-    const body = {
-        albumId: albumId,
-        pageSize: 50,
-        pageToken: nextPageToken
-    };
+    const body = { pageSize: 50 };
+    if (albumId) body.albumId = albumId;
+    if (nextPageToken) body.pageToken = nextPageToken;
 
     fetch(url, {
         method: "POST",
@@ -87,14 +82,25 @@ function fetchPhotos() {
 
 function renderPhotos() {
     const gallery = document.getElementById("photo-gallery");
-    gallery.innerHTML = '';
     photos.forEach((photo, index) => {
-        const imgElement = document.createElement("img");
-        imgElement.classList.add("photo-item");
-        imgElement.src = photo.baseUrl + "=w1024-h1024"; // 改為載入大圖
-        imgElement.onclick = () => openLightbox(index);
-        gallery.appendChild(imgElement);
+        if (!document.querySelector(`img[data-index="${index}"]`)) { // 避免重複渲染
+            const imgElement = document.createElement("img");
+            imgElement.classList.add("photo-item");
+            imgElement.src = photo.baseUrl + "=w1024-h1024";
+            imgElement.setAttribute("data-index", index);
+            imgElement.onclick = () => openLightbox(index);
+            gallery.appendChild(imgElement);
+        }
     });
+}
+
+// **監聽滾動事件以載入更多相片**
+function handleScroll() {
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+        if (nextPageToken) {
+            fetchPhotos();
+        }
+    }
 }
 
 // **開啟 Lightbox 並顯示相片**
@@ -147,21 +153,6 @@ function enterFullscreenSlideshow() {
         showPhotoInLightbox(currentPhotoIndex);
         currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
     }, slideshowSpeed);
-}
-
-// **更新幻燈片速度**
-function updateSlideshowSpeed(event) {
-    slideshowSpeed = parseInt(event.target.value, 10) || 5000;
-}
-
-// **更新幻燈片時間**
-function updateSlideshowTime(event) {
-    if (event.target.id === "slideshow-start") {
-        slideshowStartTime = event.target.value;
-    }
-    if (event.target.id === "slideshow-end") {
-        slideshowEndTime = event.target.value;
-    }
 }
 
 // **初始化 Lightbox 按鈕**
