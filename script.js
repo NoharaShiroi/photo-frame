@@ -122,6 +122,13 @@ function updateSlideshowSpeed() {
     startSlideshow();
 }
 
+// **🔹 更新輪播時間範圍 (開始/結束時間)**
+function updateSlideshowTime() {
+    slideshowStartTime = document.getElementById("slideshow-start").value;
+    slideshowEndTime = document.getElementById("slideshow-end").value;
+    console.log(`輪播時間已更新: ${slideshowStartTime} - ${slideshowEndTime}`);
+}
+
 // **🔹 進入全螢幕輪播模式**
 function enterFullscreenSlideshow() {
     isFullscreen = true;
