@@ -7,32 +7,29 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- 隱藏頂部紅線部分 -->
     <div id="auth-container">
         <button id="authorize-btn">授權 Google 帳戶</button>
     </div>
 
-    <!-- 顯示圖片區域 -->
     <div id="app-container" style="display: none;">
         <div id="album-selection-container">
             <button id="set-album-btn">選擇相簿</button>
-            <label>幻燈片速度:</label>
+            <label for="slideshow-speed">幻燈片速度:</label>
             <input type="number" id="slideshow-speed" value="5000">
-            <label>開始時間:</label>
+            <label for="slideshow-start">開始時間:</label>
             <input type="time" id="slideshow-start" value="08:00">
-            <label>結束時間:</label>
+            <label for="slideshow-end">結束時間:</label>
             <input type="time" id="slideshow-end" value="22:00">
         </div>
 
         <div id="photo-gallery"></div>
     </div>
 
-    <!-- Fullscreen Lightbox (hidden by default) -->
-    <div id="lightbox" onclick="closeLightbox()">
+    <div id="lightbox" onclick="closeLightbox()" style="display: none;">
         <img id="lightbox-img" src="" alt="Large view of photo">
         <div id="lightbox-controls">
-            <button id="prev-btn">上一張</button>
-            <button id="next-btn">下一張</button>
+            <button id="prev-btn" onclick="currentPhotoIndex = (currentPhotoIndex - 1 + photos.length) % photos.length; showPhotoInLightbox(currentPhotoIndex);">上一張</button>
+            <button id="next-btn" onclick="currentPhotoIndex = (currentPhotoIndex + 1) % photos.length; showPhotoInLightbox(currentPhotoIndex);">下一張</button>
         </div>
     </div>
 
