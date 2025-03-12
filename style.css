@@ -11,7 +11,23 @@ body {
     font-family: Arial, sans-serif;
 }
 
-#authorize-btn, #set-album-btn, #random-btn, #set-time-btn {
+#auth-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+#app-container {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+}
+
+#authorize-btn, #set-album-btn, #fullscreen-btn, #set-time-btn {
     padding: 10px 15px;
     font-size: 16px;
     cursor: pointer;
@@ -22,7 +38,7 @@ body {
     margin: 5px;
 }
 
-#album-id-input, #slideshow-start, #slideshow-end {
+#album-id-input, #slideshow-speed, #slideshow-start, #slideshow-end {
     padding: 8px;
     font-size: 16px;
     margin: 5px;
@@ -49,8 +65,8 @@ body {
 }
 
 .photo-item {
-    width: 80px;
-    height: 80px;
+    width: 100px;
+    height: 100px;
     margin: 5px;
     object-fit: cover;
     border-radius: 8px;
@@ -68,18 +84,22 @@ body {
     justify-content: center;
     align-items: center;
     cursor: pointer;
+    flex-direction: column;
 }
 
 #lightbox img {
     max-width: 90%;
-    max-height: 90%;
+    max-height: 80%;
+    margin-bottom: 10px;
+}
+
+#lightbox-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 #fullscreen-btn {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
     padding: 10px 20px;
     font-size: 18px;
     cursor: pointer;
@@ -87,4 +107,5 @@ body {
     color: white;
     border: none;
     border-radius: 5px;
+    margin-top: 10px;
 }
