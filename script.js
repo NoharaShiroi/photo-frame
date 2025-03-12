@@ -2,14 +2,14 @@ const CLIENT_ID = "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleuse
 const REDIRECT_URI = "https://noharashiroi.github.io/photo-frame/";
 const SCOPES = "https://www.googleapis.com/auth/photoslibrary.readonly";
 let accessToken = localStorage.getItem("access_token") || null;
-let albumId = null;
+let albumId = localStorage.getItem("albumId") || null;
 let photos = [];
 let currentPhotoIndex = 0;
 let slideshowInterval = null;
-let nextPageToken = null;
 let slideshowSpeed = 5000;
 let slideshowStartTime = "08:00";
 let slideshowEndTime = "22:00";
+let nextPageToken = null;
 
 // **更新相簿 ID**
 function updateAlbumId() {
@@ -17,6 +17,7 @@ function updateAlbumId() {
     if (inputAlbumId) {
         albumId = inputAlbumId;
         localStorage.setItem("albumId", albumId);
+        photos = []; // 清空舊照片
         fetchPhotos(); // 重新載入相片
     }
 }
@@ -57,7 +58,11 @@ function fetchPhotos() {
         return;
     }
     const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-    const body = albumId ? { "albumId": albumId } : {};
+    const body = {
+        albumId: albumId,
+        pageSize: 50,
+        pageToken: nextPageToken
+    };
 
     fetch(url, {
         method: "POST",
@@ -72,7 +77,7 @@ function fetchPhotos() {
         if (data.mediaItems) {
             photos = [...photos, ...data.mediaItems];
             nextPageToken = data.nextPageToken || null;
-            renderPhotos(photos);
+            renderPhotos();
         } else {
             console.error("獲取相片失敗", data);
         }
@@ -80,18 +85,19 @@ function fetchPhotos() {
     .catch(error => console.error("Error fetching photos:", error));
 }
 
-function renderPhotos(photos) {
+function renderPhotos() {
     const gallery = document.getElementById("photo-gallery");
     gallery.innerHTML = '';
     photos.forEach((photo, index) => {
         const imgElement = document.createElement("img");
         imgElement.classList.add("photo-item");
-        imgElement.src = photo.baseUrl + "=w100-h100";
+        imgElement.src = photo.baseUrl + "=w1024-h1024"; // 改為載入大圖
         imgElement.onclick = () => openLightbox(index);
         gallery.appendChild(imgElement);
     });
 }
 
+// **開啟 Lightbox 並顯示相片**
 function openLightbox(index) {
     currentPhotoIndex = index;
     const lightbox = document.getElementById("lightbox");
@@ -99,15 +105,38 @@ function openLightbox(index) {
     showPhotoInLightbox(currentPhotoIndex);
 }
 
+// **顯示 Lightbox 中的相片**
 function showPhotoInLightbox(index) {
     const lightboxImage = document.getElementById("lightbox-img");
-    lightboxImage.src = photos[index].baseUrl + "=w1024-h1024";
+    if (photos.length > 0 && index >= 0 && index < photos.length) {
+        lightboxImage.src = photos[index].baseUrl + "=w1024-h1024";
+    }
 }
 
+// **關閉 Lightbox**
 function closeLightbox() {
     document.getElementById("lightbox").style.display = "none";
 }
 
+// **切換到上一張相片**
+function prevPhoto(event) {
+    event.stopPropagation();
+    if (photos.length > 0) {
+        currentPhotoIndex = (currentPhotoIndex - 1 + photos.length) % photos.length;
+        showPhotoInLightbox(currentPhotoIndex);
+    }
+}
+
+// **切換到下一張相片**
+function nextPhoto(event) {
+    event.stopPropagation();
+    if (photos.length > 0) {
+        currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
+        showPhotoInLightbox(currentPhotoIndex);
+    }
+}
+
+// **全螢幕幻燈片**
 function enterFullscreenSlideshow() {
     if (!photos.length) {
         console.warn("無照片可播放");
@@ -120,10 +149,12 @@ function enterFullscreenSlideshow() {
     }, slideshowSpeed);
 }
 
+// **更新幻燈片速度**
 function updateSlideshowSpeed(event) {
     slideshowSpeed = parseInt(event.target.value, 10) || 5000;
 }
 
+// **更新幻燈片時間**
 function updateSlideshowTime(event) {
     if (event.target.id === "slideshow-start") {
         slideshowStartTime = event.target.value;
@@ -132,3 +163,10 @@ function updateSlideshowTime(event) {
         slideshowEndTime = event.target.value;
     }
 }
+
+// **初始化 Lightbox 按鈕**
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("prev-btn").addEventListener("click", prevPhoto);
+    document.getElementById("next-btn").addEventListener("click", nextPhoto);
+    document.getElementById("lightbox").addEventListener("click", closeLightbox);
+});
