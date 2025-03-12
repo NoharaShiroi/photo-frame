@@ -155,4 +155,12 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("prev-btn").addEventListener("click", prevPhoto);
     document.getElementById("next-btn").addEventListener("click", nextPhoto);
     document.getElementById("lightbox").addEventListener("click", closeLightbox);
+    const tokenDisplay = document.getElementById("token-display");
+    const storedToken = localStorage.getItem("access_token");
+    
+    if (storedToken) {
+        tokenDisplay.textContent = "Access Token: " + storedToken;
+    } else {
+        tokenDisplay.textContent = "未找到 access_token，請先授權登入";
+    }
 });
