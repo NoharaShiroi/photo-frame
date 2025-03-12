@@ -22,12 +22,13 @@ function updateAlbumId() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("authorize-btn").addEventListener("click", authorizeUser);
-    document.getElementById("set-album-btn").addEventListener("click", updateAlbumId);
-    document.getElementById("lightbox-fullscreen-btn").addEventListener("click", enterFullscreenSlideshow); // 修正：將按鈕放在 Lightbox
-    window.addEventListener("scroll", handleScroll); // 監聽滾動載入相片
+    document.getElementById("authorize-btn")?.addEventListener("click", authorizeUser);
+    document.getElementById("set-album-btn")?.addEventListener("click", updateAlbumId);
+    document.getElementById("lightbox-fullscreen-btn")?.addEventListener("click", enterFullscreenSlideshow);
+    window.addEventListener("scroll", handleScroll);
     getAccessToken();
 });
+
 
 function authorizeUser() {
     const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&response_type=token&scope=${SCOPES}`;
