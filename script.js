@@ -35,12 +35,12 @@ function getAccessToken() {
     accessToken = hashParams.get("access_token");
 
     if (accessToken) {
-        console.log("成功獲取 access_token:", accessToken); // Debugging
+        console.log("成功獲取 access_token:", accessToken);
         localStorage.setItem("access_token", accessToken);
 
         // 確保授權成功後 UI 正確切換
         document.getElementById("auth-container").style.display = "none";
-        document.getElementById("app-container").style.display = "flex"; // 讓 app 介面顯示
+        document.getElementById("app-container").style.display = "flex";
 
         fetchPhotos();
     } else {
@@ -65,13 +65,12 @@ async function fetchPhotos(pageToken = '') {
             body: requestBody
         });
 
-        // 檢查請求是否成功
         if (!response.ok) {
             throw new Error('API 請求失敗');
         }
 
         const data = await response.json();
-        
+
         if (data.mediaItems) {
             photos = [...photos, ...data.mediaItems.filter(item => item.mimeType.startsWith("image"))];
             displayPhotos();
@@ -84,18 +83,6 @@ async function fetchPhotos(pageToken = '') {
     }
 }
 
-// **🔹 監聽滾動事件，滾動時載入更多相片，加入防抖處理**
-let scrollTimeout = null;
-window.addEventListener("scroll", () => {
-    if (scrollTimeout) clearTimeout(scrollTimeout);
-
-    scrollTimeout = setTimeout(() => {
-        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 500 && nextPageToken) {
-            fetchPhotos(nextPageToken);
-        }
-    }, 100); // 延遲 100ms 來減少不必要的請求
-});
-
 // **🔹 更新相簿 ID**
 function updateAlbumId() {
     albumId = document.getElementById("album-id-input").value;
@@ -106,38 +93,26 @@ function updateAlbumId() {
 // **🔹 顯示相片縮略圖**
 function displayPhotos() {
     const gallery = document.getElementById("photo-gallery");
+    gallery.innerHTML = ""; // 清空 gallery
 
-    // 只更新新增的照片，避免清空整個畫面
     photos.forEach((photo, index) => {
-        if (!gallery.querySelector(`img[data-id="${photo.id}"]`)) {
-            const img = document.createElement("img");
-            img.src = `${photo.baseUrl}=w200-h200`;
-            img.classList.add("photo-item");
-            img.setAttribute("data-id", photo.id);
-            img.onclick = () => openLightbox(index); // 確保 openLightbox 函式有定義
-            gallery.appendChild(img);
-        }
+        const img = document.createElement("img");
+        img.src = `${photo.baseUrl}=w200-h200`;
+        img.classList.add("photo-item");
+        img.setAttribute("data-id", photo.id);
+        img.onclick = () => openLightbox(index);  // 修正：將 openLightbox 指向正確的位置
+        gallery.appendChild(img);
     });
 }
 
 // **🔹 開始輪播**
 function startSlideshow() {
-    const currentTime = new Date();
-    const startTime = new Date(`1970-01-01T${slideshowStartTime}:00`);
-    const endTime = new Date(`1970-01-01T${slideshowEndTime}:00`);
-
-    if (currentTime < startTime || currentTime > endTime) {
-        console.log("不在設定的輪播時間範圍內");
-        return;
-    }
-
-    if (slideshowInterval) clearInterval(slideshowInterval);
     if (photos.length === 0) return;
-
-    changePhoto(0); // 修正的地方
+    
+    changePhoto(0); // 修正：調用 changePhoto 函式來顯示第一張照片
     slideshowInterval = setInterval(() => {
         currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
-        changePhoto(currentPhotoIndex); // 修正的地方
+        changePhoto(currentPhotoIndex);  // 修正：調用 changePhoto 函式來輪播照片
     }, slideshowSpeed);
 }
 
@@ -159,7 +134,7 @@ function changePhoto(index) {
     const photoContainer = document.getElementById("photo-container");
     const img = document.createElement("img");
     img.src = `${photos[index].baseUrl}=w800-h800`; // 顯示更大的圖片
-    photoContainer.innerHTML = ""; // 清空原有圖片
+    photoContainer.innerHTML = "";  // 清空原有圖片
     photoContainer.appendChild(img);
 }
 
@@ -182,8 +157,8 @@ document.addEventListener("fullscreenchange", () => {
 function openLightbox(index) {
     const lightbox = document.getElementById("lightbox");
     const img = document.createElement("img");
-    img.src = `${photos[index].baseUrl}=w800-h800`; // 顯示更大的圖片
-    lightbox.innerHTML = ""; // 清空 lightbox
+    img.src = `${photos[index].baseUrl}=w800-h800`;  // 顯示更大的圖片
+    lightbox.innerHTML = "";  // 清空 lightbox
     lightbox.appendChild(img);
     lightbox.style.display = "block";
 }
