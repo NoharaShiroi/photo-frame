@@ -33,15 +33,20 @@ function authorizeUser() {
 function getAccessToken() {
     const hashParams = new URLSearchParams(window.location.hash.substring(1));
     accessToken = hashParams.get("access_token");
-    
+
     if (accessToken) {
+        console.log("成功獲取 access_token:", accessToken); // Debugging
         localStorage.setItem("access_token", accessToken);
+
+        // 確保授權成功後 UI 正確切換
         document.getElementById("auth-container").style.display = "none";
-        document.getElementById("app-container").style.display = "block";
+        document.getElementById("app-container").style.display = "flex"; // 讓 app 介面顯示
+
         fetchPhotos();
+    } else {
+        console.warn("未找到 access_token，請確認 OAuth 設定");
     }
 }
-
 // **🔹 取得 Google Photos 相片**
 async function fetchPhotos(pageToken = '') {
     let token = localStorage.getItem("access_token");
