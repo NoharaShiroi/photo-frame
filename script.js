@@ -134,10 +134,10 @@ function startSlideshow() {
     if (slideshowInterval) clearInterval(slideshowInterval);
     if (photos.length === 0) return;
 
-    changePhoto(0);
+    changePhoto(0); // 修正的地方
     slideshowInterval = setInterval(() => {
         currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
-        changePhoto(currentPhotoIndex);
+        changePhoto(currentPhotoIndex); // 修正的地方
     }, slideshowSpeed);
 }
 
