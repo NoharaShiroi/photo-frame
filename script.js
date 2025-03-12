@@ -35,17 +35,28 @@ function authorizeUser() {
 }
 
 function getAccessToken() {
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    if (hashParams.has("access_token")) {
-        accessToken = hashParams.get("access_token");
+    let params = new URLSearchParams(window.location.search);
+    
+    // 檢查 URL 是否有 access_token
+    if (params.has("access_token")) {
+        accessToken = params.get("access_token");
         localStorage.setItem("access_token", accessToken);
+
+        // 移除 access_token 參數，避免每次刷新都攜帶
+        window.history.replaceState({}, document.title, window.location.pathname);
+    } else {
+        accessToken = localStorage.getItem("access_token");
     }
+
     if (accessToken) {
         document.getElementById("auth-container").style.display = "none";
         document.getElementById("app-container").style.display = "flex";
         fetchPhotos();
+    } else {
+        console.warn("未找到 access_token，請確認 OAuth 設定");
     }
 }
+
 
 function fetchPhotos() {
     if (!accessToken) {
