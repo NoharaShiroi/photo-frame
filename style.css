@@ -1,83 +1,31 @@
-body {
-    margin: 0;
-    background: black;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    overflow: hidden;
-    color: white;
-    font-family: Arial, sans-serif;
-}
-
+/* 隱藏紅線部分及顯示相簿選擇區 */
 #auth-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-}
-
-#app-container {
     display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    width: 100vw;
-    height: 100vh;
 }
 
-#authorize-btn, #set-album-btn, #fullscreen-btn, #set-time-btn {
-    padding: 10px 15px;
-    font-size: 16px;
-    cursor: pointer;
-    background-color: #4285F4;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    margin: 5px;
-}
-
-#album-id-input, #slideshow-speed, #slideshow-start, #slideshow-end {
-    padding: 8px;
-    font-size: 16px;
-    margin: 5px;
-    border-radius: 5px;
-    border: 1px solid #ddd;
-}
-
-#main-photo {
-    width: 100%;
-    height: 60vh;
-    object-fit: cover; /* 保證圖片覆蓋整個區域 */
-    display: block;
-    margin-top: 10px;
-    border-radius: 8px;
+#album-selection-container {
+    margin: 20px;
+    padding: 10px;
 }
 
 #photo-gallery {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    max-height: 30vh;
-    overflow-y: auto;
-    padding: 10px;
-    width: 100%;
-    box-sizing: border-box;
+    gap: 10px;
 }
 
 .photo-item {
-    width: 100px;
-    height: 100px;
-    margin: 5px;
-    object-fit: cover; /* 確保縮略圖適應 */
+    width: 120px;
+    height: 120px;
     border-radius: 8px;
+    object-fit: cover;
     cursor: pointer;
-    transition: transform 0.3s ease; /* 添加縮放效果 */
+    transition: transform 0.3s;
 }
 
 .photo-item:hover {
-    transform: scale(1.1); /* 當滑鼠懸停時放大 */
+    transform: scale(1.1);
 }
 
 #lightbox {
@@ -87,45 +35,38 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.8);
+    background: rgba(0, 0, 0, 0.8);
     justify-content: center;
     align-items: center;
+    z-index: 1000;
+    padding: 10px;
     cursor: pointer;
     flex-direction: column;
-    z-index: 1000; /* 保證 lightbox 顯示在最上層 */
-    padding: 10px;
 }
 
 #lightbox img {
     max-width: 100%;
     max-height: 80%;
-    margin-bottom: 10px;
-    border-radius: 8px;
 }
 
 #lightbox-controls {
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    background-color: rgba(0, 0, 0, 0.7);
-    padding: 10px;
-    border-radius: 8px;
-}
-
-#fullscreen-btn {
-    padding: 10px 20px;
-    font-size: 18px;
-    cursor: pointer;
-    background-color: #34A853;
-    color: white;
-    border: none;
-    border-radius: 5px;
+    justify-content: space-between;
+    width: 100%;
     margin-top: 10px;
 }
 
-#slideshow-speed, #slideshow-start, #slideshow-end {
-    background-color: #222;
+button {
+    background-color: #34A853;
     color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #2c9e46;
 }
 
 #slideshow-speed, #slideshow-start, #slideshow-end {
@@ -136,15 +77,7 @@ body {
     margin-bottom: 10px;
 }
 
-#slideshow-start, #slideshow-end {
-    width: 120px; /* 調整開始/結束時間的輸入框寬度 */
-}
-
 @media (max-width: 600px) {
-    #main-photo {
-        height: 50vh; /* 在小螢幕上減小主圖大小 */
-    }
-
     .photo-item {
         width: 80px;
         height: 80px;
@@ -152,15 +85,5 @@ body {
 
     #lightbox img {
         max-height: 70%;
-    }
-
-    #lightbox-controls {
-        flex-direction: row; /* 輪播控件在小螢幕上排列為水平 */
-        justify-content: space-between;
-    }
-
-    #slideshow-speed, #slideshow-start, #slideshow-end {
-        font-size: 14px;
-        padding: 8px;
     }
 }
