@@ -6,9 +6,12 @@
     <title>數位相框</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="data:image/x-icon;base64,AA==" />
+
+    <!-- fetch Polyfill，確保舊版 Safari 也能使用 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fetch/3.6.2/fetch.min.js"></script>
 </head>
 <body>
-       <div id="auth-container">
+    <div id="auth-container">
         <button id="authorize-btn">授權 Google 帳戶</button>
     </div>
 
@@ -32,9 +35,5 @@
     </div>
 
     <script src="script.js"></script>
-    <script>
-    console.log("完整 URL:", window.location.href);
-    console.log("存儲的 access_token:", localStorage.getItem("access_token"));
-</script>
 </body>
 </html>
