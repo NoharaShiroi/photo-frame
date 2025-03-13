@@ -9,11 +9,11 @@ var slideshowInterval = null;
 var slideshowSpeed = 5000;
 var nextPageToken = null;
 var albums = [];
+var cachedPhotos = {}; // 用於緩存圖片
 
 // **取得 Access Token**
 function getAccessToken() {
     var hashParams = new URLSearchParams(window.location.hash.substring(1));
-
     if (hashParams.has("access_token")) {
         accessToken = hashParams.get("access_token");
         sessionStorage.setItem("access_token", accessToken);
@@ -113,7 +113,7 @@ function fetchPhotos() {
     .catch(function (error) { console.error("Error fetching photos:", error); });
 }
 
-// **顯示照片**
+// **顯示照片並使用緩存**
 function renderPhotos() {
     var photoContainer = document.getElementById("photo-container");
     if (!photoContainer) return;
@@ -127,7 +127,14 @@ function renderPhotos() {
 
     photos.forEach(function (photo) {
         var img = document.createElement("img");
-        img.src = photo.baseUrl + "=w600-h400";  // 根據需要調整圖片大小
+
+        if (cachedPhotos[photo.id]) {
+            img.src = cachedPhotos[photo.id]; // 使用緩存圖片
+        } else {
+            img.src = photo.baseUrl + "=w600-h400";  // 根據需要調整圖片大小
+            cachedPhotos[photo.id] = img.src; // 儲存至緩存
+        }
+
         img.alt = photo.filename || "Photo";
         img.classList.add("photo");
         img.addEventListener("click", function() {
