@@ -12,13 +12,10 @@ var nextPageToken = null;
 // **取得 Access Token**
 function getAccessToken() {
     var hashParams = new URLSearchParams(window.location.hash.substring(1));
-    
-    // 如果 URL 內有 access_token，則解析並存入 sessionStorage
+
     if (hashParams.has("access_token")) {
         accessToken = hashParams.get("access_token");
         sessionStorage.setItem("access_token", accessToken);
-
-        // **清除 URL Hash 避免影響**
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 
@@ -81,6 +78,15 @@ function fetchPhotos() {
         }
     })
     .catch(function (error) { console.error("Error fetching photos:", error); });
+}
+
+// **滾動事件處理，確保滾動到底時載入更多照片**
+function handleScroll() {
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+        if (nextPageToken) {
+            fetchPhotos();
+        }
+    }
 }
 
 // **載入頁面時執行**
