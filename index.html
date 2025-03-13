@@ -7,8 +7,11 @@
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="data:image/x-icon;base64,AA==" />
 
-    <!-- ✅ 改用更兼容的 fetch Polyfill -->
-    <script src="https://unpkg.com/whatwg-fetch@3.6.2/dist/fetch.umd.js"></script>
+    <!-- ✅ 改用適合 iOS 12 的 fetch Polyfill -->
+    <script src="https://cdn.jsdelivr.net/npm/unfetch@4.2.0/dist/unfetch.umd.js"></script>
+    <script>
+        if (!window.fetch) { window.fetch = unfetch; }
+    </script>
 </head>
 <body>
     <div id="auth-container">
