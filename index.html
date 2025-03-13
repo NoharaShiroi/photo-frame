@@ -6,8 +6,6 @@
     <title>數位相框</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="data:image/x-icon;base64,AA==" />
-
-    <!-- ✅ 改用適合 iOS 12 的 fetch Polyfill -->
     <script src="https://cdn.jsdelivr.net/npm/unfetch@4.2.0/dist/unfetch.umd.js"></script>
     <script>
         if (!window.fetch) { window.fetch = unfetch; }
@@ -15,18 +13,18 @@
 </head>
 <body>
     <div id="auth-container">
-        <button id="authorize-btn">授權 Google 帳戶</button>
+        <button id="authorize-btn">登入 Google 帳戶</button>
     </div>
 
     <div id="app-container" style="display: none;">
-        <div id="photo-container"></div>
         <div id="album-selection-container">
-            <button id="set-album-btn">選擇相簿</button>
-            <label for="slideshow-speed">幻燈片速度 (秒):</label>
-            <input type="number" id="slideshow-speed" value="5" min="1">
+            <button id="set-album-btn">設定相簿</button>
         </div>
-
-        <div id="photo-gallery"></div>
+        
+        <div id="photo-container"></div>
+        
+        <button id="fullscreen-btn">全螢幕模式</button>
+        <button id="slideshow-btn">啟動幻燈片</button>
     </div>
 
     <script src="script.js"></script>
