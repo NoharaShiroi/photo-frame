@@ -8,6 +8,7 @@ var currentPhotoIndex = 0;
 var slideshowInterval = null;
 var slideshowSpeed = 5000;
 var nextPageToken = null;
+var albums = [];
 
 // **取得 Access Token**
 function getAccessToken() {
@@ -22,7 +23,7 @@ function getAccessToken() {
     if (accessToken) {
         document.getElementById("auth-container").style.display = "none";
         document.getElementById("app-container").style.display = "flex";
-        fetchPhotos();
+        fetchAlbums();
     } else {
         document.getElementById("auth-container").style.display = "flex";
         document.getElementById("app-container").style.display = "none";
@@ -38,19 +39,51 @@ function authorizeUser() {
     window.location.href = authUrl;
 }
 
-// **更新相簿 ID**
-function updateAlbumId() {
-    var inputAlbumId = prompt("請輸入 Google 相簿 ID:");
-    if (inputAlbumId) {
-        albumId = inputAlbumId;
-        localStorage.setItem("albumId", albumId);
-        photos = [];
-        nextPageToken = null;
-        fetchPhotos();
+// **獲取 Google 相簿列表**
+function fetchAlbums() {
+    if (!accessToken) {
+        console.error("缺少 accessToken，請先授權");
+        return;
     }
+    var url = "https://photoslibrary.googleapis.com/v1/albums?pageSize=50";
+
+    fetch(url, {
+        method: "GET",
+        headers: {
+            "Authorization": "Bearer " + accessToken,
+            "Content-Type": "application/json"
+        }
+    })
+    .then(function (response) { return response.json(); })
+    .then(function (data) {
+        if (data.albums) {
+            albums = data.albums;
+            renderAlbumList();
+        }
+    })
+    .catch(function (error) { console.error("Error fetching albums:", error); });
 }
 
-// **獲取 Google 相簿照片**
+// **顯示相簿列表**
+function renderAlbumList() {
+    var albumListContainer = document.getElementById("album-list");
+    albumListContainer.innerHTML = '';
+
+    albums.forEach(function (album) {
+        var li = document.createElement("li");
+        li.textContent = album.title;
+        li.addEventListener("click", function() {
+            albumId = album.id;
+            localStorage.setItem("albumId", albumId);
+            photos = [];
+            nextPageToken = null;
+            fetchPhotos();
+        });
+        albumListContainer.appendChild(li);
+    });
+}
+
+// **獲取相簿中的照片**
 function fetchPhotos() {
     if (!accessToken) {
         console.error("缺少 accessToken，請先授權");
@@ -88,7 +121,7 @@ function renderPhotos() {
     photoContainer.innerHTML = ''; // 清空容器
 
     if (photos.length === 0) {
-        photoContainer.innerHTML = '沒有照片可顯示';
+        photoContainer.innerHTML = '該相簿內沒有照片';
         return;
     }
 
@@ -101,39 +134,10 @@ function renderPhotos() {
     });
 }
 
-// **滾動事件處理，確保滾動到底時載入更多照片**
-function handleScroll() {
-    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
-        if (nextPageToken) {
-            fetchPhotos();
-        }
-    }
-}
-
-// **全螢幕模式**
-document.getElementById("fullscreen-btn").addEventListener("click", function() {
-    document.body.requestFullscreen();
-});
-
-// **啟動幻燈片播放**
-document.getElementById("slideshow-btn").addEventListener("click", function() {
-    startSlideshow();
-});
-
-function startSlideshow() {
-    slideshowInterval = setInterval(function() {
-        currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
-        renderPhotos();
-    }, slideshowSpeed);
-}
-
 // **載入頁面時執行**
 document.addEventListener("DOMContentLoaded", function () {
     var authBtn = document.getElementById("authorize-btn");
     if (authBtn) authBtn.addEventListener("click", authorizeUser);
-
-    var albumBtn = document.getElementById("set-album-btn");
-    if (albumBtn) albumBtn.addEventListener("click", updateAlbumId);
 
     window.addEventListener("scroll", handleScroll);
     getAccessToken();
