@@ -7,8 +7,8 @@
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="data:image/x-icon;base64,AA==" />
 
-    <!-- fetch Polyfill，確保舊版 Safari 也能使用 -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/fetch/3.6.2/fetch.min.js"></script>
+    <!-- ✅ 改用更兼容的 fetch Polyfill -->
+    <script src="https://unpkg.com/whatwg-fetch@3.6.2/dist/fetch.umd.js"></script>
 </head>
 <body>
     <div id="auth-container">
@@ -23,15 +23,6 @@
         </div>
 
         <div id="photo-gallery"></div>
-    </div>
-
-    <div id="lightbox" style="display: none;">
-        <img id="lightbox-img" src="" alt="Large view of photo">
-        <div id="lightbox-controls">
-            <button id="prev-btn">上一張</button>
-            <button id="next-btn">下一張</button>
-            <button id="lightbox-fullscreen-btn">全螢幕播放</button>
-        </div>
     </div>
 
     <script src="script.js"></script>
