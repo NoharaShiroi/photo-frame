@@ -127,33 +127,49 @@ function renderPhotos() {
 
     photos.forEach(function (photo) {
         var img = document.createElement("img");
-        img.src = photo.baseUrl + "=w600-h400";  // 可以根據需要調整圖片大小
+        img.src = photo.baseUrl + "=w600-h400";  // 根據需要調整圖片大小
         img.alt = photo.filename || "Photo";
         img.classList.add("photo");
+        img.addEventListener("click", function() {
+            openLightbox(photo.baseUrl);
+        });
         photoContainer.appendChild(img);
     });
 }
 
-// **滾動事件處理，確保滾動到底時載入更多照片**
-function handleScroll() {
-    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
-        if (nextPageToken) {
-            fetchPhotos();
-        }
-    }
+// **圖片放大顯示功能**
+function openLightbox(imageUrl) {
+    var lightbox = document.getElementById("lightbox");
+    var lightboxImage = document.getElementById("lightbox-image");
+    lightboxImage.src = imageUrl + "=w1200-h800";  // 放大圖片
+    lightbox.style.display = "flex";
+}
+
+document.getElementById("close-lightbox").addEventListener("click", function() {
+    document.getElementById("lightbox").style.display = "none";
+});
+
+// **全螢幕模式**
+document.getElementById("fullscreen-btn").addEventListener("click", function() {
+    document.body.requestFullscreen();
+});
+
+// **啟動幻燈片播放**
+document.getElementById("slideshow-btn").addEventListener("click", function() {
+    startSlideshow();
+});
+
+function startSlideshow() {
+    slideshowInterval = setInterval(function() {
+        currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
+        renderPhotos();
+    }, slideshowSpeed);
 }
 
 // **載入頁面時執行**
 document.addEventListener("DOMContentLoaded", function () {
     var authBtn = document.getElementById("authorize-btn");
     if (authBtn) authBtn.addEventListener("click", authorizeUser);
-
-    // 這行需要定義 updateAlbumId 函數，或者您可以選擇刪除
-    // var albumBtn = document.getElementById("set-album-btn");
-    // if (albumBtn) albumBtn.addEventListener("click", updateAlbumId);
-
-    // 加入滾動事件處理
-    window.addEventListener("scroll", handleScroll);
 
     getAccessToken();
 });
