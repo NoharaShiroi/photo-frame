@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("authorize-btn")?.addEventListener("click", authorizeUser);
     document.getElementById("set-album-btn")?.addEventListener("click", updateAlbumId);
     document.getElementById("lightbox-fullscreen-btn")?.addEventListener("click", enterFullscreenSlideshow);
-    window.addEventListener("scroll", handleScroll);
+        window.addEventListener("scroll", handleScroll);
     getAccessToken();
 });
 
@@ -161,4 +161,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("prev-btn").addEventListener("click", prevPhoto);
     document.getElementById("next-btn").addEventListener("click", nextPhoto);
     document.getElementById("lightbox").addEventListener("click", closeLightbox);
+    document.getElementById("lightbox-fullscreen-btn")?.addEventListener("click", toggleFullScreen);
+
 });
+
+
+
