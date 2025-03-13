@@ -78,15 +78,14 @@ function fetchPhotos() {
 
 function renderPhotos() {
     const gallery = document.getElementById("photo-gallery");
+    gallery.innerHTML = "";
     photos.forEach((photo, index) => {
-        if (!document.querySelector(`img[data-index="${index}"]`)) {
-            const imgElement = document.createElement("img");
-            imgElement.classList.add("photo-item");
-            imgElement.src = photo.baseUrl + "=w1024-h1024";
-            imgElement.setAttribute("data-index", index);
-            imgElement.onclick = () => openLightbox(index);
-            gallery.appendChild(imgElement);
-        }
+        const imgElement = document.createElement("img");
+        imgElement.classList.add("photo-item");
+        imgElement.src = photo.baseUrl + "=w1024-h1024";
+        imgElement.setAttribute("data-index", index);
+        imgElement.onclick = () => openLightbox(index);
+        gallery.appendChild(imgElement);
     });
 }
 
@@ -144,35 +143,4 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("prev-btn").addEventListener("click", prevPhoto);
     document.getElementById("next-btn").addEventListener("click", nextPhoto);
     document.getElementById("lightbox").addEventListener("click", closeLightbox);
-
-    // 取得 URL 中的 access_token
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const accessToken = hashParams.get("access_token");
-
-    if (accessToken) {
-        // 存儲新的 access_token
-        localStorage.setItem("access_token", accessToken);
-        sessionStorage.setItem("access_token", accessToken);
-        console.log("存儲的新 access_token:", accessToken);
-    } else {
-        // 若 access_token 不存在，可能是授權失敗，嘗試清除 Cookie 並請求授權
-        console.warn("未找到 access_token，請重新授權");
-
-        // 清除 localStorage 避免錯誤的 Token 存在
-        localStorage.removeItem("access_token");
-        sessionStorage.removeItem("access_token");
-
-        // **清除所有 Cookie，確保 Google OAuth 不會使用舊的登入狀態**
-        document.cookie.split(";").forEach(cookie => {
-            document.cookie = cookie.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/");
-        });
-
-        // **自動導向 Google 授權**
-        const clientId = "你的 Google API Client ID";
-        const redirectUri = "你的網站 URL";
-        const scope = "https://www.googleapis.com/auth/photoslibrary.readonly";
-        const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=${scope}&prompt=consent`;
-
-        window.location.href = authUrl;
-    }
 });
