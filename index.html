@@ -24,8 +24,11 @@
         
         <div id="photo-container"></div>
 
-        <button id="fullscreen-btn">全螢幕模式</button>
-        <button id="slideshow-btn">啟動幻燈片</button>
+        <div id="slideshow-options" style="display: none;">
+            <label for="slideshow-speed">幻燈片速度(秒): </label>
+            <input type="number" id="slideshow-speed" min="1" value="5" />
+            <button id="slideshow-start-btn">啟動幻燈片</button>
+        </div>
     </div>
 
     <div id="lightbox" style="display: none;">
@@ -37,3 +40,4 @@
 </body>
 </html>
 
+   
