@@ -17,14 +17,18 @@ body {
 
 /* 相簿設定與按鈕區域 */
 #album-selection-container {
-    margin: 20px;
-    padding: 10px;
     display: flex;
     justify-content: center;
+    align-items: center;
     gap: 10px;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    max-width: 600px;
+    margin: 20px auto;
 }
-
+input {
+    width: 80px;
+    text-align: center;
+}
 button {
     background-color: #34A853;
     color: white;
