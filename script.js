@@ -163,8 +163,50 @@ document.getElementById("fullscreen-btn").addEventListener("click", function() {
 
 // **啟動幻燈片播放**
 document.getElementById("slideshow-btn").addEventListener("click", function() {
+    if (slideshowInterval) {
+        clearInterval(slideshowInterval); // 清除現有的幻燈片間隔
+    }
     startSlideshow();
 });
+
+// **啟動幻燈片**
+function startSlideshow() {
+    slideshowInterval = setInterval(function() {
+        currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
+        renderPhotos(); // 這裡會重新渲染圖片
+    }, slideshowSpeed);
+}
+
+// **渲染圖片並處理幻燈片的顯示**
+function renderPhotos() {
+    var photoContainer = document.getElementById("photo-container");
+    if (!photoContainer) return;
+
+    photoContainer.innerHTML = ''; // 清空容器
+
+    if (photos.length === 0) {
+        photoContainer.innerHTML = '該相簿內沒有照片';
+        return;
+    }
+
+    photos.forEach(function (photo, index) {
+        var img = document.createElement("img");
+        img.src = photo.baseUrl + "=w600-h400";  // 根據需要調整圖片大小
+        img.alt = photo.filename || "Photo";
+        img.classList.add("photo");
+
+        img.addEventListener("click", function() {
+            openLightbox(photo.baseUrl);
+        });
+
+        photoContainer.appendChild(img);
+
+        // 讓幻燈片模式能夠正確顯示當前圖片
+        if (index === currentPhotoIndex) {
+            img.classList.add('active');  // 標註當前正在顯示的圖片
+        }
+    });
+}
 
 function startSlideshow() {
     slideshowInterval = setInterval(function() {
