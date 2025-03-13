@@ -110,6 +110,23 @@ function handleScroll() {
     }
 }
 
+// **全螢幕模式**
+document.getElementById("fullscreen-btn").addEventListener("click", function() {
+    document.body.requestFullscreen();
+});
+
+// **啟動幻燈片播放**
+document.getElementById("slideshow-btn").addEventListener("click", function() {
+    startSlideshow();
+});
+
+function startSlideshow() {
+    slideshowInterval = setInterval(function() {
+        currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
+        renderPhotos();
+    }, slideshowSpeed);
+}
+
 // **載入頁面時執行**
 document.addEventListener("DOMContentLoaded", function () {
     var authBtn = document.getElementById("authorize-btn");
