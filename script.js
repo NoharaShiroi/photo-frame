@@ -148,6 +148,10 @@ document.addEventListener("DOMContentLoaded", function () {
     var authBtn = document.getElementById("authorize-btn");
     if (authBtn) authBtn.addEventListener("click", authorizeUser);
 
+    // 這行需要定義 updateAlbumId 函數，或者您可以選擇刪除
+    // var albumBtn = document.getElementById("set-album-btn");
+    // if (albumBtn) albumBtn.addEventListener("click", updateAlbumId);
+
     // 加入滾動事件處理
     window.addEventListener("scroll", handleScroll);
 
