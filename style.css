@@ -46,7 +46,6 @@ button:hover {
     font-size: 18px;
 }
 
-/* 圖片容器設置 */
 #photo-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -56,7 +55,6 @@ button:hover {
     margin: 20px auto;
 }
 
-/* 單張圖片顯示設置 */
 #photo-container img {
     max-width: 100%;
     height: auto;
@@ -65,17 +63,14 @@ button:hover {
     transition: transform 0.3s ease;
 }
 
-/* 圖片懸停效果 */
 #photo-container img:hover {
     transform: scale(1.05);
 }
 
-/* 全螢幕模式按鈕 */
 #fullscreen-btn, #slideshow-btn {
     margin-top: 20px;
 }
 
-/* 當全螢幕模式和圖片放大顯示時的樣式 */
 #lightbox {
     position: fixed;
     top: 0;
@@ -105,7 +100,6 @@ button:hover {
     z-index: 1001;
 }
 
-/* 響應式設計 */
 @media (max-width: 768px) {
     #photo-container {
         grid-template-columns: 1fr 1fr;
