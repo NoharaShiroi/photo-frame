@@ -75,7 +75,7 @@ button:hover {
 }
 
 /* 確保全螢幕模式和幻燈片按鈕顯示在圖片容器上 */
-#fullscreen-btn, #slideshow-btn {
+#fullscreen-btn, #slideshow-btn, #back-to-albums-btn {
     position: absolute;
     top: 10px;
     left: 50%;
