@@ -8,16 +8,14 @@ body {
     transition: background-color 0.3s;
 }
 
-/* 認證和應用區塊 */
 #auth-container, #app-container {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
     flex-direction: column;
+    height: 100vh;
 }
 
-/* 按鈕樣式 */
 button {
     padding: 10px 20px;
     font-size: 16px;
@@ -33,7 +31,6 @@ button:hover {
     background-color: #45a049;
 }
 
-/* 相簿選擇區域 */
 #album-selection-container {
     margin-top: 20px;
 }
@@ -51,12 +48,12 @@ button:hover {
 
 /* 圖片容器設置 */
 #photo-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 15px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
     padding: 20px;
-    transition: opacity 0.3s ease;
+    width: 90%;
+    margin: 20px auto;
 }
 
 /* 單張圖片顯示設置 */
@@ -64,7 +61,8 @@ button:hover {
     max-width: 100%;
     height: auto;
     border-radius: 8px;
-    transition: transform 0.3s ease, opacity 0.3s ease;
+    cursor: pointer;
+    transition: transform 0.3s ease;
 }
 
 /* 圖片懸停效果 */
@@ -77,31 +75,44 @@ button:hover {
     margin-top: 20px;
 }
 
-/* 暗黑模式 */
-body.dark-mode {
-    background-color: #333;
-    color: #fff;
+/* 當全螢幕模式和圖片放大顯示時的樣式 */
+#lightbox {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
 }
 
-body.dark-mode button {
-    background-color: #333;
-    color: #fff;
+#lightbox-image {
+    max-width: 90%;
+    max-height: 90%;
+    box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.7);
+}
+
+#close-lightbox {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: white;
+    font-size: 30px;
+    cursor: pointer;
+    z-index: 1001;
 }
 
 /* 響應式設計 */
 @media (max-width: 768px) {
     #photo-container {
-        flex-direction: column;
-        gap: 10px;
+        grid-template-columns: 1fr 1fr;
     }
 
     button {
         font-size: 14px;
         padding: 8px 15px;
     }
-}
-
-/* 加載過渡效果 */
-#photo-container.loading {
-    opacity: 0.5;
 }
