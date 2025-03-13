@@ -15,20 +15,29 @@ body {
     height: 100vh;
 }
 
-/* 相簿設定與按鈕區域 */
+/* 相簿設定與按鈕區域（固定於頁面頂部，且置中） */
 #album-selection-container {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    padding: 10px 15px;
+    z-index: 1000;
     display: flex;
-    justify-content: center;
-    align-items: center;
     gap: 10px;
-    flex-wrap: nowrap;
-    max-width: 600px;
-    margin: 20px auto;
+    align-items: center;
+    border-radius: 10px;
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
 }
+
+/* 幻燈片速度輸入框 */
 input {
     width: 80px;
     text-align: center;
 }
+
+/* 按鈕樣式 */
 button {
     background-color: #34A853;
     color: white;
@@ -43,15 +52,16 @@ button:hover {
     background-color: #2c9e46;
 }
 
-/* 照片展示區 */
+/* 照片展示區（網格排列，適應不同螢幕） */
 #photo-gallery {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 10px;
-    padding: 20px;
+    padding: 80px 20px 20px; /* 預留上方空間 */
     justify-content: center;
 }
 
+/* 照片樣式 */
 .photo-item {
     width: 100%;
     height: 150px;
@@ -62,7 +72,7 @@ button:hover {
 }
 
 .photo-item:hover {
-    transform: scale(1.1);
+    transform: scale(1.05);
 }
 
 /* Lightbox (大圖顯示) */
@@ -92,6 +102,7 @@ button:hover {
     object-fit: contain;
 }
 
+/* Lightbox 控制按鈕 */
 #lightbox-controls {
     position: absolute;
     bottom: 20px;
@@ -104,7 +115,7 @@ button:hover {
     padding: 12px;
 }
 
-/* 全螢幕幻燈片模式 */
+/* 全螢幕幻燈片模式按鈕 */
 #fullscreen-btn, #lightbox-fullscreen-btn {
     position: fixed;
     bottom: 20px;
@@ -112,6 +123,7 @@ button:hover {
     z-index: 1100;
 }
 
+/* 響應式設計（小螢幕優化） */
 @media (max-width: 600px) {
     .photo-item {
         height: 100px;
@@ -119,5 +131,11 @@ button:hover {
 
     #lightbox img {
         max-height: 70%;
+    }
+
+    #album-selection-container {
+        width: 90%;
+        flex-wrap: wrap;
+        justify-content: center;
     }
 }
