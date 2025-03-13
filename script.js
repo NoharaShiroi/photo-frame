@@ -1,22 +1,22 @@
 var CLIENT_ID = "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com";
 var REDIRECT_URI = "https://noharashiroi.github.io/photo-frame/";
 var SCOPES = "https://www.googleapis.com/auth/photoslibrary.readonly";
-var accessToken = sessionStorage.getItem("access_token") || null;
+var accessToken = localStorage.getItem("access_token") || null;
 var albumId = localStorage.getItem("albumId") || null;
 var photos = [];
 var currentPhotoIndex = 0;
 var slideshowInterval = null;
-var slideshowSpeed = 5000;
+var slideshowSpeed = 5000;  // 預設時間為 5000 毫秒
 var nextPageToken = null;
 var albums = [];
-var cachedPhotos = {}; // 用於緩存圖片
+var cachedPhotos = {};  // 用於緩存圖片
 
-// **取得 Access Token**
+// **獲取 Access Token**
 function getAccessToken() {
     var hashParams = new URLSearchParams(window.location.hash.substring(1));
     if (hashParams.has("access_token")) {
         accessToken = hashParams.get("access_token");
-        sessionStorage.setItem("access_token", accessToken);
+        localStorage.setItem("access_token", accessToken);  // 使用 localStorage 儲存 Token
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 
@@ -120,7 +120,7 @@ function renderPhotos() {
     var slideshowBtn = document.getElementById("slideshow-btn");
     if (!photoContainer) return;
 
-    photoContainer.innerHTML = ''; // 清空容器
+    photoContainer.innerHTML = '';  // 清空容器
 
     if (photos.length === 0) {
         photoContainer.innerHTML = '該相簿內沒有照片';
@@ -130,12 +130,11 @@ function renderPhotos() {
     photos.forEach(function (photo, index) {
         var img = document.createElement("img");
 
-        // 先檢查緩存
         if (cachedPhotos[photo.id]) {
-            img.src = cachedPhotos[photo.id]; // 使用緩存圖片
+            img.src = cachedPhotos[photo.id];  // 使用緩存圖片
         } else {
             img.src = photo.baseUrl + "=w600-h400";  // 根據需要調整圖片大小
-            cachedPhotos[photo.id] = img.src; // 儲存至緩存
+            cachedPhotos[photo.id] = img.src;  // 儲存至緩存
         }
 
         img.alt = photo.filename || "Photo";
@@ -154,27 +153,10 @@ function renderPhotos() {
     });
 }
 
-// **圖片放大顯示功能**
-function openLightbox(imageUrl) {
-    var lightbox = document.getElementById("lightbox");
-    var lightboxImage = document.getElementById("lightbox-image");
-    lightboxImage.src = imageUrl + "=w1200-h800";  // 放大圖片
-    lightbox.style.display = "flex";
-}
-
-document.getElementById("close-lightbox").addEventListener("click", function() {
-    document.getElementById("lightbox").style.display = "none";
-});
-
-// **全螢幕模式**
-document.getElementById("fullscreen-btn").addEventListener("click", function() {
-    document.body.requestFullscreen();
-});
-
 // **啟動幻燈片播放**
 document.getElementById("slideshow-btn").addEventListener("click", function() {
     if (slideshowInterval) {
-        clearInterval(slideshowInterval); // 清除現有的幻燈片間隔
+        clearInterval(slideshowInterval);  // 清除現有的幻燈片間隔
     }
     startSlideshow();
 });
@@ -186,6 +168,15 @@ function startSlideshow() {
         renderPhotos();
     }, slideshowSpeed);
 }
+
+// **設置幻燈片切換間隔**
+document.getElementById("slideshow-speed").addEventListener("input", function(e) {
+    slideshowSpeed = parseInt(e.target.value);
+    if (slideshowInterval) {
+        clearInterval(slideshowInterval);  // 清除當前的幻燈片
+        startSlideshow();  // 重新啟動幻燈片播放
+    }
+});
 
 // **載入頁面時執行**
 document.addEventListener("DOMContentLoaded", function () {
