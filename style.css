@@ -1,4 +1,4 @@
-/* 全站基礎設置 */
+/* Basic setup for the entire site */
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -8,7 +8,7 @@ body {
     transition: background-color 0.3s;
 }
 
-/* 將容器設為彈性布局，確保內容居中 */
+/* Flexbox layout to center content */
 #auth-container, #app-container {
     display: flex;
     justify-content: center;
@@ -18,7 +18,7 @@ body {
     position: relative;
 }
 
-/* 按鈕樣式 */
+/* Button styles */
 button {
     padding: 10px 20px;
     font-size: 16px;
@@ -50,7 +50,7 @@ button:hover {
     font-size: 18px;
 }
 
-/* 圖片容器設置 */
+/* Image container styling */
 #photo-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
@@ -61,7 +61,7 @@ button:hover {
     position: relative;
 }
 
-/* 單張圖片顯示設置 */
+/* Single image display settings */
 #photo-container img {
     opacity: 0;
     transition: opacity 1s ease-in-out;
@@ -79,7 +79,7 @@ button:hover {
     transform: scale(1.05);
 }
 
-/* 確保全螢幕模式和幻燈片按鈕顯示在圖片容器上 */
+/* Fullscreen and slideshow buttons styling */
 #fullscreen-btn, #slideshow-btn, #back-to-albums-btn {
     position: absolute;
     top: 10px;
@@ -95,7 +95,7 @@ button:hover {
     cursor: pointer;
 }
 
-/* 當全螢幕模式和圖片放大顯示時的樣式 */
+/* Lightbox styles */
 #lightbox {
     position: fixed;
     top: 0;
@@ -125,7 +125,7 @@ button:hover {
     z-index: 1001;
 }
 
-/* 響應式設計 */
+/* Responsive Design */
 @media (max-width: 768px) {
     #photo-container {
         grid-template-columns: 1fr 1fr;
