@@ -15,7 +15,7 @@ body {
     align-items: center;
     flex-direction: column;
     height: 100vh;
-    position: relative; /* 保證按鈕顯示在圖片上方 */
+    position: relative;
 }
 
 /* 按鈕樣式 */
@@ -28,7 +28,7 @@ button {
     color: white;
     border-radius: 5px;
     margin: 10px;
-    position: relative; /* 確保按鈕不會被圖片擋住 */
+    position: relative;
 }
 
 button:hover {
@@ -58,16 +58,21 @@ button:hover {
     padding: 20px;
     width: 90%;
     margin: 20px auto;
-    position: relative; /* 確保按鈕顯示在圖片容器內，避免遮擋 */
+    position: relative;
 }
 
 /* 單張圖片顯示設置 */
 #photo-container img {
+    opacity: 0;
+    transition: opacity 1s ease-in-out;
     max-width: 100%;
     height: auto;
     border-radius: 8px;
     cursor: pointer;
-    transition: transform 0.3s ease;
+}
+
+#photo-container img.active {
+    opacity: 1;
 }
 
 #photo-container img:hover {
@@ -132,7 +137,7 @@ button:hover {
     }
 
     #fullscreen-btn, #slideshow-btn {
-        font-size: 14px; /* 小屏幕下，按鈕尺寸縮小 */
+        font-size: 14px;
         padding: 8px 15px;
     }
 }
