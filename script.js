@@ -1,4 +1,3 @@
-
 var CLIENT_ID = "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com";
 var REDIRECT_URI = "https://noharashiroi.github.io/photo-frame/";
 var SCOPES = "https://www.googleapis.com/auth/photoslibrary.readonly";
@@ -144,11 +143,6 @@ function renderPhotos() {
             openLightbox(photo.baseUrl);
         });
         photoContainer.appendChild(img);
-
-        // 讓幻燈片模式能夠正確顯示當前圖片
-        if (index === currentPhotoIndex) {
-            img.classList.add('active');  // 標註當前正在顯示的圖片
-        }
     });
 }
 
@@ -164,21 +158,23 @@ document.getElementById("close-lightbox").addEventListener("click", function() {
     document.getElementById("lightbox").style.display = "none";
 });
 
-// **全螢幕模式**
-document.getElementById("fullscreen-btn").addEventListener("click", function() {
-    document.body.requestFullscreen();
+document.getElementById("lightbox").addEventListener("click", function(event) {
+    if (event.target !== document.getElementById("lightbox-image")) {
+        document.getElementById("lightbox").style.display = "none";
+    }
 });
 
 // **啟動幻燈片播放**
-document.getElementById("slideshow-btn").addEventListener("click", function() {
-    if (slideshowInterval) {
-        clearInterval(slideshowInterval); // 清除現有的幻燈片間隔
-    }
+document.getElementById("slideshow-start-btn").addEventListener("click", function() {
+    slideshowSpeed = parseInt(document.getElementById("slideshow-speed").value) * 1000 || 5000; // 使用用戶設定的秒數
     startSlideshow();
 });
 
 // **啟動幻燈片**
 function startSlideshow() {
+    if (slideshowInterval) {
+        clearInterval(slideshowInterval);
+    }
     slideshowInterval = setInterval(function() {
         currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
         renderPhotos();
@@ -192,3 +188,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     getAccessToken();
 });
+
+
+/*20250313 17:00*/
