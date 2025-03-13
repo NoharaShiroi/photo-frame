@@ -6,17 +6,17 @@ var albumId = localStorage.getItem("albumId") || null;
 var photos = [];
 var currentPhotoIndex = 0;
 var slideshowInterval = null;
-var slideshowSpeed = 5000;  // 預設時間為 5000 毫秒
+var slideshowSpeed = 5000; // Default slideshow speed
 var nextPageToken = null;
 var albums = [];
-var cachedPhotos = {};  // 用於緩存圖片
+var cachedPhotos = {};  // For caching images
 
-// **獲取 Access Token**
+// **Get Access Token**
 function getAccessToken() {
     var hashParams = new URLSearchParams(window.location.hash.substring(1));
     if (hashParams.has("access_token")) {
         accessToken = hashParams.get("access_token");
-        localStorage.setItem("access_token", accessToken);  // 使用 localStorage 儲存 Token
+        localStorage.setItem("access_token", accessToken); // Store Token
         window.history.replaceState({}, document.title, window.location.pathname);
     }
 
@@ -30,7 +30,7 @@ function getAccessToken() {
     }
 }
 
-// **授權 Google 帳戶**
+// **Authorize User**
 function authorizeUser() {
     var authUrl = "https://accounts.google.com/o/oauth2/auth?client_id=" + CLIENT_ID +
         "&redirect_uri=" + encodeURIComponent(REDIRECT_URI) +
@@ -39,14 +39,13 @@ function authorizeUser() {
     window.location.href = authUrl;
 }
 
-// **獲取 Google 相簿列表**
+// **Fetch Album List**
 function fetchAlbums() {
     if (!accessToken) {
-        console.error("缺少 accessToken，請先授權");
+        console.error("Missing accessToken, please authorize first");
         return;
     }
     var url = "https://photoslibrary.googleapis.com/v1/albums?pageSize=50";
-
     fetch(url, {
         method: "GET",
         headers: {
@@ -54,22 +53,22 @@ function fetchAlbums() {
             "Content-Type": "application/json"
         }
     })
-    .then(function (response) { return response.json(); })
-    .then(function (data) {
+    .then(response => response.json())
+    .then(data => {
         if (data.albums) {
             albums = data.albums;
             renderAlbumList();
         }
     })
-    .catch(function (error) { console.error("Error fetching albums:", error); });
+    .catch(error => console.error("Error fetching albums:", error));
 }
 
-// **顯示相簿列表**
+// **Render Album List**
 function renderAlbumList() {
     var albumListContainer = document.getElementById("album-list");
     albumListContainer.innerHTML = '';
 
-    albums.forEach(function (album) {
+    albums.forEach(function(album) {
         var li = document.createElement("li");
         li.textContent = album.title;
         li.addEventListener("click", function() {
@@ -83,10 +82,10 @@ function renderAlbumList() {
     });
 }
 
-// **獲取相簿中的照片**
+// **Fetch Photos from Selected Album**
 function fetchPhotos() {
     if (!accessToken) {
-        console.error("缺少 accessToken，請先授權");
+        console.error("Missing accessToken, please authorize first");
         return;
     }
     var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
@@ -102,66 +101,63 @@ function fetchPhotos() {
         },
         body: JSON.stringify(body)
     })
-    .then(function (response) { return response.json(); })
-    .then(function (data) {
+    .then(response => response.json())
+    .then(data => {
         if (data.mediaItems) {
             photos = photos.concat(data.mediaItems);
             nextPageToken = data.nextPageToken || null;
             renderPhotos();
-            document.getElementById("back-to-albums-btn").style.display = "block";  // 顯示返回按鈕
+            document.getElementById("back-to-albums-btn").style.display = "block";  // Show back button
         }
     })
-    .catch(function (error) { console.error("Error fetching photos:", error); });
+    .catch(error => console.error("Error fetching photos:", error));
 }
 
-// **顯示照片並使用緩存**
+// **Render Photos**
 function renderPhotos() {
     var photoContainer = document.getElementById("photo-container");
     var slideshowBtn = document.getElementById("slideshow-btn");
     if (!photoContainer) return;
 
-    photoContainer.innerHTML = '';  // 清空容器
+    photoContainer.innerHTML = ''; // Clear container
 
     if (photos.length === 0) {
-        photoContainer.innerHTML = '該相簿內沒有照片';
+        photoContainer.innerHTML = 'No photos in this album';
         return;
     }
 
-    photos.forEach(function (photo, index) {
+    photos.forEach(function(photo, index) {
         var img = document.createElement("img");
-
         if (cachedPhotos[photo.id]) {
-            img.src = cachedPhotos[photo.id];  // 使用緩存圖片
+            img.src = cachedPhotos[photo.id];  // Use cached image
         } else {
-            img.src = photo.baseUrl + "=w600-h400";  // 根據需要調整圖片大小
-            cachedPhotos[photo.id] = img.src;  // 儲存至緩存
+            img.src = photo.baseUrl + "=w600-h400";  // Adjust image size as needed
+            cachedPhotos[photo.id] = img.src;  // Save to cache
         }
-
         img.alt = photo.filename || "Photo";
         img.classList.add("photo");
-
         img.addEventListener("click", function() {
             openLightbox(photo.baseUrl);
-            slideshowBtn.style.display = "block";  // 顯示幻燈片按鈕
+            slideshowBtn.style.display = "block";  // Show slideshow button
         });
         photoContainer.appendChild(img);
 
-        // 讓幻燈片模式能夠正確顯示當前圖片
+        // Mark the current image as active
         if (index === currentPhotoIndex) {
-            img.classList.add('active');  // 標註當前正在顯示的圖片
+            img.classList.add('active');
         }
     });
 }
 
-// **啟動幻燈片播放**
+// **Start Slideshow**
 document.getElementById("slideshow-btn").addEventListener("click", function() {
     if (slideshowInterval) {
-        clearInterval(slideshowInterval);  // 清除現有的幻燈片間隔
+        clearInterval(slideshowInterval);  // Clear existing slideshow interval
     }
     startSlideshow();
 });
 
-// **啟動幻燈片**
+// **Start Slideshow with Custom Transition**
 function startSlideshow() {
     slideshowInterval = setInterval(function() {
         currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
@@ -169,19 +165,25 @@ function startSlideshow() {
     }, slideshowSpeed);
 }
 
-// **設置幻燈片切換間隔**
+// **Change Slideshow Speed**
 document.getElementById("slideshow-speed").addEventListener("input", function(e) {
     slideshowSpeed = parseInt(e.target.value);
     if (slideshowInterval) {
-        clearInterval(slideshowInterval);  // 清除當前的幻燈片
-        startSlideshow();  // 重新啟動幻燈片播放
+        clearInterval(slideshowInterval);  // Clear current slideshow
+        startSlideshow();  // Restart slideshow with new speed
     }
 });
 
-// **載入頁面時執行**
+// **Automatic Update of Photos**
+setInterval(function() {
+    if (albumId) {
+        fetchPhotos();  // Periodically check for new photos
+    }
+}, 60000);  // Check every minute
+
+// **Page Load Initialization**
 document.addEventListener("DOMContentLoaded", function () {
     var authBtn = document.getElementById("authorize-btn");
     if (authBtn) authBtn.addEventListener("click", authorizeUser);
-
     getAccessToken();
 });
