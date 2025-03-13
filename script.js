@@ -139,6 +139,24 @@ function enterFullscreenSlideshow() {
     }, slideshowSpeed);
 }
 
+function toggleFullScreen() {
+    let lightbox = document.getElementById("lightbox");
+
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (lightbox.requestFullscreen) {
+            lightbox.requestFullscreen();
+        } else if (lightbox.webkitRequestFullscreen) {
+            lightbox.webkitRequestFullscreen();
+        }
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        }
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("prev-btn").addEventListener("click", prevPhoto);
     document.getElementById("next-btn").addEventListener("click", nextPhoto);
