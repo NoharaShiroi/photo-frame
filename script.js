@@ -80,6 +80,27 @@ function fetchPhotos() {
     .catch(function (error) { console.error("Error fetching photos:", error); });
 }
 
+// **顯示照片**
+function renderPhotos() {
+    var photoContainer = document.getElementById("photo-container");
+    if (!photoContainer) return;
+
+    photoContainer.innerHTML = ''; // 清空容器
+
+    if (photos.length === 0) {
+        photoContainer.innerHTML = '沒有照片可顯示';
+        return;
+    }
+
+    photos.forEach(function (photo) {
+        var img = document.createElement("img");
+        img.src = photo.baseUrl + "=w600-h400";  // 可以根據需要調整圖片大小
+        img.alt = photo.filename || "Photo";
+        img.classList.add("photo");
+        photoContainer.appendChild(img);
+    });
+}
+
 // **滾動事件處理，確保滾動到底時載入更多照片**
 function handleScroll() {
     if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
