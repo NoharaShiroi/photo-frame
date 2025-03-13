@@ -108,6 +108,7 @@ function fetchPhotos() {
             photos = photos.concat(data.mediaItems);
             nextPageToken = data.nextPageToken || null;
             renderPhotos();
+            document.getElementById("back-to-albums-btn").style.display = "block";  // 顯示返回按鈕
         }
     })
     .catch(function (error) { console.error("Error fetching photos:", error); });
@@ -116,6 +117,7 @@ function fetchPhotos() {
 // **顯示照片並使用緩存**
 function renderPhotos() {
     var photoContainer = document.getElementById("photo-container");
+    var slideshowBtn = document.getElementById("slideshow-btn");
     if (!photoContainer) return;
 
     photoContainer.innerHTML = ''; // 清空容器
@@ -141,6 +143,7 @@ function renderPhotos() {
 
         img.addEventListener("click", function() {
             openLightbox(photo.baseUrl);
+            slideshowBtn.style.display = "block";  // 顯示幻燈片按鈕
         });
         photoContainer.appendChild(img);
 
