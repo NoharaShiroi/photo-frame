@@ -33,10 +33,10 @@
 
     <!-- 🔹 放大圖片 (Lightbox) -->
     <div id="lightbox">
-        <span id="close-lightbox">&times;</span>
+        <span id="close-lightbox" onclick="app.closeLightbox()">&times;</span>
         <img id="lightbox-image" src="" alt="Lightbox Image">
-        <button id="prev-photo" onclick="changePhoto(-1)">上張</button>
-        <button id="next-photo" onclick="changePhoto(1)">下張</button>
+        <button id="prev-photo" onclick="app.changePhoto(-1)">上張</button>
+        <button id="next-photo" onclick="app.changePhoto(1)">下張</button>
     </div>
 
     <script src="script.js"></script>
