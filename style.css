@@ -60,6 +60,19 @@ body {
     cursor: pointer;
 }
 
+#back-to-album-btn {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    padding: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    border: none;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 5px;
+}
+
 button {
     padding: 10px 20px;
     font-size: 16px;
@@ -77,6 +90,3 @@ button {
         grid-template-columns: 1fr 1fr;
     }
 }
-
-
-/* 20250313 17:00*/
