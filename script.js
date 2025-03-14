@@ -6,7 +6,7 @@ let albumId = localStorage.getItem("albumId") || null;
 let photos = [];
 let currentPhotoIndex = 0;
 let slideshowInterval = null;
-let slideshowSpeed = 5000;  // Fix slideshowSpeed initialization
+let slideshowSpeed = 5000;  // Default slideshow speed
 let nextPageToken = null;
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -53,6 +53,7 @@ function fetchAllPhotos() {
     .then(response => {
         if (response.status === 401) {
             alert("未授權或授權過期，請重新授權！");
+            redirectToAuthorization();
             return;
         }
         return response.json();
@@ -207,4 +208,10 @@ function startSlideshow() {
     slideshowInterval = setInterval(() => {
         nextPhoto({ stopPropagation: () => {} });
     }, slideshowSpeed);
+}
+
+// 新增授权重定向函数
+function redirectToAuthorization() {
+    const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=${SCOPES}&prompt=consent`;
+    window.location.href = authUrl;
 }
