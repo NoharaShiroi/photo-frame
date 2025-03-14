@@ -56,14 +56,14 @@ function fetchAlbums() {
 // **顯示相簿列表**
 function renderAlbumList(albums) {
     var albumListContainer = document.getElementById("album-list");
-    albumListContainer.innerHTML = '';
+    albumListContainer.innerHTML = '';  // 清空之前的相簿列表
     albums.forEach(album => {
         var li = document.createElement("li");
         li.textContent = album.title;
         li.onclick = () => {
             albumId = album.id;
-            localStorage.setItem("albumId", albumId);
-            fetchPhotos();
+            localStorage.setItem("albumId", albumId);  // 儲存相簿ID
+            fetchPhotos();  // 立即取得相簿中的照片
         };
         albumListContainer.appendChild(li);
     });
@@ -71,7 +71,7 @@ function renderAlbumList(albums) {
 
 // **獲取相簿中的照片**
 function fetchPhotos() {
-    if (!accessToken) return;
+    if (!albumId || !accessToken) return;  // 確保有相簿ID和Access Token
     var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
     var body = {
         albumId,
@@ -95,24 +95,24 @@ function fetchPhotos() {
 // **顯示照片**
 function renderPhotos() {
     var photoContainer = document.getElementById("photo-container");
-    photoContainer.innerHTML = '';
+    photoContainer.innerHTML = '';  // 清空之前的照片
 
     if (photos.length === 0) {
         photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
-        return;
+    } else {
+        photos.forEach((photo) => {
+            var img = document.createElement("img");
+            img.src = photo.baseUrl + "=w600-h400";  // 顯示圖片
+            img.alt = "Photo";
+            img.classList.add("photo");
+            img.onclick = () => openLightbox(photo.baseUrl);  // 點擊放大圖片
+            photoContainer.appendChild(img);
+        });
     }
 
-    photos.forEach((photo, index) => {
-        var img = document.createElement("img");
-        img.src = photo.baseUrl + "=w600-h400";
-        img.alt = "Photo";
-        img.classList.add("photo");
-
-        img.onclick = () => openLightbox(photo.baseUrl);
-        photoContainer.appendChild(img);
-    });
-
-    document.getElementById("photo-container").style.display = "grid";
+    // 顯示相片容器
+    photoContainer.style.display = "grid";
+    document.getElementById("app-container").style.display = "flex";  // 確保相片區域顯示
 }
 
 // **放大圖片**
