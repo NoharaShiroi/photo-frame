@@ -1,35 +1,35 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>數位相框</title>
+    <title>Google 相簿數位相框</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="icon" href="data:image/x-icon;base64,AA==" />
 </head>
 <body>
+
+    <!-- 🔹 授權登入 -->
     <div id="auth-container">
-        <button id="google-auth-btn">授权 Google 账户</button>
+        <h1>Google 相簿 數位相框</h1>
+        <button id="authorize-btn">使用 Google 帳戶登入</button>
     </div>
 
+    <!-- 🔹 相簿選擇 -->
     <div id="app-container" style="display: none;">
+        <button id="back-to-album-btn" style="display: none;">選擇其他相簿</button>
         <div id="album-selection-container">
-            <button id="set-album-btn">選擇相簿</button>
-            <label for="slideshow-speed">幻燈片速度 (秒):</label>
-            <input type="number" id="slideshow-speed" value="5" min="1">
+            <h2>選擇相簿</h2>
+            <ul id="album-list"></ul>
         </div>
 
-        <div id="photo-gallery"></div>
+        <!-- 🔹 相片顯示區 -->
+        <div id="photo-container" style="display: none;"></div>
     </div>
 
-    <div id="lightbox" style="display: none;">
-        <img id="lightbox-img" src="" alt="Large view of photo">
-        <div id="lightbox-controls">
-            <button id="prev-btn">上一張</button>
-            <button id="next-btn">下一張</button>
-            <button id="close-btn">X</button>
-            <button id="start-slideshow-btn">開始幻燈片</button>
-        </div>
+    <!-- 🔹 放大圖片 (Lightbox) -->
+    <div id="lightbox">
+        <span id="close-lightbox">&times;</span>
+        <img id="lightbox-image" src="" alt="Lightbox Image">
     </div>
 
     <script src="script.js"></script>
