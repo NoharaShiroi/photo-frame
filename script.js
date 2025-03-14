@@ -6,6 +6,7 @@ let albumId = localStorage.getItem("albumId") || null;
 let photos = [];
 let currentPhotoIndex = 0;
 let slideshowInterval = null;
+let slideshowSpeed = 5000;  // Fix slideshowSpeed initialization
 let nextPageToken = null;
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -83,14 +84,20 @@ function updateAlbumId() {
     .then(data => {
         const albumList = data.albums;
         if (albumList && albumList.length > 0) {
-            const albumSelect = prompt("請選擇相簿:\n" + albumList.map((album, index) => `${index + 1}. ${album.title}`).join("\n"));
-            const albumIndex = parseInt(albumSelect) - 1;
-            if (albumIndex >= 0 && albumIndex < albumList.length) {
-                albumId = albumList[albumIndex].id;
-                localStorage.setItem("albumId", albumId);
-                photos = [];
-                nextPageToken = null;
-                fetchAlbumPhotos();
+            const albumSelect = prompt("請選擇相簿:\n" + 
+                "0. 所有相片\n" + 
+                albumList.map((album, index) => `${index + 1}. ${album.title}`).join("\n"));
+            if (albumSelect === "0") {
+                fetchAllPhotos();  // Choose all photos
+            } else {
+                const albumIndex = parseInt(albumSelect) - 1;
+                if (albumIndex >= 0 && albumIndex < albumList.length) {
+                    albumId = albumList[albumIndex].id;
+                    localStorage.setItem("albumId", albumId);
+                    photos = [];
+                    nextPageToken = null;
+                    fetchAlbumPhotos();
+                }
             }
         } else {
             alert("無相簿可供選擇");
@@ -187,12 +194,13 @@ document.getElementById("lightbox").addEventListener("click", (event) => {
 document.getElementById("prev-btn").addEventListener("click", prevPhoto);
 document.getElementById("next-btn").addEventListener("click", nextPhoto);
 
+document.getElementById("start-slideshow-btn").addEventListener("click", startSlideshow);
+
 function setSlideshowSpeed() {
     slideshowSpeed = parseInt(document.getElementById("slideshow-speed").value) * 1000;
     if (slideshowInterval) {
         clearInterval(slideshowInterval);
     }
-    startSlideshow();
 }
 
 function startSlideshow() {
@@ -200,6 +208,3 @@ function startSlideshow() {
         nextPhoto({ stopPropagation: () => {} });
     }, slideshowSpeed);
 }
-
-document.getElementById("slideshow-speed").value = 5;  // Default speed 5 seconds
-startSlideshow();
