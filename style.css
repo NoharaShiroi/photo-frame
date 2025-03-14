@@ -18,6 +18,32 @@ body {
 #album-selection-container {
     margin-bottom: 20px;
 }
+/* 新增的按鈕樣式（可愛風格） */
+#nav-buttons-container button {
+    background: linear-gradient(145deg, #ffb3e6, #ff66b2); /* 漸變色背景 */
+    border: none;
+    color: white;
+    font-size: 28px;
+    padding: 12px 24px;
+    border-radius: 50px; /* 更圓潤 */
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+    box-shadow: 0px 4px 10px rgba(255, 105, 180, 0.5); /* 柔和的陰影效果 */
+}
+
+/* 按鈕懸停效果 */
+#nav-buttons-container button:hover {
+    background: linear-gradient(145deg, #ff66b2, #ffb3e6);
+    transform: scale(1.1);
+    box-shadow: 0px 6px 15px rgba(255, 105, 180, 0.7); /* 更強的陰影效果 */
+}
+/* 在移動裝置上的自適應樣式 */
+@media (max-width: 768px) {
+    #nav-buttons-container button {
+        font-size: 24px;
+        padding: 10px 20px;
+    }
+}
 
 /* 縮圖顯示區 */
 #photo-container {
@@ -60,11 +86,13 @@ body {
     transition: opacity 0.3s ease-in-out;
 }
 
+/* 放大圖片 */
 #lightbox img {
     max-width: 90%;
-    max-height: 90%;
+    max-height: 80%;
     box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.7);
 }
+
 
 /* 返回選擇相簿按鈕 */
 #back-to-album-btn {
