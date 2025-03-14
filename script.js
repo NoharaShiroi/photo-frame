@@ -44,23 +44,27 @@ function fetchAlbums() {
         method: "GET",
         headers: { "Authorization": "Bearer " + accessToken }
     })
-    .then(response => response.json())
-    .then(data => {
+    .then(function(response) {
+        return response.json();
+    })
+    .then(function(data) {
         if (data.albums) {
             renderAlbumList(data.albums);
         }
     })
-    .catch(error => console.error("Error fetching albums:", error));
+    .catch(function(error) {
+        console.error("Error fetching albums:", error);
+    });
 }
 
 // **顯示相簿列表**
 function renderAlbumList(albums) {
     var albumListContainer = document.getElementById("album-list");
     albumListContainer.innerHTML = '';  // 清空之前的相簿列表
-    albums.forEach(album => {
+    albums.forEach(function(album) {
         var li = document.createElement("li");
         li.textContent = album.title;
-        li.onclick = () => {
+        li.onclick = function() {
             albumId = album.id;
             localStorage.setItem("albumId", albumId);  // 儲存相簿ID
             fetchPhotos();  // 立即取得相簿中的照片
@@ -71,25 +75,45 @@ function renderAlbumList(albums) {
 
 // **獲取相簿中的照片**
 function fetchPhotos() {
-    if (!albumId || !accessToken) return;  // 確保有相簿ID和Access Token
+    if (!albumId || !accessToken) {
+        console.error("No albumId or accessToken found.");
+        return;  // 確保有相簿ID和Access Token
+    }
+
     var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
+    
     var body = {
-        albumId,
+        albumId: albumId,  // 確保 albumId 正確傳遞
         pageSize: 50,
-        filters: { contentFilter: { includedContentCategories: ["PHOTOS"] } }
+        filters: {
+            contentFilter: {
+                includedContentCategories: ["PHOTOS"]
+            }
+        }
     };
 
     fetch(url, {
         method: "POST",
-        headers: { "Authorization": "Bearer " + accessToken, "Content-Type": "application/json" },
+        headers: { 
+            "Authorization": "Bearer " + accessToken, 
+            "Content-Type": "application/json" 
+        },
         body: JSON.stringify(body)
     })
-    .then(response => response.json())
-    .then(data => {
-        photos = data.mediaItems || [];
-        renderPhotos();
+    .then(function(response) {
+        return response.json();
     })
-    .catch(error => console.error("Error fetching photos:", error));
+    .then(function(data) {
+        if (data.mediaItems) {
+            photos = data.mediaItems;
+            renderPhotos();
+        } else {
+            console.error("No mediaItems found in the response.", data);
+        }
+    })
+    .catch(function(error) {
+        console.error("Error fetching photos:", error);
+    });
 }
 
 // **顯示照片**
@@ -100,12 +124,14 @@ function renderPhotos() {
     if (photos.length === 0) {
         photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
     } else {
-        photos.forEach((photo) => {
+        photos.forEach(function(photo) {
             var img = document.createElement("img");
             img.src = photo.baseUrl + "=w600-h400";  // 顯示圖片
             img.alt = "Photo";
             img.classList.add("photo");
-            img.onclick = () => openLightbox(photo.baseUrl);  // 點擊放大圖片
+            img.onclick = function() {
+                openLightbox(photo.baseUrl);  // 點擊放大圖片
+            };
             photoContainer.appendChild(img);
         });
     }
@@ -135,7 +161,7 @@ function startSlideshow() {
     if (photos.length === 0) return;  // 🚨 避免錯誤
     if (slideshowInterval) clearInterval(slideshowInterval);
     
-    slideshowInterval = setInterval(() => {
+    slideshowInterval = setInterval(function() {
         currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
         document.getElementById("lightbox-image").src = photos[currentPhotoIndex].baseUrl + "=w1200-h800";
     }, 5000);
