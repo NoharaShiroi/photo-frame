@@ -128,7 +128,7 @@ function renderPhotos() {
     photos.forEach(function (photo, index) {
         var img = document.createElement("img");
 
-        // 先檢查緩存
+        // 檢查是否已緩存圖片
         if (cachedPhotos[photo.id]) {
             img.src = cachedPhotos[photo.id]; // 使用緩存圖片
         } else {
@@ -152,21 +152,20 @@ function openLightbox(imageUrl) {
     var lightboxImage = document.getElementById("lightbox-image");
     lightboxImage.src = imageUrl + "=w1200-h800";  // 放大圖片
     lightbox.style.display = "flex";
+
+    // 顯示幻燈片選項
+    document.getElementById("slideshow-options-lightbox").style.display = "block";
+    document.getElementById("back-to-album-btn").style.display = "block"; // 顯示返回相簿按鈕
 }
 
-document.getElementById("close-lightbox").addEventListener("click", function() {
-    document.getElementById("lightbox").style.display = "none";
-});
-
-document.getElementById("lightbox").addEventListener("click", function(event) {
-    if (event.target !== document.getElementById("lightbox-image")) {
-        document.getElementById("lightbox").style.display = "none";
-    }
+// **返回選擇相簿功能**
+document.getElementById("back-to-album-btn").addEventListener("click", function() {
+    window.location.href = window.location.pathname; // 重新加載頁面，返回選擇相簿
 });
 
 // **啟動幻燈片播放**
-document.getElementById("slideshow-start-btn").addEventListener("click", function() {
-    slideshowSpeed = parseInt(document.getElementById("slideshow-speed").value) * 1000 || 5000; // 使用用戶設定的秒數
+document.getElementById("slideshow-start-btn-lightbox").addEventListener("click", function() {
+    slideshowSpeed = parseInt(document.getElementById("slideshow-speed-lightbox").value) * 1000 || 5000; // 使用用戶設定的秒數
     startSlideshow();
 });
 
@@ -188,6 +187,3 @@ document.addEventListener("DOMContentLoaded", function () {
 
     getAccessToken();
 });
-
-
-/*20250313 17:00*/
