@@ -1,6 +1,6 @@
-const CLIENT_ID = '1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.comD';  // 替换成你自己的 Google OAuth Client ID
-const REDIRECT_URI = 'https://noharashiroi.github.io/photo-frame/';  // 替换成你自己的重定向 URI
-const SCOPES = "https://www.googleapis.com/auth/photoslibrary.readonly";  // 设置你需要的权限范围
+const CLIENT_ID = "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com" // 替换成你自己的 Google OAuth Client ID
+const REDIRECT_URI = "https://noharashiroi.github.io/photo-frame/"; // 替换成你自己的重定向 URI
+const SCOPES = "https://www.googleapis.com/auth/photoslibrary.readonly"// 设置你需要的权限范围
 
 window.addEventListener('DOMContentLoaded', function() {
     // 授权按钮事件监听
