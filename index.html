@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Google 相簿數位相框</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://apis.google.com/js/api.js"></script> <!-- 加载 Google API -->
 </head>
 <body>
 
@@ -19,7 +20,11 @@
         <button id="back-to-album-btn" style="display: none;">選擇其他相簿</button>
         <div id="album-selection-container">
             <h2>選擇相簿</h2>
-            <ul id="album-list"></ul>
+            <select id="album-select" onchange="loadPhotos()">
+                <option value="all">所有相片</option>
+                <option value="">選擇相簿</option>
+                <ul id="album-list" style="display: none;"></ul>
+            </select>
         </div>
 
         <!-- 🔹 相片顯示區 -->
@@ -30,6 +35,8 @@
     <div id="lightbox">
         <span id="close-lightbox">&times;</span>
         <img id="lightbox-image" src="" alt="Lightbox Image">
+        <button id="prev-photo" onclick="changePhoto(-1)">上張</button>
+        <button id="next-photo" onclick="changePhoto(1)">下張</button>
     </div>
 
     <script src="script.js"></script>
