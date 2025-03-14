@@ -3,7 +3,7 @@ const app = {
     REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/", // 替换为你的重定向 URI
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
     accessToken: sessionStorage.getItem("access_token") || null,
-    albumId: localStorage.getItem("albumId") || null,
+    albumId: null,
     photos: [],
     currentPhotoIndex: 0,
 
@@ -19,6 +19,7 @@ const app = {
             document.getElementById("auth-container").style.display = "none";
             document.getElementById("app-container").style.display = "flex";
             this.fetchAlbums();
+            this.fetchAllPhotos();  // 在授权后预加载所有照片
         } else {
             document.getElementById("auth-container").style.display = "flex";
             document.getElementById("app-container").style.display = "none";
@@ -51,7 +52,7 @@ const app = {
 
     renderAlbumList: function(albums) {
         var albumSelect = document.getElementById("album-select");
-        albumSelect.innerHTML = '<option value="all">所有相片</option><option value="">選擇相簿</option>';
+        albumSelect.innerHTML = '<option value="all">所有相片</option>'; // 去掉多余的选项
         albums.forEach(album => {
             var option = document.createElement("option");
             option.value = album.id;
@@ -73,7 +74,9 @@ const app = {
 
     fetchAllPhotos: function() {
         var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-        var body = { pageSize: 50 };
+        var body = {
+            pageSize: 50
+        };
 
         fetch(url, {
             method: "POST",
@@ -138,7 +141,7 @@ const app = {
         }
 
         photoContainer.style.display = "grid";
-        document.getElementById("app-container").style.display = "flex";
+        document.getElementById("app-container").style.display = "flex"; // 显示相片容器
     },
 
     openLightbox: function(index) {
