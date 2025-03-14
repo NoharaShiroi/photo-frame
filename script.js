@@ -1,6 +1,6 @@
 const app = {
-    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com", // 替換為你的客戶端 ID
-    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/", // 替換為你的重定向 URI
+    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
+    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
     accessToken: sessionStorage.getItem("access_token") || null,
     albumId: null,
@@ -20,7 +20,7 @@ const app = {
             document.getElementById("auth-container").style.display = "none";
             document.getElementById("app-container").style.display = "flex";
             this.fetchAlbums();
-            this.fetchAllPhotos();  // 在授權後預加載所有照片
+            this.fetchAllPhotos();  
         } else {
             document.getElementById("auth-container").style.display = "flex";
             document.getElementById("app-container").style.display = "none";
@@ -128,7 +128,7 @@ const app = {
 
     renderPhotos: function() {
         var photoContainer = document.getElementById("photo-container");
-        photoContainer.innerHTML = '';  // 清空照片容器
+        photoContainer.innerHTML = '';
 
         if (this.photos.length === 0) {
             photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
@@ -153,7 +153,7 @@ const app = {
         var lightboxImage = document.getElementById("lightbox-image");
         lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
         lightbox.style.display = "flex";
-        setTimeout(() => lightbox.style.opacity = 1, 10); 
+        setTimeout(() => lightbox.style.opacity = 1, 10);
     },
 
     closeLightbox: function() {
@@ -181,13 +181,13 @@ document.getElementById("back-to-album-btn").onclick = () => {
     document.getElementById("album-selection-container").style.display = "block";
 };
 
-// 新增：切換上下張按鈕的顯示與功能
+// 切換照片
 document.getElementById("next-photo-btn").onclick = () => app.changePhoto(1);
 document.getElementById("prev-photo-btn").onclick = () => app.changePhoto(-1);
 
 document.addEventListener("DOMContentLoaded", () => app.getAccessToken());
 
-// 滾動事件，用於加載更多照片
+// 滾動事件
 window.onscroll = function() {
     if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
         app.fetchAllPhotos();
