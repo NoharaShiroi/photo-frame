@@ -181,6 +181,10 @@ document.getElementById("back-to-album-btn").onclick = () => {
     document.getElementById("album-selection-container").style.display = "block";
 };
 
+// 新增：切換上下張按鈕的顯示與功能
+document.getElementById("next-photo-btn").onclick = () => app.changePhoto(1);
+document.getElementById("prev-photo-btn").onclick = () => app.changePhoto(-1);
+
 document.addEventListener("DOMContentLoaded", () => app.getAccessToken());
 
 // 滾動事件，用於加載更多照片
