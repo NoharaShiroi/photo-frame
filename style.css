@@ -14,7 +14,7 @@ body {
     padding: 10px;
 }
 
-/* 相簿選擇區 */
+/* 選擇相簿 */
 #album-selection-container {
     margin-bottom: 20px;
 }
@@ -82,32 +82,22 @@ body {
     cursor: pointer;
 }
 
-/* 控制圖像切換按鈕樣式 */
-#prev-photo, #next-photo {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 36px;
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: pointer;
-    z-index: 1;
-}
-
-/* 上一張按鈕位置 */
-#prev-photo {
-    left: 10px;
-}
-
-/* 下一張按鈕位置 */
-#next-photo {
-    right: 10px;
-}
-
 /* 響應式設計 */
 @media (max-width: 768px) {
     #photo-container {
         grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
     }
+}
+
+/* 鳴響按鈕設計 */
+button {
+    background-color: transparent;
+    border: none;
+    color: white;
+    font-size: 30px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: rgba(255, 255, 255, 0.3);
 }
