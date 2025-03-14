@@ -1,15 +1,12 @@
-// 全局变量封装
 const app = {
-    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
-    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
+    CLIENT_ID: "YOUR_CLIENT_ID.apps.googleusercontent.com", // 替换为你的客户端 ID
+    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/", // 替换为你的重定向 URI
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
     accessToken: sessionStorage.getItem("access_token") || null,
     albumId: localStorage.getItem("albumId") || null,
     photos: [],
     currentPhotoIndex: 0,
-    slideshowInterval: null,
 
-    // 获取访问令牌
     getAccessToken: function() {
         var hashParams = new URLSearchParams(window.location.hash.substring(1));
         if (hashParams.has("access_token")) {
@@ -18,26 +15,21 @@ const app = {
             window.history.replaceState({}, document.title, window.location.pathname);
         }
 
-        // 调试输出 accessToken
-        console.log("Access Token after getAccessToken: ", this.accessToken);  // 输出当前的 accessToken
-
         if (this.accessToken) {
             document.getElementById("auth-container").style.display = "none";
             document.getElementById("app-container").style.display = "flex";
-            this.fetchAlbums();  // 获取相册列表
+            this.fetchAlbums();
         } else {
             document.getElementById("auth-container").style.display = "flex";
             document.getElementById("app-container").style.display = "none";
         }
     },
 
-    // 授权用户
     authorizeUser: function() {
         var authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${this.CLIENT_ID}&redirect_uri=${encodeURIComponent(this.REDIRECT_URI)}&response_type=token&scope=${this.SCOPES}&prompt=consent`;
         window.location.href = authUrl;
     },
 
-    // 获取相册列表
     fetchAlbums: function() {
         if (!this.accessToken) return;
         var url = "https://photoslibrary.googleapis.com/v1/albums?pageSize=50";
@@ -48,8 +40,6 @@ const app = {
         })
         .then(response => response.json())
         .then(data => {
-            // 调试输出相册数据
-            console.log("Fetched Albums Data: ", data);  // 输出获取到的相册数据
             if (data.albums) {
                 this.renderAlbumList(data.albums);
             }
@@ -59,52 +49,39 @@ const app = {
         });
     },
 
-    // 显示相册列表
     renderAlbumList: function(albums) {
-        var albumListContainer = document.getElementById("album-list");
-        albumListContainer.innerHTML = '';
+        var albumSelect = document.getElementById("album-select");
+        albumSelect.innerHTML = '<option value="all">所有相片</option><option value="">選擇相簿</option>';
         albums.forEach(album => {
-            var li = document.createElement("li");
-            li.textContent = album.title;
-            li.onclick = () => {
-                this.albumId = album.id;
-                localStorage.setItem("albumId", this.albumId);
-                this.fetchPhotos();
-            };
-            albumListContainer.appendChild(li);
+            var option = document.createElement("option");
+            option.value = album.id;
+            option.textContent = album.title;
+            albumSelect.appendChild(option);
         });
     },
 
-    // 获取相册中的照片
-    fetchPhotos: function() {
-        // 调试输出 albumId
-        console.log("Fetching photos for Album ID: ", this.albumId);  // 输出当前的 albumId
+    loadPhotos: function() {
+        const albumSelect = document.getElementById("album-select");
+        this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
 
-        if (!this.albumId || !this.accessToken) {
-            console.error("No albumId or accessToken found.");
-            return;
+        if (this.albumId) {
+            this.fetchPhotos();
+        } else { // 加载所有图片
+            this.fetchAllPhotos();
         }
+    },
 
+    fetchAllPhotos: function() {
         var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-        var body = {
-            albumId: this.albumId,
-            pageSize: 50
-            // 去掉 filters，只请求所有媒体项
-        };
+        var body = { pageSize: 50 };
 
         fetch(url, {
             method: "POST",
             headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
             body: JSON.stringify(body)
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
-            console.log("API Response Data: ", data);  // 输出完整的API响应数据
             if (data.mediaItems) {
                 this.photos = data.mediaItems;
                 this.renderPhotos();
@@ -117,7 +94,32 @@ const app = {
         });
     },
 
-    // 显示照片
+    fetchPhotos: function() {
+        var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
+        var body = {
+            albumId: this.albumId,
+            pageSize: 50
+        };
+
+        fetch(url, {
+            method: "POST",
+            headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.mediaItems) {
+                this.photos = data.mediaItems;
+                this.renderPhotos();
+            } else {
+                console.error("No mediaItems found in the response.");
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching photos:", error);
+        });
+    },
+
     renderPhotos: function() {
         var photoContainer = document.getElementById("photo-container");
         photoContainer.innerHTML = '';
@@ -125,12 +127,12 @@ const app = {
         if (this.photos.length === 0) {
             photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
         } else {
-            this.photos.forEach(photo => {
+            this.photos.forEach((photo, index) => {
                 var img = document.createElement("img");
                 img.src = `${photo.baseUrl}=w600-h400`;
                 img.alt = "Photo";
                 img.classList.add("photo");
-                img.onclick = () => this.openLightbox(photo.baseUrl);
+                img.onclick = () => this.openLightbox(index);
                 photoContainer.appendChild(img);
             });
         }
@@ -139,31 +141,29 @@ const app = {
         document.getElementById("app-container").style.display = "flex";
     },
 
-    // 放大图片
-    openLightbox: function(imageUrl) {
+    openLightbox: function(index) {
+        this.currentPhotoIndex = index;
         var lightbox = document.getElementById("lightbox");
         var lightboxImage = document.getElementById("lightbox-image");
-        lightboxImage.src = `${imageUrl}=w1200-h800`;
+        lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
         lightbox.style.display = "flex";
         setTimeout(() => lightbox.style.opacity = 1, 10); // 动画效果
     },
 
-    // 关闭Lightbox
     closeLightbox: function() {
         var lightbox = document.getElementById("lightbox");
         lightbox.style.opacity = 0;
         setTimeout(() => lightbox.style.display = "none", 300);
     },
 
-    // 启动幻灯片
-    startSlideshow: function() {
-        if (this.photos.length === 0) return;
-        if (this.slideshowInterval) clearInterval(this.slideshowInterval);
-
-        this.slideshowInterval = setInterval(() => {
-            this.currentPhotoIndex = (this.currentPhotoIndex + 1) % this.photos.length;
-            document.getElementById("lightbox-image").src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
-        }, 5000);
+    changePhoto: function(direction) {
+        this.currentPhotoIndex += direction;
+        if (this.currentPhotoIndex < 0) {
+            this.currentPhotoIndex = 0;
+        } else if (this.currentPhotoIndex >= this.photos.length) {
+            this.currentPhotoIndex = this.photos.length - 1;
+        }
+        document.getElementById("lightbox-image").src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
     }
 };
 
@@ -175,5 +175,4 @@ document.getElementById("back-to-album-btn").onclick = () => {
     document.getElementById("album-selection-container").style.display = "block";
 };
 
-// 页面加载时执行
 document.addEventListener("DOMContentLoaded", () => app.getAccessToken());
