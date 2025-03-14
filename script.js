@@ -1,6 +1,6 @@
 const app = {
-    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com", // 替换为你的客户端 ID
-    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/", // 替换为你的重定向 URI
+    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com", // 替換為你的客戶端 ID
+    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/", // 替換為你的重定向 URI
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
     accessToken: sessionStorage.getItem("access_token") || null,
     albumId: null,
@@ -20,7 +20,7 @@ const app = {
             document.getElementById("auth-container").style.display = "none";
             document.getElementById("app-container").style.display = "flex";
             this.fetchAlbums();
-            this.fetchAllPhotos();  // 在授权后预加载所有照片
+            this.fetchAllPhotos();  // 在授權後預加載所有照片
         } else {
             document.getElementById("auth-container").style.display = "flex";
             document.getElementById("app-container").style.display = "none";
@@ -53,7 +53,7 @@ const app = {
 
     renderAlbumList: function(albums) {
         var albumSelect = document.getElementById("album-select");
-        albumSelect.innerHTML = '<option value="all">所有相片</option>'; // 去掉多余的选项
+        albumSelect.innerHTML = '<option value="all">所有相片</option>';
         albums.forEach(album => {
             var option = document.createElement("option");
             option.value = album.id;
@@ -69,7 +69,7 @@ const app = {
         if (this.albumId) {
             this.fetchPhotos();
         } else {
-            this.fetchAllPhotos(); // 加载所有照片
+            this.fetchAllPhotos();
         }
     },
 
@@ -144,7 +144,7 @@ const app = {
         }
 
         photoContainer.style.display = "grid";
-        document.getElementById("app-container").style.display = "flex"; // 显示相片容器
+        document.getElementById("app-container").style.display = "flex";
     },
 
     openLightbox: function(index) {
@@ -153,7 +153,7 @@ const app = {
         var lightboxImage = document.getElementById("lightbox-image");
         lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
         lightbox.style.display = "flex";
-        setTimeout(() => lightbox.style.opacity = 1, 10); // 动画效果
+        setTimeout(() => lightbox.style.opacity = 1, 10); 
     },
 
     closeLightbox: function() {
@@ -173,7 +173,7 @@ const app = {
     }
 };
 
-// 事件监听
+// 事件監聽
 document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
 document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
 document.getElementById("back-to-album-btn").onclick = () => {
@@ -183,7 +183,7 @@ document.getElementById("back-to-album-btn").onclick = () => {
 
 document.addEventListener("DOMContentLoaded", () => app.getAccessToken());
 
-// 滚动事件，用于加载更多照片
+// 滾動事件，用於加載更多照片
 window.onscroll = function() {
     if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
         app.fetchAllPhotos();
