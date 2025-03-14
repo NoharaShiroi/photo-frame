@@ -1,174 +1,164 @@
-var CLIENT_ID = "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com";
-var REDIRECT_URI = "https://noharashiroi.github.io/photo-frame/";
-var SCOPES = "https://www.googleapis.com/auth/photoslibrary.readonly";
-var accessToken = sessionStorage.getItem("access_token") || null;
-var albumId = localStorage.getItem("albumId") || null;
-var photos = [];
-var currentPhotoIndex = 0;
-var slideshowInterval = null;
+const CLIENT_ID = "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com";
+const REDIRECT_URI = "https://noharashiroi.github.io/photo-frame/";
+const SCOPES = "https://www.googleapis.com/auth/photoslibrary.readonly";
+let accessToken = localStorage.getItem("access_token") || null;
+let albumId = localStorage.getItem("albumId") || null;
+let photos = [];
+let currentPhotoIndex = 0;
+let slideshowInterval = null;
+let slideshowSpeed = 5000;
+let nextPageToken = null;
 
-// **取得 Access Token**
-function getAccessToken() {
-    var hashParams = new URLSearchParams(window.location.hash.substring(1));
-    if (hashParams.has("access_token")) {
-        accessToken = hashParams.get("access_token");
-        sessionStorage.setItem("access_token", accessToken);
-        window.history.replaceState({}, document.title, window.location.pathname);
-    }
-
-    if (accessToken) {
-        document.getElementById("auth-container").style.display = "none";
-        document.getElementById("app-container").style.display = "flex";
-        fetchAlbums();
-    } else {
-        document.getElementById("auth-container").style.display = "flex";
-        document.getElementById("app-container").style.display = "none";
+function updateAlbumId() {
+    const inputAlbumId = prompt("請輸入 Google 相簿 ID:");
+    if (inputAlbumId) {
+        albumId = inputAlbumId;
+        localStorage.setItem("albumId", albumId);
+        photos = [];
+        nextPageToken = null;
+        fetchPhotos();
     }
 }
 
-// **授權 Google 帳戶**
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("authorize-btn")?.addEventListener("click", authorizeUser);
+    document.getElementById("set-album-btn")?.addEventListener("click", updateAlbumId);
+    document.getElementById("lightbox-fullscreen-btn")?.addEventListener("click", enterFullscreenSlideshow);
+    window.addEventListener("scroll", handleScroll);
+    getAccessToken();
+});
+
 function authorizeUser() {
-    var authUrl = "https://accounts.google.com/o/oauth2/auth?client_id=" + CLIENT_ID +
-        "&redirect_uri=" + encodeURIComponent(REDIRECT_URI) +
-        "&response_type=token&scope=" + SCOPES +
-        "&prompt=consent";
+    const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=${SCOPES}&prompt=consent`;
     window.location.href = authUrl;
 }
 
-// **獲取 Google 相簿列表**
-function fetchAlbums() {
-    if (!accessToken) return;
-    var url = "https://photoslibrary.googleapis.com/v1/albums?pageSize=50";
-
-    fetch(url, {
-        method: "GET",
-        headers: { "Authorization": "Bearer " + accessToken }
-    })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
-        if (data.albums) {
-            renderAlbumList(data.albums);
-        }
-    })
-    .catch(function(error) {
-        console.error("Error fetching albums:", error);
-    });
-}
-
-// **顯示相簿列表**
-function renderAlbumList(albums) {
-    var albumListContainer = document.getElementById("album-list");
-    albumListContainer.innerHTML = '';  // 清空之前的相簿列表
-    albums.forEach(function(album) {
-        var li = document.createElement("li");
-        li.textContent = album.title;
-        li.onclick = function() {
-            albumId = album.id;
-            localStorage.setItem("albumId", albumId);  // 儲存相簿ID
-            fetchPhotos();  // 立即取得相簿中的照片
-        };
-        albumListContainer.appendChild(li);
-    });
-}
-
-// **獲取相簿中的照片**
-function fetchPhotos() {
-    if (!albumId || !accessToken) {
-        console.error("No albumId or accessToken found.");
-        return;  // 確保有相簿ID和Access Token
+function getAccessToken() {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    if (hashParams.has("access_token")) {
+        accessToken = hashParams.get("access_token");
+        localStorage.setItem("access_token", accessToken);
     }
+    if (accessToken) {
+        document.getElementById("auth-container").style.display = "none";
+        document.getElementById("app-container").style.display = "flex";
+        fetchPhotos();
+    }
+}
 
-    var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-    
-    var body = {
-        albumId: albumId,
-        pageSize: 50,
-        filters: {
-            contentFilter: {
-                includedContentCategories: ["PHOTOS"]
-            }
-        }
-    };
+function fetchPhotos() {
+    if (!accessToken) {
+        console.error("缺少 accessToken，請先授權");
+        return;
+    }
+    const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
+    const body = { pageSize: 50 };
+    if (albumId) body.albumId = albumId;
+    if (nextPageToken) body.pageToken = nextPageToken;
 
     fetch(url, {
         method: "POST",
-        headers: { 
-            "Authorization": "Bearer " + accessToken, 
-            "Content-Type": "application/json" 
+        headers: {
+            "Authorization": `Bearer ${accessToken}`,
+            "Content-Type": "application/json"
         },
         body: JSON.stringify(body)
     })
-    .then(function(response) {
-        return response.json();
-    })
-    .then(function(data) {
+    .then(response => response.json())
+    .then(data => {
         if (data.mediaItems) {
-            photos = data.mediaItems;
+            photos = [...photos, ...data.mediaItems];
+            nextPageToken = data.nextPageToken || null;
             renderPhotos();
-        } else {
-            console.error("No mediaItems found in the response.", data);
         }
     })
-    .catch(function(error) {
-        console.error("Error fetching photos:", error);
+    .catch(error => console.error("Error fetching photos:", error));
+}
+
+function renderPhotos() {
+    const gallery = document.getElementById("photo-gallery");
+    gallery.innerHTML = "";
+    photos.forEach((photo, index) => {
+        const imgElement = document.createElement("img");
+        imgElement.classList.add("photo-item");
+        imgElement.src = photo.baseUrl + "=w1024-h1024";
+        imgElement.setAttribute("data-index", index);
+        imgElement.onclick = () => openLightbox(index);
+        gallery.appendChild(imgElement);
     });
 }
 
-// **顯示照片**
-function renderPhotos() {
-    var photoContainer = document.getElementById("photo-container");
-    photoContainer.innerHTML = '';  // 清空之前的照片
-
-    if (photos.length === 0) {
-        photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
-    } else {
-        photos.forEach(function(photo) {
-            var img = document.createElement("img");
-            img.src = photo.baseUrl + "=w600-h400";
-            img.alt = "Photo";
-            img.classList.add("photo");
-            img.onclick = function() {
-                openLightbox(photo.baseUrl);
-            };
-            photoContainer.appendChild(img);
-        });
+function handleScroll() {
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+        if (nextPageToken) {
+            fetchPhotos();
+        }
     }
-
-    // 顯示相片容器
-    photoContainer.style.display = "grid";
-    document.getElementById("app-container").style.display = "flex";
 }
 
-// **放大圖片**
-function openLightbox(imageUrl) {
-    document.getElementById("lightbox-image").src = imageUrl + "=w1200-h800";
+function openLightbox(index) {
+    currentPhotoIndex = index;
     document.getElementById("lightbox").style.display = "flex";
+    showPhotoInLightbox(currentPhotoIndex);
 }
 
-// **關閉放大圖片**
-document.getElementById("lightbox").onclick = function(event) {
-    if (event.target === this) this.style.display = "none";
-};
+function showPhotoInLightbox(index) {
+    const lightboxImage = document.getElementById("lightbox-img");
+    if (photos.length > 0 && index >= 0 && index < photos.length) {
+        lightboxImage.src = photos[index].baseUrl + "=w1024-h1024";
+    }
+}
 
-document.getElementById("close-lightbox").onclick = function() {
+function closeLightbox() {
     document.getElementById("lightbox").style.display = "none";
-};
-
-// **啟動幻燈片**
-function startSlideshow() {
-    if (photos.length === 0) return;
-    if (slideshowInterval) clearInterval(slideshowInterval);
-
-    slideshowInterval = setInterval(function() {
-        currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
-        document.getElementById("lightbox-image").src = photos[currentPhotoIndex].baseUrl + "=w1200-h800";
-    }, 5000);
 }
 
-// **監聽登入按鈕**
-document.getElementById("authorize-btn").onclick = authorizeUser;
+function prevPhoto(event) {
+    event.stopPropagation();
+    if (photos.length > 0) {
+        currentPhotoIndex = (currentPhotoIndex - 1 + photos.length) % photos.length;
+        showPhotoInLightbox(currentPhotoIndex);
+    }
+}
 
-// **載入頁面時執行**
-document.addEventListener("DOMContentLoaded", getAccessToken);
+function nextPhoto(event) {
+    event.stopPropagation();
+    if (photos.length > 0) {
+        currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
+        showPhotoInLightbox(currentPhotoIndex);
+    }
+}
+
+function enterFullscreenSlideshow() {
+    if (!photos.length) return;
+    if (slideshowInterval) clearInterval(slideshowInterval);
+    slideshowInterval = setInterval(() => {
+        showPhotoInLightbox(currentPhotoIndex);
+        currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
+    }, slideshowSpeed);
+}
+
+function toggleFullScreen() {
+    let lightbox = document.getElementById("lightbox");
+
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        if (lightbox.requestFullscreen) {
+            lightbox.requestFullscreen();
+        } else if (lightbox.webkitRequestFullscreen) {
+            lightbox.webkitRequestFullscreen();
+        }
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        }
+    }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("prev-btn").addEventListener("click", prevPhoto);
+    document.getElementById("next-btn").addEventListener("click", nextPhoto);
+    document.getElementById("lightbox").addEventListener("click", closeLightbox);
+    document.getElementById("lightbox-fullscreen-btn")?.addEventListener("click", toggleFullScreen);
+});
