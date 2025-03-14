@@ -6,10 +6,6 @@
     <title>數位相框</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="data:image/x-icon;base64,AA==" />
-    <script src="https://cdn.jsdelivr.net/npm/unfetch@4.2.0/dist/unfetch.umd.js"></script>
-    <script>
-        if (!window.fetch) { window.fetch = unfetch; }
-    </script>
 </head>
 <body>
     <div id="auth-container">
@@ -17,25 +13,18 @@
     </div>
 
     <div id="app-container" style="display: none;">
+        <button id="back-to-album-btn">返回選擇相簿</button>
         <div id="album-selection-container">
             <button id="set-album-btn">選擇相簿</button>
             <ul id="album-list"></ul>
         </div>
-        
         <div id="photo-container"></div>
-
-        <div id="slideshow-options" style="display: none;">
-            <label for="slideshow-speed">幻燈片速度(秒): </label>
-            <input type="number" id="slideshow-speed" min="1" value="5" />
-            <button id="slideshow-start-btn">啟動幻燈片</button>
-        </div>
     </div>
 
     <div id="lightbox" style="display: none;">
         <span id="close-lightbox">X</span>
-        <button id="back-to-album-btn" style="display: none;">返回選擇相簿</button> <!-- 返回選擇相簿的按鈕 -->
         <img id="lightbox-image" src="" alt="放大圖片" />
-        <div id="slideshow-options-lightbox" style="display: none;">
+        <div id="slideshow-options-lightbox">
             <label for="slideshow-speed-lightbox">幻燈片速度(秒): </label>
             <input type="number" id="slideshow-speed-lightbox" min="1" value="5" />
             <button id="slideshow-start-btn-lightbox">啟動幻燈片</button>
