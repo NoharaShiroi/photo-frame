@@ -83,7 +83,7 @@ function fetchPhotos() {
     var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
     
     var body = {
-        albumId: albumId,  // 確保 albumId 正確傳遞
+        albumId: albumId,
         pageSize: 50,
         filters: {
             contentFilter: {
@@ -126,11 +126,11 @@ function renderPhotos() {
     } else {
         photos.forEach(function(photo) {
             var img = document.createElement("img");
-            img.src = photo.baseUrl + "=w600-h400";  // 顯示圖片
+            img.src = photo.baseUrl + "=w600-h400";
             img.alt = "Photo";
             img.classList.add("photo");
             img.onclick = function() {
-                openLightbox(photo.baseUrl);  // 點擊放大圖片
+                openLightbox(photo.baseUrl);
             };
             photoContainer.appendChild(img);
         });
@@ -138,7 +138,7 @@ function renderPhotos() {
 
     // 顯示相片容器
     photoContainer.style.display = "grid";
-    document.getElementById("app-container").style.display = "flex";  // 確保相片區域顯示
+    document.getElementById("app-container").style.display = "flex";
 }
 
 // **放大圖片**
@@ -158,9 +158,9 @@ document.getElementById("close-lightbox").onclick = function() {
 
 // **啟動幻燈片**
 function startSlideshow() {
-    if (photos.length === 0) return;  // 🚨 避免錯誤
+    if (photos.length === 0) return;
     if (slideshowInterval) clearInterval(slideshowInterval);
-    
+
     slideshowInterval = setInterval(function() {
         currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
         document.getElementById("lightbox-image").src = photos[currentPhotoIndex].baseUrl + "=w1200-h800";
