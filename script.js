@@ -6,11 +6,9 @@ let albumId = localStorage.getItem("albumId") || null;
 let photos = [];
 let currentPhotoIndex = 0;
 let slideshowInterval = null;
-let slideshowSpeed = 5000;
 let nextPageToken = null;
 
 function updateAlbumId() {
-    // 添加動態列出用戶相簿的功能
     if (!accessToken) {
         alert("請先授權 Google 帳戶！");
         return;
@@ -105,7 +103,6 @@ function fetchPhotos() {
 
 function renderPhotos() {
     const gallery = document.getElementById("photo-gallery");
-    gallery.innerHTML = "";
     photos.forEach((photo, index) => {
         const imgElement = document.createElement("img");
         imgElement.classList.add("photo-item");
@@ -156,3 +153,13 @@ function nextPhoto(event) {
         showPhotoInLightbox(currentPhotoIndex);
     }
 }
+
+// Bind event for closing lightbox
+document.getElementById("close-btn").addEventListener("click", closeLightbox);
+document.getElementById("lightbox").addEventListener("click", (event) => {
+    if (event.target === document.getElementById("lightbox")) {
+        closeLightbox();
+    }
+});
+document.getElementById("prev-btn").addEventListener("click", prevPhoto);
+document.getElementById("next-btn").addEventListener("click", nextPhoto);
