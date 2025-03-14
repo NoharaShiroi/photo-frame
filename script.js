@@ -162,25 +162,13 @@ const app = {
         setTimeout(() => lightbox.style.display = "none", 300);
     },
 
-    app.changePhoto = function(direction) {
-    this.currentPhotoIndex += direction;
-    if (this.currentPhotoIndex < 0) {
-        this.currentPhotoIndex = 0;
-    } else if (this.currentPhotoIndex >= this.photos.length) {
-        this.currentPhotoIndex = this.photos.length - 1;
-    }
-
-    // 更新 lightbox 中顯示的圖片
-    document.getElementById("lightbox-image").src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
-};
-
-// 修正，確保圖片放大頁面不會被點擊事件關閉
-document.getElementById("lightbox").onclick = function(e) {
-    if (e.target !== document.getElementById("lightbox-image")) {
-        app.closeLightbox();
-    }
-};
-
+    changePhoto: function(direction) {
+        this.currentPhotoIndex += direction;
+        if (this.currentPhotoIndex < 0) {
+            this.currentPhotoIndex = 0;
+        } else if (this.currentPhotoIndex >= this.photos.length) {
+            this.currentPhotoIndex = this.photos.length - 1;
+        }
         document.getElementById("lightbox-image").src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
     }
 };
