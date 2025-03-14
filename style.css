@@ -82,15 +82,6 @@ body {
     cursor: pointer;
 }
 
-/* 上下切换按钮样式 */
-#prev-photo, #next-photo {
-    background-color: transparent;
-    border: none;
-    color: white;
-    font-size: 30px;
-    cursor: pointer;
-}
-
 /* 響應式設計 */
 @media (max-width: 768px) {
     #photo-container {
