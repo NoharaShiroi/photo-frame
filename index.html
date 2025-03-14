@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -33,11 +34,15 @@
 
     <div id="lightbox" style="display: none;">
         <span id="close-lightbox">X</span>
+        <button id="back-to-album-btn" style="display: none;">返回選擇相簿</button> <!-- 返回選擇相簿的按鈕 -->
         <img id="lightbox-image" src="" alt="放大圖片" />
+        <div id="slideshow-options-lightbox" style="display: none;">
+            <label for="slideshow-speed-lightbox">幻燈片速度(秒): </label>
+            <input type="number" id="slideshow-speed-lightbox" min="1" value="5" />
+            <button id="slideshow-start-btn-lightbox">啟動幻燈片</button>
+        </div>
     </div>
 
     <script src="script.js"></script>
 </body>
 </html>
-
-   
