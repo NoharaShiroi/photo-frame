@@ -14,7 +14,7 @@ body {
     padding: 10px;
 }
 
-/* 選擇相簿 */
+/* 相簿選擇區 */
 #album-selection-container {
     margin-bottom: 20px;
 }
@@ -80,6 +80,29 @@ body {
     border-radius: 5px;
     border: none;
     cursor: pointer;
+}
+
+/* 控制圖像切換按鈕樣式 */
+#prev-photo, #next-photo {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 36px;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    z-index: 1;
+}
+
+/* 上一張按鈕位置 */
+#prev-photo {
+    left: 10px;
+}
+
+/* 下一張按鈕位置 */
+#next-photo {
+    right: 10px;
 }
 
 /* 響應式設計 */
