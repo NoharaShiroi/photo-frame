@@ -90,12 +90,8 @@ fetchPhotos: function() {
     var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
     var body = {
         albumId: this.albumId,
-        pageSize: 50,
-        filters: {
-            contentFilter: {
-                includedContentCategories: ["PHOTOS"]
-            }
-        }
+        pageSize: 50
+        // 去掉 filters，只请求所有媒体项
     };
 
     fetch(url, {
@@ -104,16 +100,13 @@ fetchPhotos: function() {
         body: JSON.stringify(body)
     })
     .then(response => {
-        // 调试输出返回的 HTTP 状态码
-        console.log("Response Status: ", response.status);  // 输出 HTTP 状态码
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         return response.json();
     })
     .then(data => {
-        // 调试输出响应数据
-        console.log("API Response Data: ", data);  // 输出响应数据，帮助诊断
+        console.log("API Response Data: ", data);  // 输出完整的API响应数据
         if (data.mediaItems) {
             this.photos = data.mediaItems;
             this.renderPhotos();
