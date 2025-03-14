@@ -31,12 +31,16 @@
     </div>
 
     <!-- 🔹 放大圖片 (Lightbox) -->
-    <div id="lightbox" onclick="app.closeLightbox()">
-        <span id="close-lightbox">&times;</span>
-        <img id="lightbox-image" src="" alt="Lightbox Image">
-        <button id="prev-photo" onclick="app.changePhoto(-1)">&#10094;</button> <!-- 上張 -->
-        <button id="next-photo" onclick="app.changePhoto(1)">&#10095;</button> <!-- 下張 -->
+<div id="lightbox" onclick="app.closeLightbox()">
+    <span id="close-lightbox">&times;</span>
+    <img id="lightbox-image" src="" alt="Lightbox Image">
+    <!-- 新增置中在底部的切換按鈕 -->
+    <div class="nav-buttons">
+        <button id="prev-photo" onclick="app.changePhoto(-1)">&#10094;</button> <!-- 更換箭頭 -->
+        <button id="next-photo" onclick="app.changePhoto(1)">&#10095;</button> <!-- 更換箭頭 -->
     </div>
+</div>
+
 
     <script src="script.js"></script>
 </body>
