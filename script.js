@@ -20,6 +20,7 @@ const app = {
             document.getElementById("auth-container").style.display = "none";
             document.getElementById("app-container").style.display = "flex";
             this.fetchAlbums();
+            this.fetchAllPhotos();  // 在授权后预加载所有照片
         } else {
             document.getElementById("auth-container").style.display = "flex";
             document.getElementById("app-container").style.display = "none";
@@ -68,8 +69,6 @@ const app = {
         if (this.albumId) {
             this.fetchPhotos();
         } else {
-            this.photos = [];  // 清空之前的照片
-            this.renderPhotos(); // 重新渲染所有照片
             this.fetchAllPhotos(); // 加载所有照片
         }
     },
@@ -116,7 +115,7 @@ const app = {
         .then(response => response.json())
         .then(data => {
             if (data.mediaItems) {
-                this.photos = data.mediaItems; // 仅保留该相簿的照片
+                this.photos = data.mediaItems;
                 this.renderPhotos();
             } else {
                 console.error("No mediaItems found in the response.");
