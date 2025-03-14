@@ -30,13 +30,18 @@
         <div id="photo-container" style="display: none;"></div>
     </div>
 
-    <!-- 🔹 放大圖片 (Lightbox) -->
-    <div id="lightbox" onclick="app.closeLightbox()">
-        <span id="close-lightbox">&times;</span>
-        <img id="lightbox-image" src="" alt="Lightbox Image">
+    <!-- 放大圖片 (Lightbox) -->
+<div id="lightbox" onclick="app.closeLightbox()">
+    <span id="close-lightbox">&times;</span>
+    <img id="lightbox-image" src="" alt="Lightbox Image">
+    
+    <!-- 新增的按鈕容器 -->
+    <div id="nav-buttons-container">
         <button id="prev-photo" onclick="app.changePhoto(-1)">&#10094;</button> <!-- 上張 -->
         <button id="next-photo" onclick="app.changePhoto(1)">&#10095;</button> <!-- 下張 -->
     </div>
+</div>
+
 
     <script src="script.js"></script>
 </body>
