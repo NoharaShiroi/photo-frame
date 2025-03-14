@@ -1,3 +1,4 @@
+/* 基本頁面設置 */
 body {
     font-family: Arial, sans-serif;
     margin: 0;
@@ -6,15 +7,27 @@ body {
     text-align: center;
 }
 
-/* 容器設置 */
-#app-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 10px;
+/* 授權登入區 */
+#auth-container {
+    padding: 20px;
 }
 
-/* 選擇相簿 */
+#authorize-btn {
+    font-size: 18px;
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: #fff; /* 更改字體顏色 */
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#authorize-btn:hover {
+    background-color: #45a049;
+}
+
+/* 相簿選擇區 */
 #album-selection-container {
     margin-bottom: 20px;
 }
@@ -82,22 +95,45 @@ body {
     cursor: pointer;
 }
 
+/* 放大圖片頁面控制按鈕 */
+#prev-photo, #next-photo {
+    position: absolute;
+    bottom: 20px;
+    padding: 10px;
+    font-size: 24px;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.5);
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#prev-photo {
+    left: 20px;
+}
+
+#next-photo {
+    right: 20px;
+}
+
+#prev-photo:hover, #next-photo:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* 結束放大圖片時關閉 */
+#close-lightbox {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 36px;
+    color: white;
+    cursor: pointer;
+}
+
 /* 響應式設計 */
 @media (max-width: 768px) {
     #photo-container {
         grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
     }
-}
-
-/* 鳴響按鈕設計 */
-button {
-    background-color: transparent;
-    border: none;
-    color: white;
-    font-size: 30px;
-    cursor: pointer;
-}
-
-button:hover {
-    background-color: rgba(255, 255, 255, 0.3);
 }
