@@ -8,6 +8,64 @@ let currentPhotoIndex = 0;
 let slideshowInterval = null;
 let nextPageToken = null;
 
+document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("authorize-btn")?.addEventListener("click", authorizeUser);
+    document.getElementById("set-album-btn")?.addEventListener("click", updateAlbumId);
+    window.addEventListener("scroll", handleScroll);
+    getAccessToken();
+    document.getElementById("slideshow-speed")?.addEventListener("change", setSlideshowSpeed);
+});
+
+function authorizeUser() {
+    const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=${SCOPES}&prompt=consent`;
+    window.location.href = authUrl;
+}
+
+function getAccessToken() {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    if (hashParams.has("access_token")) {
+        accessToken = hashParams.get("access_token");
+        localStorage.setItem("access_token", accessToken);
+    }
+    if (accessToken) {
+        document.getElementById("auth-container").style.display = "none";
+        document.getElementById("app-container").style.display = "flex";
+        fetchAllPhotos();
+    }
+}
+
+function fetchAllPhotos() {
+    if (!accessToken) {
+        console.error("缺少 accessToken，請先授權");
+        return;
+    }
+    const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
+    const body = { pageSize: 50 };
+    fetch(url, {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${accessToken}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+    })
+    .then(response => {
+        if (response.status === 401) {
+            alert("未授權或授權過期，請重新授權！");
+            return;
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data && data.mediaItems) {
+            photos = data.mediaItems;
+            nextPageToken = data.nextPageToken || null;
+            renderPhotos();
+        }
+    })
+    .catch(error => console.error("Error fetching photos:", error));
+}
+
 function updateAlbumId() {
     if (!accessToken) {
         alert("請先授權 Google 帳戶！");
@@ -32,7 +90,7 @@ function updateAlbumId() {
                 localStorage.setItem("albumId", albumId);
                 photos = [];
                 nextPageToken = null;
-                fetchPhotos();
+                fetchAlbumPhotos();
             }
         } else {
             alert("無相簿可供選擇");
@@ -41,41 +99,13 @@ function updateAlbumId() {
     .catch(error => console.error("Error fetching albums:", error));
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("authorize-btn")?.addEventListener("click", authorizeUser);
-    document.getElementById("set-album-btn")?.addEventListener("click", updateAlbumId);
-    window.addEventListener("scroll", handleScroll);
-    getAccessToken();
-});
-
-function authorizeUser() {
-    const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=${SCOPES}&prompt=consent`;
-    window.location.href = authUrl;
-}
-
-function getAccessToken() {
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    if (hashParams.has("access_token")) {
-        accessToken = hashParams.get("access_token");
-        localStorage.setItem("access_token", accessToken);
-    }
-    if (accessToken) {
-        document.getElementById("auth-container").style.display = "none";
-        document.getElementById("app-container").style.display = "flex";
-        fetchPhotos();
-    }
-}
-
-function fetchPhotos() {
+function fetchAlbumPhotos() {
     if (!accessToken) {
         console.error("缺少 accessToken，請先授權");
         return;
     }
     const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-    const body = { pageSize: 50 };
-    if (albumId) body.albumId = albumId;
-    if (nextPageToken) body.pageToken = nextPageToken;
-
+    const body = { pageSize: 50, albumId };
     fetch(url, {
         method: "POST",
         headers: {
@@ -84,25 +114,19 @@ function fetchPhotos() {
         },
         body: JSON.stringify(body)
     })
-    .then(response => {
-        if (response.status === 401) {
-            alert("未授權或授權過期，請重新授權！");
-            return;
-        }
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
         if (data && data.mediaItems) {
-            photos = [...photos, ...data.mediaItems];
-            nextPageToken = data.nextPageToken || null;
+            photos = data.mediaItems;
             renderPhotos();
         }
     })
-    .catch(error => console.error("Error fetching photos:", error));
+    .catch(error => console.error("Error fetching album photos:", error));
 }
 
 function renderPhotos() {
     const gallery = document.getElementById("photo-gallery");
+    gallery.innerHTML = "";
     photos.forEach((photo, index) => {
         const imgElement = document.createElement("img");
         imgElement.classList.add("photo-item");
@@ -116,7 +140,7 @@ function renderPhotos() {
 function handleScroll() {
     if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
         if (nextPageToken) {
-            fetchPhotos();
+            fetchAllPhotos();
         }
     }
 }
@@ -154,7 +178,6 @@ function nextPhoto(event) {
     }
 }
 
-// Bind event for closing lightbox
 document.getElementById("close-btn").addEventListener("click", closeLightbox);
 document.getElementById("lightbox").addEventListener("click", (event) => {
     if (event.target === document.getElementById("lightbox")) {
@@ -163,3 +186,20 @@ document.getElementById("lightbox").addEventListener("click", (event) => {
 });
 document.getElementById("prev-btn").addEventListener("click", prevPhoto);
 document.getElementById("next-btn").addEventListener("click", nextPhoto);
+
+function setSlideshowSpeed() {
+    slideshowSpeed = parseInt(document.getElementById("slideshow-speed").value) * 1000;
+    if (slideshowInterval) {
+        clearInterval(slideshowInterval);
+    }
+    startSlideshow();
+}
+
+function startSlideshow() {
+    slideshowInterval = setInterval(() => {
+        nextPhoto({ stopPropagation: () => {} });
+    }, slideshowSpeed);
+}
+
+document.getElementById("slideshow-speed").value = 5;  // Default speed 5 seconds
+startSlideshow();
