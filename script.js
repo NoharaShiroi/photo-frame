@@ -1,5 +1,5 @@
 const app = {
-    CLIENT_ID: "YOUR_CLIENT_ID.apps.googleusercontent.com", // 替换为你的客户端 ID
+    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com", // 替换为你的客户端 ID
     REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/", // 替换为你的重定向 URI
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
     accessToken: sessionStorage.getItem("access_token") || null,
