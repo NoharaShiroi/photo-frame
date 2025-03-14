@@ -66,8 +66,8 @@ const app = {
 
         if (this.albumId) {
             this.fetchPhotos();
-        } else { // 加载所有图片
-            this.fetchAllPhotos();
+        } else {
+            this.fetchAllPhotos(); // 加载所有照片
         }
     },
 
