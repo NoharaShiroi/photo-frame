@@ -6,6 +6,7 @@ const app = {
     albumId: null,
     photos: [],
     currentPhotoIndex: 0,
+    nextPageToken: null,
 
     getAccessToken: function() {
         var hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -73,9 +74,10 @@ const app = {
     },
 
     fetchAllPhotos: function() {
-        var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-        var body = {
-            pageSize: 50
+        const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
+        const body = {
+            pageSize: 50,
+            pageToken: this.nextPageToken || ''
         };
 
         fetch(url, {
@@ -86,7 +88,8 @@ const app = {
         .then(response => response.json())
         .then(data => {
             if (data.mediaItems) {
-                this.photos = data.mediaItems;
+                this.photos = [...this.photos, ...data.mediaItems];
+                this.nextPageToken = data.nextPageToken;
                 this.renderPhotos();
             } else {
                 console.error("No mediaItems found in the response.");
@@ -125,7 +128,7 @@ const app = {
 
     renderPhotos: function() {
         var photoContainer = document.getElementById("photo-container");
-        photoContainer.innerHTML = '';
+        photoContainer.innerHTML = '';  // 清空照片容器
 
         if (this.photos.length === 0) {
             photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
@@ -179,3 +182,10 @@ document.getElementById("back-to-album-btn").onclick = () => {
 };
 
 document.addEventListener("DOMContentLoaded", () => app.getAccessToken());
+
+// 滚动事件，用于加载更多照片
+window.onscroll = function() {
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+        app.fetchAllPhotos();
+    }
+};
