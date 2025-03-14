@@ -1,83 +1,127 @@
-/* 优化按钮位置 */
-#slideshow-container {
-    position: fixed;
-    bottom: 20px;
-    left: 20px;
-    z-index: 999;
-    display: flex;
-    flex-direction: row;
-    gap: 10px;
+/* 基本樣式 */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+    text-align: center;
 }
 
-#slideshow-container button {
-    padding: 10px 20px;
-    font-size: 14px;
-    border: none;
+/* 容器設置 */
+#app-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+}
+
+/* 選擇相簿按鈕 */
+#album-selection-container {
+    margin-bottom: 20px;
+}
+
+/* 縮圖顯示區 - 自適應排列，類似 iOS 相簿 */
+#photo-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 5px;
+    padding: 10px;
+    justify-content: center;
+    max-width: 90vw;
+}
+
+/* 縮圖 */
+.photo {
+    width: 100%;
+    aspect-ratio: 1/1;
+    object-fit: cover;
     border-radius: 5px;
     cursor: pointer;
+    transition: transform 0.2s ease-in-out;
 }
 
-#slideshow-container .start-slideshow-btn {
-    background-color: #4CAF50;
-    color: white;
+.photo:hover {
+    transform: scale(1.05);
 }
 
-#slideshow-container .close-btn {
-    background-color: red;
-    color: white;
-}
-
+/* 放大圖片 (lightbox) */
 #lightbox {
-    display: none;
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
+    width: 100%;
+    height: 100%;
     background-color: rgba(0, 0, 0, 0.8);
-    align-items: center;
+    display: flex;
     justify-content: center;
+    align-items: center;
     z-index: 1000;
+    display: none;
 }
 
 #lightbox img {
     max-width: 90%;
     max-height: 90%;
-    object-fit: contain;
+    box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.7);
 }
 
-#lightbox .control-btns {
+/* 點擊 lightbox 任意區域關閉 */
+#lightbox:after {
+    content: "";
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    gap: 10px;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
 }
 
-#lightbox .prev-btn, #lightbox .next-btn {
-    background-color: rgba(255, 255, 255, 0.7);
-    border-radius: 50%;
-    padding: 10px;
+/* 關閉按鈕 */
+#close-lightbox {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 30px;
+    color: white;
     cursor: pointer;
+    z-index: 10;
 }
 
-#album-select-container {
+/* 返回選擇相簿按鈕 - 固定在頁面頂部 */
+#back-to-album-btn {
     position: fixed;
     top: 10px;
-    left: 10px;
-    z-index: 999;
-    background-color: rgba(0, 0, 0, 0.6);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1001;
     padding: 10px;
-    border-radius: 5px;
-}
-
-#google-auth-btn {
+    font-size: 16px;
     background-color: #4CAF50;
     color: white;
-    padding: 10px 20px;
+    border-radius: 5px;
     border: none;
+    cursor: pointer;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    #photo-container {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    }
+}
+
+#album-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+#album-list li {
+    padding: 10px;
+    margin: 5px;
+    background: #fff;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 16px;
+}
+
+#album-list li:hover {
+    background: #ddd;
 }
