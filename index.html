@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Google 相簿數位相框</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://apis.google.com/js/api.js"></script> <!-- 加载 Google API -->
 </head>
 <body>
 
@@ -20,9 +20,9 @@
         <button id="back-to-album-btn" style="display: none;">選擇其他相簿</button>
         <div id="album-selection-container">
             <h2>選擇相簿</h2>
-            <select id="album-select" onchange="app.loadPhotos()">
+            <select id="album-select" onchange="loadPhotos()">
                 <option value="all">所有相片</option>
-                <!-- 動態生成的相簿選項 -->
+                <!-- 动态生成的相簿选项 -->
             </select>
         </div>
 
@@ -30,15 +30,12 @@
         <div id="photo-container" style="display: none;"></div>
     </div>
 
-    <!-- 放大圖片 (Lightbox) -->
+    <!-- 🔹 放大圖片 (Lightbox) -->
     <div id="lightbox" onclick="app.closeLightbox()">
         <span id="close-lightbox">&times;</span>
         <img id="lightbox-image" src="" alt="Lightbox Image">
-        
-        <div id="nav-buttons-container">
-            <button id="prev-photo-btn">上一張</button>
-            <button id="next-photo-btn">下一張</button>
-        </div>
+        <button id="prev-photo" onclick="app.changePhoto(-1)">上張</button>
+        <button id="next-photo" onclick="app.changePhoto(1)">下張</button>
     </div>
 
     <script src="script.js"></script>
