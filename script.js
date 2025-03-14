@@ -73,7 +73,11 @@ function renderAlbumList(albums) {
 function fetchPhotos() {
     if (!accessToken) return;
     var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-    var body = { albumId, pageSize: 50 };
+    var body = {
+        albumId,
+        pageSize: 50,
+        filters: { contentFilter: { includedContentCategories: ["PHOTOS"] } }
+    };
 
     fetch(url, {
         method: "POST",
@@ -93,6 +97,11 @@ function renderPhotos() {
     var photoContainer = document.getElementById("photo-container");
     photoContainer.innerHTML = '';
 
+    if (photos.length === 0) {
+        photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
+        return;
+    }
+
     photos.forEach((photo, index) => {
         var img = document.createElement("img");
         img.src = photo.baseUrl + "=w600-h400";
@@ -102,6 +111,8 @@ function renderPhotos() {
         img.onclick = () => openLightbox(photo.baseUrl);
         photoContainer.appendChild(img);
     });
+
+    document.getElementById("photo-container").style.display = "grid";
 }
 
 // **放大圖片**
@@ -121,6 +132,7 @@ document.getElementById("close-lightbox").onclick = function() {
 
 // **啟動幻燈片**
 function startSlideshow() {
+    if (photos.length === 0) return;  // 🚨 避免錯誤
     if (slideshowInterval) clearInterval(slideshowInterval);
     
     slideshowInterval = setInterval(() => {
