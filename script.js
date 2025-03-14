@@ -9,24 +9,27 @@ const app = {
     currentPhotoIndex: 0,
     slideshowInterval: null,
 
-    // 获取访问令牌
-    getAccessToken: function() {
-        var hashParams = new URLSearchParams(window.location.hash.substring(1));
-        if (hashParams.has("access_token")) {
-            this.accessToken = hashParams.get("access_token");
-            sessionStorage.setItem("access_token", this.accessToken);
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
+  // 获取访问令牌
+getAccessToken: function() {
+    var hashParams = new URLSearchParams(window.location.hash.substring(1));
+    if (hashParams.has("access_token")) {
+        this.accessToken = hashParams.get("access_token");
+        sessionStorage.setItem("access_token", this.accessToken);
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
 
-        if (this.accessToken) {
-            document.getElementById("auth-container").style.display = "none";
-            document.getElementById("app-container").style.display = "flex";
-            this.fetchAlbums();
-        } else {
-            document.getElementById("auth-container").style.display = "flex";
-            document.getElementById("app-container").style.display = "none";
-        }
-    },
+    // 调试输出 accessToken
+    console.log("Access Token after getAccessToken: ", this.accessToken);  // 输出当前的 accessToken
+
+    if (this.accessToken) {
+        document.getElementById("auth-container").style.display = "none";
+        document.getElementById("app-container").style.display = "flex";
+        this.fetchAlbums();  // 获取相册列表
+    } else {
+        document.getElementById("auth-container").style.display = "flex";
+        document.getElementById("app-container").style.display = "none";
+    }
+},
 
     // 授权用户
     authorizeUser: function() {
@@ -35,24 +38,28 @@ const app = {
     },
 
     // 获取相册列表
-    fetchAlbums: function() {
-        if (!this.accessToken) return;
-        var url = "https://photoslibrary.googleapis.com/v1/albums?pageSize=50";
-        
-        fetch(url, {
-            method: "GET",
-            headers: { "Authorization": "Bearer " + this.accessToken }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.albums) {
-                this.renderAlbumList(data.albums);
-            }
-        })
-        .catch(error => {
-            console.error("Error fetching albums:", error);
-        });
-    },
+fetchAlbums: function() {
+    if (!this.accessToken) return;
+    var url = "https://photoslibrary.googleapis.com/v1/albums?pageSize=50";
+    
+    fetch(url, {
+        method: "GET",
+        headers: { "Authorization": "Bearer " + this.accessToken }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // 调试输出相册数据
+        console.log("Fetched Albums Data: ", data);  // 输出获取到的相册数据
+
+        if (data.albums) {
+            this.renderAlbumList(data.albums);
+        }
+    })
+    .catch(error => {
+        console.error("Error fetching albums:", error);
+    });
+},
+
 
     // 显示相册列表
     renderAlbumList: function(albums) {
@@ -71,41 +78,53 @@ const app = {
     },
 
     // 获取相册中的照片
-    fetchPhotos: function() {
-        if (!this.albumId || !this.accessToken) {
-            console.error("No albumId or accessToken found.");
-            return;
+fetchPhotos: function() {
+    // 调试输出 albumId
+    console.log("Fetching photos for Album ID: ", this.albumId);  // 输出当前的 albumId
+
+    if (!this.albumId || !this.accessToken) {
+        console.error("No albumId or accessToken found.");
+        return;
+    }
+
+    var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
+    var body = {
+        albumId: this.albumId,
+        pageSize: 50,
+        filters: {
+            contentFilter: {
+                includedContentCategories: ["PHOTOS"]
+            }
         }
+    };
 
-        var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-        var body = {
-            albumId: this.albumId,
-            pageSize: 50,
-            filters: {
-                contentFilter: {
-                    includedContentCategories: ["PHOTOS"]
-                }
-            }
-        };
-
-        fetch(url, {
-            method: "POST",
-            headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
-            body: JSON.stringify(body)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.mediaItems) {
-                this.photos = data.mediaItems;
-                this.renderPhotos();
-            } else {
-                console.error("No mediaItems found in the response.");
-            }
-        })
-        .catch(error => {
-            console.error("Error fetching photos:", error);
-        });
-    },
+    fetch(url, {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+    })
+    .then(response => {
+        // 调试输出返回的 HTTP 状态码
+        console.log("Response Status: ", response.status);  // 输出 HTTP 状态码
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        // 调试输出响应数据
+        console.log("API Response Data: ", data);  // 输出响应数据，帮助诊断
+        if (data.mediaItems) {
+            this.photos = data.mediaItems;
+            this.renderPhotos();
+        } else {
+            console.error("No mediaItems found in the response.");
+        }
+    })
+    .catch(error => {
+        console.error("Error fetching photos:", error);
+    });
+},
 
     // 显示照片
     renderPhotos: function() {
@@ -156,6 +175,99 @@ const app = {
         }, 5000);
     }
 };
+// 获取访问令牌
+getAccessToken: function() {
+    var hashParams = new URLSearchParams(window.location.hash.substring(1));
+    if (hashParams.has("access_token")) {
+        this.accessToken = hashParams.get("access_token");
+        sessionStorage.setItem("access_token", this.accessToken);
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
+    // 调试输出 accessToken
+    console.log("Access Token after getAccessToken: ", this.accessToken);  // 输出当前的 accessToken
+
+    if (this.accessToken) {
+        document.getElementById("auth-container").style.display = "none";
+        document.getElementById("app-container").style.display = "flex";
+        this.fetchAlbums();  // 获取相册列表
+    } else {
+        document.getElementById("auth-container").style.display = "flex";
+        document.getElementById("app-container").style.display = "none";
+    }
+},
+
+// 获取相册列表
+fetchAlbums: function() {
+    if (!this.accessToken) return;
+    var url = "https://photoslibrary.googleapis.com/v1/albums?pageSize=50";
+    
+    fetch(url, {
+        method: "GET",
+        headers: { "Authorization": "Bearer " + this.accessToken }
+    })
+    .then(response => response.json())
+    .then(data => {
+        // 调试输出相册数据
+        console.log("Fetched Albums Data: ", data);  // 输出获取到的相册数据
+
+        if (data.albums) {
+            this.renderAlbumList(data.albums);
+        }
+    })
+    .catch(error => {
+        console.error("Error fetching albums:", error);
+    });
+},
+
+// 获取相册中的照片
+fetchPhotos: function() {
+    // 调试输出 albumId
+    console.log("Fetching photos for Album ID: ", this.albumId);  // 输出当前的 albumId
+
+    if (!this.albumId || !this.accessToken) {
+        console.error("No albumId or accessToken found.");
+        return;
+    }
+
+    var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
+    var body = {
+        albumId: this.albumId,
+        pageSize: 50,
+        filters: {
+            contentFilter: {
+                includedContentCategories: ["PHOTOS"]
+            }
+        }
+    };
+
+    fetch(url, {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+    })
+    .then(response => {
+        // 调试输出返回的 HTTP 状态码
+        console.log("Response Status: ", response.status);  // 输出 HTTP 状态码
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        // 调试输出响应数据
+        console.log("API Response Data: ", data);  // 输出响应数据，帮助诊断
+        if (data.mediaItems) {
+            this.photos = data.mediaItems;
+            this.renderPhotos();
+        } else {
+            console.error("No mediaItems found in the response.");
+        }
+    })
+    .catch(error => {
+        console.error("Error fetching photos:", error);
+    });
+},
 
 // 事件监听
 document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
@@ -167,3 +279,5 @@ document.getElementById("back-to-album-btn").onclick = () => {
 
 // 页面加载时执行
 document.addEventListener("DOMContentLoaded", () => app.getAccessToken());
+
+
