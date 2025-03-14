@@ -15,12 +15,12 @@ body {
     padding: 10px;
 }
 
-/* 選擇相簿按鈕 */
+/* 選擇相簿 */
 #album-selection-container {
     margin-bottom: 20px;
 }
 
-/* 縮圖顯示區 - 自適應排列，類似 iOS 相簿 */
+/* 縮圖顯示區 */
 #photo-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -67,28 +67,7 @@ body {
     box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.7);
 }
 
-/* 點擊 lightbox 任意區域關閉 */
-#lightbox:after {
-    content: "";
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-}
-
-/* 關閉按鈕 */
-#close-lightbox {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 30px;
-    color: white;
-    cursor: pointer;
-    z-index: 10;
-}
-
-/* 返回選擇相簿按鈕 - 固定在頁面頂部 */
+/* 返回選擇相簿按鈕 */
 #back-to-album-btn {
     position: fixed;
     top: 10px;
@@ -109,21 +88,4 @@ body {
     #photo-container {
         grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
     }
-}
-
-#album-list {
-    list-style-type: none;
-    padding: 0;
-}
-
-#album-list li {
-    padding: 10px;
-    margin: 5px;
-    background: #fff;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-#album-list li:hover {
-    background: #ddd;
 }
