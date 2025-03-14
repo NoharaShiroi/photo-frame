@@ -153,14 +153,15 @@ function openLightbox(imageUrl) {
     lightboxImage.src = imageUrl + "=w1200-h800";  // 放大圖片
     lightbox.style.display = "flex";
 
-    // 顯示幻燈片選項
+    // 顯示幻燈片選項和返回按鈕
     document.getElementById("slideshow-options-lightbox").style.display = "block";
-    document.getElementById("back-to-album-btn").style.display = "block"; // 顯示返回相簿按鈕
+    document.getElementById("back-to-album-btn").style.display = "block"; // 顯示返回按鈕
 }
 
 // **返回選擇相簿功能**
 document.getElementById("back-to-album-btn").addEventListener("click", function() {
-    window.location.href = window.location.pathname; // 重新加載頁面，返回選擇相簿
+    document.getElementById("lightbox").style.display = "none"; // 關閉放大圖片
+    document.getElementById("app-container").style.display = "flex"; // 顯示相簿縮圖頁面
 });
 
 // **啟動幻燈片播放**
