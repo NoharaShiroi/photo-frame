@@ -7,6 +7,9 @@ window.addEventListener('DOMContentLoaded', function() {
         console.error("授权按钮未找到！");
     }
 
+    // 检查是否有有效的 access_token
+    checkAuthorizationStatus();
+
     // 绑定幻灯片按钮事件
     const slideshowBtn = document.getElementById("start-slideshow-btn");
     if (slideshowBtn) {
@@ -41,6 +44,15 @@ window.addEventListener('DOMContentLoaded', function() {
 function redirectToAuthorization() {
     const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=${SCOPES}&prompt=consent`;
     window.location.href = authUrl;
+}
+
+// 检查授权状态
+function checkAuthorizationStatus() {
+    const accessToken = localStorage.getItem("access_token");
+    if (!accessToken) {
+        alert("未授權或授權過期，請重新授權");
+        window.location.href = "https://accounts.google.com/o/oauth2/auth?client_id=" + CLIENT_ID + "&redirect_uri=" + encodeURIComponent(REDIRECT_URI) + "&response_type=token&scope=" + SCOPES + "&prompt=consent";
+    }
 }
 
 // 启动幻灯片
@@ -103,14 +115,3 @@ function loadMorePhotos() {
     // 在这里添加你加载更多图片的逻辑
     console.log('加载更多图片...');
 }
-
-// 页面加载完成时绑定事件
-window.addEventListener('DOMContentLoaded', function() {
-    // 授权按钮事件监听
-    const authBtn = document.getElementById('google-auth-btn');
-    if (authBtn) {
-        authBtn.addEventListener('click', redirectToAuthorization);
-    } else {
-        console.error("授权按钮未找到！");
-    }
-});
