@@ -114,28 +114,3 @@ button:hover {
     font-size: 18px;
     padding: 12px;
 }
-
-/* 全螢幕幻燈片模式按鈕 */
-#fullscreen-btn, #lightbox-fullscreen-btn {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 1100;
-}
-
-/* 響應式設計（小螢幕優化） */
-@media (max-width: 600px) {
-    .photo-item {
-        height: 100px;
-    }
-
-    #lightbox img {
-        max-height: 70%;
-    }
-
-    #album-selection-container {
-        width: 90%;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-}
