@@ -108,3 +108,21 @@ body {
         grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
     }
 }
+
+
+#album-list {
+    list-style-type: none;
+    padding: 0;
+}
+
+#album-list li {
+    padding: 10px;
+    margin: 5px;
+    background: #fff;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+#album-list li:hover {
+    background: #ddd;
+}
