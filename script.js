@@ -10,20 +10,42 @@ let slideshowSpeed = 5000;
 let nextPageToken = null;
 
 function updateAlbumId() {
-    const inputAlbumId = prompt("請輸入 Google 相簿 ID:");
-    if (inputAlbumId) {
-        albumId = inputAlbumId;
-        localStorage.setItem("albumId", albumId);
-        photos = [];
-        nextPageToken = null;
-        fetchPhotos();
+    // 添加動態列出用戶相簿的功能
+    if (!accessToken) {
+        alert("請先授權 Google 帳戶！");
+        return;
     }
+    const url = "https://photoslibrary.googleapis.com/v1/albums";
+    fetch(url, {
+        method: "GET",
+        headers: {
+            "Authorization": `Bearer ${accessToken}`,
+            "Content-Type": "application/json"
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const albumList = data.albums;
+        if (albumList && albumList.length > 0) {
+            const albumSelect = prompt("請選擇相簿:\n" + albumList.map((album, index) => `${index + 1}. ${album.title}`).join("\n"));
+            const albumIndex = parseInt(albumSelect) - 1;
+            if (albumIndex >= 0 && albumIndex < albumList.length) {
+                albumId = albumList[albumIndex].id;
+                localStorage.setItem("albumId", albumId);
+                photos = [];
+                nextPageToken = null;
+                fetchPhotos();
+            }
+        } else {
+            alert("無相簿可供選擇");
+        }
+    })
+    .catch(error => console.error("Error fetching albums:", error));
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("authorize-btn")?.addEventListener("click", authorizeUser);
     document.getElementById("set-album-btn")?.addEventListener("click", updateAlbumId);
-    document.getElementById("lightbox-fullscreen-btn")?.addEventListener("click", enterFullscreenSlideshow);
     window.addEventListener("scroll", handleScroll);
     getAccessToken();
 });
@@ -64,9 +86,15 @@ function fetchPhotos() {
         },
         body: JSON.stringify(body)
     })
-    .then(response => response.json())
+    .then(response => {
+        if (response.status === 401) {
+            alert("未授權或授權過期，請重新授權！");
+            return;
+        }
+        return response.json();
+    })
     .then(data => {
-        if (data.mediaItems) {
+        if (data && data.mediaItems) {
             photos = [...photos, ...data.mediaItems];
             nextPageToken = data.nextPageToken || null;
             renderPhotos();
@@ -128,37 +156,3 @@ function nextPhoto(event) {
         showPhotoInLightbox(currentPhotoIndex);
     }
 }
-
-function enterFullscreenSlideshow() {
-    if (!photos.length) return;
-    if (slideshowInterval) clearInterval(slideshowInterval);
-    slideshowInterval = setInterval(() => {
-        showPhotoInLightbox(currentPhotoIndex);
-        currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
-    }, slideshowSpeed);
-}
-
-function toggleFullScreen() {
-    let lightbox = document.getElementById("lightbox");
-
-    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
-        if (lightbox.requestFullscreen) {
-            lightbox.requestFullscreen();
-        } else if (lightbox.webkitRequestFullscreen) {
-            lightbox.webkitRequestFullscreen();
-        }
-    } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-            document.webkitExitFullscreen();
-        }
-    }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("prev-btn").addEventListener("click", prevPhoto);
-    document.getElementById("next-btn").addEventListener("click", nextPhoto);
-    document.getElementById("lightbox").addEventListener("click", closeLightbox);
-    document.getElementById("lightbox-fullscreen-btn")?.addEventListener("click", toggleFullScreen);
-});
