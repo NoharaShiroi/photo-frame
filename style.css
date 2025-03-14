@@ -82,11 +82,30 @@ body {
     cursor: pointer;
 }
 
-/* 響應式設計 */
-@media (max-width: 768px) {
-    #photo-container {
-        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-    }
+/* 放大圖片頁面切換箭頭 */
+#prev-photo, #next-photo {
+    position: fixed;
+    bottom: 20px;
+    background-color: rgba(255, 255, 255, 0.7);
+    color: #333;
+    border: none;
+    padding: 10px 20px;
+    font-size: 30px;
+    cursor: pointer;
+    z-index: 1001;
+    border-radius: 50%;
+}
+
+#prev-photo {
+    left: 20px;
+}
+
+#next-photo {
+    right: 20px;
+}
+
+#prev-photo:hover, #next-photo:hover {
+    background-color: rgba(255, 255, 255, 0.9);
 }
 
 /* 鳴響按鈕設計 */
@@ -100,4 +119,26 @@ button {
 
 button:hover {
     background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    #photo-container {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    }
+}
+
+/* 登入按鈕樣式 */
+#authorize-btn {
+    background-color: #4285f4;
+    color: white;
+    border-radius: 5px;
+    padding: 10px 20px;
+    font-size: 18px;
+    border: none;
+    cursor: pointer;
+}
+
+#authorize-btn:hover {
+    background-color: #357ae8;
 }
