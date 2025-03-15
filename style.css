@@ -51,7 +51,7 @@ body {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.8);
-    display: none;
+    display: none; /* 初始状态隐藏，确保只在打开时显示 */
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
     justify-content: center;
