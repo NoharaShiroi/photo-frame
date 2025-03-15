@@ -64,11 +64,11 @@ const app = {
     loadPhotos: function() {
         const albumSelect = document.getElementById("album-select");
         this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
-
+        
         if (this.albumId) {
             this.fetchPhotos();
         } else {
-            this.fetchAllPhotos(); // 加载所有照片
+            this.fetchAllPhotos();
         }
     },
 
@@ -153,7 +153,6 @@ const app = {
         lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
         lightbox.style.display = "flex";
         setTimeout(() => lightbox.style.opacity = 1, 10);
-        this.updatePhotoButtonsPosition();
     },
 
     closeLightbox: function() {
@@ -170,17 +169,6 @@ const app = {
             this.currentPhotoIndex = this.photos.length - 1;
         }
         document.getElementById("lightbox-image").src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
-        this.updatePhotoButtonsPosition();
-    },
-
-    updatePhotoButtonsPosition: function() {
-        const lightboxImage = document.getElementById("lightbox-image");
-        const prevButton = document.getElementById("prev-photo");
-        const nextButton = document.getElementById("next-photo");
-        
-        const imageRect = lightboxImage.getBoundingClientRect();
-        prevButton.style.top = `${imageRect.top + imageRect.height / 2 - 20}px`;
-        nextButton.style.top = `${imageRect.top + imageRect.height / 2 - 20}px`;
     }
 };
 
