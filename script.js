@@ -35,12 +35,17 @@ const app = {
     fetchAlbums: function() {
         if (!this.accessToken) return;
         var url = "https://photoslibrary.googleapis.com/v1/albums?pageSize=50";
-        
+
         fetch(url, {
             method: "GET",
             headers: { "Authorization": "Bearer " + this.accessToken }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Network response was not ok: " + response.statusText);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.albums) {
                 this.renderAlbumList(data.albums);
@@ -85,7 +90,12 @@ const app = {
             headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
             body: JSON.stringify(body)
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Network response was not ok: " + response.statusText);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.mediaItems) {
                 this.photos = [...this.photos, ...data.mediaItems];
@@ -112,7 +122,12 @@ const app = {
             headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
             body: JSON.stringify(body)
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Network response was not ok: " + response.statusText);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.mediaItems) {
                 this.photos = data.mediaItems;
