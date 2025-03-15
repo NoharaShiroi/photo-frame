@@ -59,17 +59,16 @@ body {
     z-index: 1000;
 }
 
-/* 使按钮半透明并呈圆形 */
 .nav-button {
     position: absolute;
-    background-color: rgba(255, 192, 203, 0.7); /* 淡粉红色背景 */
+    background-color: rgba(255, 192, 203, 0.7); /* 粉红色背景 */
     border: none;
     border-radius: 50%; /* 圆角按钮 */
     width: 50px; /* 按钮宽度 */
     height: 50px; /* 按钮高度 */
     cursor: pointer;
-    font-size: 30px; /* 字体大小，足够大以显示箭头 */
-    color: white; /* 箭头颜色 */
+    font-size: 30px; /* 字体大小 */
+    color: white; /* 按钮颜色 */
     display: flex; /* 使用 Flexbox 来居中箭头 */
     justify-content: center;
     align-items: center;
@@ -79,7 +78,7 @@ body {
 
 /* 鼠标悬停时改变背景色 */
 .nav-button:hover {
-    background-color: rgba(255, 105, 180, 0.9); /* 悬停时为更强烈的粉红色 */
+    background-color: rgba(255, 105, 180, 0.9); /* 悬停时更亮的粉红色 */
 }
 
 /* 定位按钮 */
