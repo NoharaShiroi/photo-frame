@@ -210,35 +210,33 @@ const app = {
 
     enterFullScreen: function() {
         this.startSlideshow(); // 启动全屏播放
-    },
+    }
+};
+
+// 当 DOM 内容加载完成后，添加事件监听
+document.addEventListener("DOMContentLoaded", () => {
+    // 事件监听
+    document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
     
-    exitFullScreen: function() {
-        this.closeLightbox(); // 关闭 Lightbox
-    }
-};
+    // 关闭 Lightbox 按钮
+    document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
+    
+    // 全屏播放按钮
+    document.getElementById("fullscreen-btn").onclick = app.enterFullScreen.bind(app);
+    
+    // 处理相册返回
+    document.getElementById("back-to-album-btn").onclick = () => {
+        document.getElementById("photo-container").style.display = "none";
+        document.getElementById("album-selection-container").style.display = "block";
+    };
 
-// 事件监听
-document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
+    // 加载访问令牌
+    app.getAccessToken();
 
-document.getElementById("back-to-album-btn").onclick = () => {
-    document.getElementById("photo-container").style.display = "none";
-    document.getElementById("album-selection-container").style.display = "block";
-};
-
-// 关闭 Lightbox 按钮
-document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
-
-// 全屏播放按钮
-document.getElementById("fullscreen-btn").onclick = app.enterFullScreen.bind(app);
-
-// 返回 Lightbox 显示
-document.getElementById("exit-fullscreen-btn").onclick = app.exitFullScreen.bind(app);
-
-document.addEventListener("DOMContentLoaded", () => app.getAccessToken());
-
-// 滚动事件，用于加载更多照片
-window.onscroll = function() {
-    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
-        app.fetchAllPhotos();
-    }
-};
+    // 滚动事件，用于加载更多照片
+    window.onscroll = function() {
+        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+            app.fetchAllPhotos();
+        }
+    };
+});
