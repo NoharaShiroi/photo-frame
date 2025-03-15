@@ -31,13 +31,12 @@
     </div>
 
     <!-- 🔹 放大圖片 (Lightbox) -->
-<div id="lightbox" style="display:none;">
-    <span id="close-lightbox">&times;</span>
-    <img id="lightbox-image" src="" alt="Lightbox Image">
-    <button id="prev-photo" onclick="app.changePhoto(-1)">prev</button>
-    <button id="next-photo" onclick="app.changePhoto(1)">next</button>
-</div>
-
+    <div id="lightbox" style="display:none;">
+        <span id="close-lightbox">&times;</span>
+        <img id="lightbox-image" src="" alt="Lightbox Image">
+        <button id="prev-photo" class="nav-button" onclick="app.changePhoto(-1)">上张</button>
+        <button id="next-photo" class="nav-button" onclick="app.changePhoto(1)">下张</button>
+    </div>
 
     <script src="script.js"></script>
 </body>
