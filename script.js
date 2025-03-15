@@ -1,6 +1,6 @@
 const app = {
-    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com", // 替换为你的客户端 ID
-    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/", // 替换为你的重定向 URI
+    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
+    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
     accessToken: sessionStorage.getItem("access_token") || null,
     albumId: null,
@@ -154,6 +154,7 @@ const app = {
         lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
         lightbox.style.display = "flex";
         setTimeout(() => lightbox.style.opacity = 1, 10); // 动画效果
+        this.updateNavigationButtonsPosition();
     },
 
     closeLightbox: function() {
@@ -170,6 +171,28 @@ const app = {
             this.currentPhotoIndex = this.photos.length - 1;
         }
         document.getElementById("lightbox-image").src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
+        this.updateNavigationButtonsPosition();
+    },
+
+    updateNavigationButtonsPosition: function() {
+        var lightboxImage = document.getElementById("lightbox-image");
+        var prevButton = document.getElementById("prev-photo");
+        var nextButton = document.getElementById("next-photo");
+
+        var imageWidth = lightboxImage.naturalWidth;
+        var imageHeight = lightboxImage.naturalHeight;
+
+        // 动态调整按钮的位置
+        var lightbox = document.getElementById("lightbox");
+        var lightboxWidth = lightbox.offsetWidth;
+        var lightboxHeight = lightbox.offsetHeight;
+
+        prevButton.style.top = "50%";
+        nextButton.style.top = "50%";
+
+        // 保证按钮位置居中
+        prevButton.style.left = "20px"; // 靠左
+        nextButton.style.right = "20px"; // 靠右
     }
 };
 
@@ -182,10 +205,3 @@ document.getElementById("back-to-album-btn").onclick = () => {
 };
 
 document.addEventListener("DOMContentLoaded", () => app.getAccessToken());
-
-// 滚动事件，用于加载更多照片
-window.onscroll = function() {
-    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
-        app.fetchAllPhotos();
-    }
-};
