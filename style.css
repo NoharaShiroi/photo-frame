@@ -43,8 +43,7 @@ body {
     transform: scale(1.05);
 }
 
-/* 放大圖片 (lightbox) 相關樣式 */
-/* 确保光箱具有相对定位（如果需要） */
+/* 放大圖片 (Lightbox) 相關樣式 */
 #lightbox {
     position: fixed;
     top: 0;
@@ -58,8 +57,9 @@ body {
     justify-content: center;
     align-items: center;
     z-index: 1000;
+}
 
- /* 使按钮半透明并呈圆形 */
+/* 使按钮半透明并呈圆形 */
 .nav-button {
     position: absolute;
     background-color: rgba(255, 255, 255, 0.7); /* 半透明的白色背景 */
@@ -80,14 +80,13 @@ body {
 
 /* 定位按钮 */
 #prev-photo {
-    left: calc(50% - 70px); /* 偏左，50% 位置向左偏移 70px */
+    left: calc(50% - 70px); /* 偏左，50% 的位置向左偏移 70px */
     bottom: 20px; /* 距离底部 20px */
 }
 
 #next-photo {
-    left: calc(50% + 20px); /* 偏右，50% 位置向右偏移 70px */
+    left: calc(50% + 20px); /* 偏右，50% 的位置向右偏移 70px */
     bottom: 20px; /* 距离底部 20px */
-}
 }
 
 #lightbox img {
@@ -111,7 +110,6 @@ body {
     border: none;
     cursor: pointer;
 }
-
 
 /* 響應式設計 */
 @media (max-width: 768px) {
