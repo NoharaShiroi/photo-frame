@@ -6,7 +6,7 @@ body {
     text-align: center;
 }
 
-/* 容器設置 */
+/* 容器设置 */
 #app-container {
     display: flex;
     flex-direction: column;
@@ -14,12 +14,12 @@ body {
     padding: 10px;
 }
 
-/* 選擇相簿 */
+/* 选择相簿 */
 #album-selection-container {
     margin-bottom: 20px;
 }
 
-/* 縮圖顯示區 */
+/* 照片显示区域 */
 #photo-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -29,7 +29,7 @@ body {
     max-width: 90vw;
 }
 
-/* 縮圖 */
+/* 照片缩略图 */
 .photo {
     width: 100%;
     aspect-ratio: 1/1;
@@ -43,7 +43,7 @@ body {
     transform: scale(1.05);
 }
 
-/* 放大圖片 (lightbox) */
+/* 放大图片 (Lightbox) */
 #lightbox {
     position: fixed;
     top: 0;
@@ -66,28 +66,17 @@ body {
     box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.7);
 }
 
-/* 上下照片切换按钮 */
-#prev-photo, #next-photo {
+/* 关闭 Lightbox */
+#close-lightbox {
     position: absolute;
-    bottom: 20px;
-    background: rgba(0, 0, 0, 0.5);
+    top: 20px;
+    right: 20px;
+    font-size: 40px;
     color: white;
-    font-size: 30px;
-    border: none;
-    border-radius: 50%;
-    padding: 10px;
     cursor: pointer;
 }
 
-#prev-photo {
-    left: 10%;
-}
-
-#next-photo {
-    right: 10%;
-}
-
-/* 返回選擇相簿按鈕 */
+/* 返回选择相簿按钮 */
 #back-to-album-btn {
     position: fixed;
     top: 10px;
@@ -103,9 +92,51 @@ body {
     cursor: pointer;
 }
 
-/* 響應式設計 */
+/* prev 和 next 按钮 */
+#prev-photo, #next-photo {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    font-size: 30px;
+    border: none;
+    padding: 10px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 1001;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+}
+
+#prev-photo:hover, #next-photo:hover {
+    opacity: 1;
+}
+
+/* prev 按钮在左侧 */
+#prev-photo {
+    left: 20px;
+}
+
+/* next 按钮在右侧 */
+#next-photo {
+    right: 20px;
+}
+
+/* 响应式设计 */
 @media (max-width: 768px) {
     #photo-container {
         grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    }
+
+    #prev-photo, #next-photo {
+        font-size: 25px;
+    }
+}
+
+@media (max-width: 480px) {
+    #prev-photo, #next-photo {
+        font-size: 20px;
+        padding: 8px;
     }
 }
