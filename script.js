@@ -20,6 +20,7 @@ const app = {
             document.getElementById("auth-container").style.display = "none";
             document.getElementById("app-container").style.display = "flex";
             this.fetchAlbums();
+            this.fetchAllPhotos();
         } else {
             document.getElementById("auth-container").style.display = "flex";
             document.getElementById("app-container").style.display = "none";
@@ -155,7 +156,7 @@ const app = {
         setTimeout(() => lightbox.style.opacity = 1, 10);
     },
 
-        closeLightbox: function() {
+    closeLightbox: function() {
         var lightbox = document.getElementById("lightbox");
         lightbox.style.opacity = 0;
         setTimeout(() => lightbox.style.display = "none", 300);
@@ -169,26 +170,6 @@ const app = {
             this.currentPhotoIndex = this.photos.length - 1;
         }
         document.getElementById("lightbox-image").src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
-
-        // 動態調整按鈕位置以確保在圖片下方
-        this.updateNavButtonPositions();
-    },
-
-    updateNavButtonPositions: function() {
-        const lightboxImage = document.getElementById("lightbox-image");
-        const prevButton = document.getElementById("prev-photo");
-        const nextButton = document.getElementById("next-photo");
-
-        const imageHeight = lightboxImage.clientHeight;
-
-        // 根據圖片的高度調整按鈕的位置
-        const buttonOffset = imageHeight / 2;
-        prevButton.style.top = `${buttonOffset}px`;
-        nextButton.style.top = `${buttonOffset}px`;
-
-        // 動態調整透明度
-        prevButton.style.opacity = 0.6;
-        nextButton.style.opacity = 0.6;
     }
 };
 
