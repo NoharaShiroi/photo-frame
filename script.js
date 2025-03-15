@@ -7,6 +7,8 @@ const app = {
     photos: [],
     currentPhotoIndex: 0,
     nextPageToken: null,
+    slideshowInterval: null, // 定时器的引用
+    isPlaying: true, // 播放状态
 
     getAccessToken: function() {
         var hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -15,7 +17,6 @@ const app = {
             sessionStorage.setItem("access_token", this.accessToken);
             window.history.replaceState({}, document.title, window.location.pathname);
         }
-
         if (this.accessToken) {
             document.getElementById("auth-container").style.display = "none";
             document.getElementById("app-container").style.display = "flex";
@@ -177,35 +178,61 @@ const app = {
         setTimeout(() => lightbox.style.display = "none", 300);
     },
 
-    changePhoto: function(direction) {
-        this.currentPhotoIndex += direction;
-        if (this.currentPhotoIndex < 0) {
-            this.currentPhotoIndex = 0;
-        } else if (this.currentPhotoIndex >= this.photos.length) {
-            this.currentPhotoIndex = this.photos.length - 1;
+    startSlideshow: function() {
+        if (this.photos.length > 0) {
+            this.currentPhotoIndex = 0; // 从第一张开始循环
+            document.body.requestFullscreen(); // 进入全屏模式
+            this.showCurrentPhoto();
+            this.autoChangePhoto();
         }
-        document.getElementById("lightbox-image").src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
+    },
+
+    showCurrentPhoto: function() {
+        var lightboxImage = document.getElementById("lightbox-image");
+        lightboxImage.src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
+    },
+
+    autoChangePhoto: function() {
+        this.slideshowInterval = setInterval(() => {
+            this.currentPhotoIndex = (this.currentPhotoIndex + 1) % this.photos.length;
+            this.showCurrentPhoto();
+        }, 5000); // 每5秒自动切换照片
+    },
+
+    toggleSlideshow: function() {
+        if (this.isPlaying) {
+            clearInterval(this.slideshowInterval); // 清除自动播放
+        } else {
+            this.autoChangePhoto(); // 恢复自动播放
+        }
+        this.isPlaying = !this.isPlaying; // 切换状态
+    },
+
+    enterFullScreen: function() {
+        this.startSlideshow(); // 启动全屏播放
+    },
+    
+    exitFullScreen: function() {
+        this.closeLightbox(); // 关闭 Lightbox
     }
 };
 
 // 事件监听
 document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
 
-// 将 closeLightbox 函数绑定到关闭按钮上
-document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
-
-// 为 lightbox 添加点击事件监听，这里是关键变化
-document.getElementById("lightbox").addEventListener("click", function(event) {
-    // 如果点击的目标是 lightbox 自身，即背景地带
-    if (event.target === this) {
-        app.closeLightbox();
-    }
-});
-
 document.getElementById("back-to-album-btn").onclick = () => {
     document.getElementById("photo-container").style.display = "none";
     document.getElementById("album-selection-container").style.display = "block";
 };
+
+// 关闭 Lightbox 按钮
+document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
+
+// 全屏播放按钮
+document.getElementById("fullscreen-btn").onclick = app.enterFullScreen.bind(app);
+
+// 返回 Lightbox 显示
+document.getElementById("exit-fullscreen-btn").onclick = app.exitFullScreen.bind(app);
 
 document.addEventListener("DOMContentLoaded", () => app.getAccessToken());
 
