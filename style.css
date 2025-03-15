@@ -58,7 +58,7 @@ body {
     justify-content: center;
     align-items: center;
     z-index: 1000;
-} 
+
  /* 使按钮半透明并呈圆形 */
 .nav-button {
     position: absolute;
@@ -88,7 +88,7 @@ body {
     left: calc(50% + 20px); /* 偏右，50% 位置向右偏移 70px */
     bottom: 20px; /* 距离底部 20px */
 }
-
+}
 
 #lightbox img {
     max-width: 90%;
