@@ -58,12 +58,56 @@ body {
     display: none;
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
+    cursor: pointer;
 }
 
 #lightbox img {
     max-width: 90%;
     max-height: 90%;
     box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.7);
+}
+
+/* 上下张按钮的样式 */
+#prev-photo, #next-photo {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(0, 0, 0, 0.5); /* 半透明 */
+    color: white;
+    border: none;
+    padding: 10px;
+    font-size: 18px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    z-index: 1001;
+    opacity: 0.7;
+}
+
+#prev-photo:hover, #next-photo:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* 使按钮根据图片大小动态调整位置 */
+#prev-photo {
+    left: 20px; /* 靠左 */
+}
+
+#next-photo {
+    right: 20px; /* 靠右 */
+}
+
+/* 关闭按钮 */
+#close-lightbox {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 30px;
+    color: white;
+    background: none;
+    border: none;
+    cursor: pointer;
+    z-index: 1002;
 }
 
 /* 返回選擇相簿按鈕 */
