@@ -52,7 +52,7 @@ const app = {
 
     renderAlbumList: function(albums) {
         var albumSelect = document.getElementById("album-select");
-        albumSelect.innerHTML = '<option value="all">所有相片</option>';
+        albumSelect.innerHTML = '<option value="all">所有相片</option>'; // 重新设置相簿选项
         albums.forEach(album => {
             var option = document.createElement("option");
             option.value = album.id;
@@ -61,14 +61,12 @@ const app = {
         });
     },
 
-    loadPhotos: function() {
-        const albumSelect = document.getElementById("album-select");
-        this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
-        
+    loadPhotos: function(albumId) {
+        this.albumId = albumId === "all" ? null : albumId; // 如果选择的是“所有相片”，则为空
         if (this.albumId) {
-            this.fetchPhotos();
+            this.fetchPhotos(); // 加载该相簿的照片
         } else {
-            this.fetchAllPhotos();
+            this.fetchAllPhotos(); // 加载所有照片
         }
     },
 
@@ -127,7 +125,7 @@ const app = {
 
     renderPhotos: function() {
         var photoContainer = document.getElementById("photo-container");
-        photoContainer.innerHTML = '';
+        photoContainer.innerHTML = '';  // 清空照片容器
 
         if (this.photos.length === 0) {
             photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
@@ -143,7 +141,7 @@ const app = {
         }
 
         photoContainer.style.display = "grid";
-        document.getElementById("app-container").style.display = "flex";
+        document.getElementById("app-container").style.display = "flex"; // 显示相片容器
     },
 
     openLightbox: function(index) {
@@ -152,7 +150,7 @@ const app = {
         var lightboxImage = document.getElementById("lightbox-image");
         lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
         lightbox.style.display = "flex";
-        setTimeout(() => lightbox.style.opacity = 1, 10);
+        setTimeout(() => lightbox.style.opacity = 1, 10); // 动画效果
     },
 
     closeLightbox: function() {
@@ -172,6 +170,7 @@ const app = {
     }
 };
 
+// 事件监听
 document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
 document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
 document.getElementById("back-to-album-btn").onclick = () => {
@@ -180,3 +179,10 @@ document.getElementById("back-to-album-btn").onclick = () => {
 };
 
 document.addEventListener("DOMContentLoaded", () => app.getAccessToken());
+
+// 滚动事件，用于加载更多照片
+window.onscroll = function() {
+    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+        app.fetchAllPhotos();
+    }
+};
