@@ -43,7 +43,7 @@ body {
     transform: scale(1.05);
 }
 
-/* 放大圖片 (Lightbox) 相關樣式 */
+/* 放大圖片 (lightbox) 相關樣式 */
 #lightbox {
     position: fixed;
     top: 0;
@@ -62,30 +62,34 @@ body {
 /* 使按钮半透明并呈圆形 */
 .nav-button {
     position: absolute;
-    background-color: rgba(255, 255, 255, 0.7); /* 半透明的白色背景 */
+    background-color: rgba(255, 192, 203, 0.7); /* 淡粉红色背景 */
     border: none;
     border-radius: 50%; /* 圆角按钮 */
     width: 50px; /* 按钮宽度 */
     height: 50px; /* 按钮高度 */
     cursor: pointer;
-    font-size: 18px; /* 字体大小 */
+    font-size: 30px; /* 字体大小，足够大以显示箭头 */
+    color: white; /* 箭头颜色 */
+    display: flex; /* 使用 Flexbox 来居中箭头 */
+    justify-content: center;
+    align-items: center;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); /* 添加阴影 */
     transition: background-color 0.2s; /* 缓和背景色变化的效果 */
 }
 
 /* 鼠标悬停时改变背景色 */
 .nav-button:hover {
-    background-color: rgba(255, 255, 255, 0.9); /* 悬停时为不透明背景 */
+    background-color: rgba(255, 105, 180, 0.9); /* 悬停时为更强烈的粉红色 */
 }
 
 /* 定位按钮 */
 #prev-photo {
-    left: calc(50% - 70px); /* 偏左，50% 的位置向左偏移 70px */
+    left: calc(50% - 70px); /* 偏左，50% 位置向左偏移 70px */
     bottom: 20px; /* 距离底部 20px */
 }
 
 #next-photo {
-    left: calc(50% + 20px); /* 偏右，50% 的位置向右偏移 70px */
+    left: calc(50% + 20px); /* 偏右，50% 位置向右偏移 70px */
     bottom: 20px; /* 距离底部 20px */
 }
 
