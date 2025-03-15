@@ -55,7 +55,7 @@ body {
 #photo-container {
     display: grid;
     gap: 10px;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* 设置缩略图的大小和排列 */
     margin-top: 20px;
 }
 
@@ -63,6 +63,8 @@ body {
     width: 100%;
     cursor: pointer;
     transition: transform 0.3s ease;
+    border-radius: 8px; /* 给图片加上圆角 */
+    object-fit: cover; /* 保证图片不被拉伸 */
 }
 
 .photo:hover {
