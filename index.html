@@ -20,7 +20,7 @@
         <button id="back-to-album-btn" style="display: none;">選擇其他相簿</button>
         <div id="album-selection-container">
             <h2>選擇相簿</h2>
-            <select id="album-select">
+            <select id="album-select" onchange="loadPhotos()">
                 <option value="all">所有相片</option>
                 <!-- 动态生成的相簿选项 -->
             </select>
@@ -31,11 +31,11 @@
     </div>
 
     <!-- 🔹 放大圖片 (Lightbox) -->
-    <div id="lightbox" onclick="closeLightbox()">
+    <div id="lightbox" onclick="app.closeLightbox()">
         <span id="close-lightbox">&times;</span>
         <img id="lightbox-image" src="" alt="Lightbox Image">
-        <button id="prev-photo" onclick="changePhoto(-1)">上張</button>
-        <button id="next-photo" onclick="changePhoto(1)">下張</button>
+        <button id="prev-photo" onclick="app.changePhoto(-1)">上張</button>
+        <button id="next-photo" onclick="app.changePhoto(1)">下張</button>
     </div>
 
     <script src="script.js"></script>

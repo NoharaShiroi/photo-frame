@@ -8,7 +8,6 @@ const app = {
     currentPhotoIndex: 0,
     nextPageToken: null,
 
-    // 初始化授权
     getAccessToken: function() {
         var hashParams = new URLSearchParams(window.location.hash.substring(1));
         if (hashParams.has("access_token")) {
@@ -21,19 +20,18 @@ const app = {
             document.getElementById("auth-container").style.display = "none";
             document.getElementById("app-container").style.display = "flex";
             this.fetchAlbums();
+            this.fetchAllPhotos();  // 在授权后预加载所有照片
         } else {
             document.getElementById("auth-container").style.display = "flex";
             document.getElementById("app-container").style.display = "none";
         }
     },
 
-    // 授权登录
     authorizeUser: function() {
         var authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${this.CLIENT_ID}&redirect_uri=${encodeURIComponent(this.REDIRECT_URI)}&response_type=token&scope=${this.SCOPES}&prompt=consent`;
         window.location.href = authUrl;
     },
 
-    // 获取所有相簿
     fetchAlbums: function() {
         if (!this.accessToken) return;
         var url = "https://photoslibrary.googleapis.com/v1/albums?pageSize=50";
@@ -53,33 +51,28 @@ const app = {
         });
     },
 
-    // 渲染相簿列表
     renderAlbumList: function(albums) {
         var albumSelect = document.getElementById("album-select");
-        albumSelect.innerHTML = '<option value="all">所有相片</option>'; // 重新设置相簿选项
+        albumSelect.innerHTML = '<option value="all">所有相片</option>'; // 去掉多余的选项
         albums.forEach(album => {
             var option = document.createElement("option");
             option.value = album.id;
             option.textContent = album.title;
             albumSelect.appendChild(option);
         });
-
-        albumSelect.onchange = (e) => {
-            this.loadPhotos(e.target.value);
-        };
     },
 
-    // 加载相簿的照片
-    loadPhotos: function(albumId) {
-        this.albumId = albumId === "all" ? null : albumId; // 如果选择的是“所有相片”，则为空
+    loadPhotos: function() {
+        const albumSelect = document.getElementById("album-select");
+        this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
+
         if (this.albumId) {
-            this.fetchPhotos(); // 加载该相簿的照片
+            this.fetchPhotos();
         } else {
             this.fetchAllPhotos(); // 加载所有照片
         }
     },
 
-    // 获取所有照片
     fetchAllPhotos: function() {
         const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
         const body = {
@@ -107,7 +100,6 @@ const app = {
         });
     },
 
-    // 获取指定相簿的照片
     fetchPhotos: function() {
         var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
         var body = {
@@ -134,7 +126,6 @@ const app = {
         });
     },
 
-    // 渲染照片
     renderPhotos: function() {
         var photoContainer = document.getElementById("photo-container");
         photoContainer.innerHTML = '';  // 清空照片容器
@@ -156,7 +147,6 @@ const app = {
         document.getElementById("app-container").style.display = "flex"; // 显示相片容器
     },
 
-    // 打开放大图片
     openLightbox: function(index) {
         this.currentPhotoIndex = index;
         var lightbox = document.getElementById("lightbox");
@@ -166,14 +156,12 @@ const app = {
         setTimeout(() => lightbox.style.opacity = 1, 10); // 动画效果
     },
 
-    // 关闭放大图片
     closeLightbox: function() {
         var lightbox = document.getElementById("lightbox");
         lightbox.style.opacity = 0;
         setTimeout(() => lightbox.style.display = "none", 300);
     },
 
-    // 切换照片
     changePhoto: function(direction) {
         this.currentPhotoIndex += direction;
         if (this.currentPhotoIndex < 0) {
