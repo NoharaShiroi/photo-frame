@@ -1,6 +1,6 @@
 const app = {
-    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
-    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
+    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com", // 替换为你的客户端 ID
+    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/", // 替换为你的重定向 URI
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
     accessToken: sessionStorage.getItem("access_token") || null,
     albumId: null,
@@ -20,7 +20,6 @@ const app = {
             document.getElementById("auth-container").style.display = "none";
             document.getElementById("app-container").style.display = "flex";
             this.fetchAlbums();
-            this.fetchAllPhotos();
         } else {
             document.getElementById("auth-container").style.display = "flex";
             document.getElementById("app-container").style.display = "none";
@@ -69,7 +68,7 @@ const app = {
         if (this.albumId) {
             this.fetchPhotos();
         } else {
-            this.fetchAllPhotos();
+            this.fetchAllPhotos(); // 加载所有照片
         }
     },
 
@@ -154,6 +153,7 @@ const app = {
         lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
         lightbox.style.display = "flex";
         setTimeout(() => lightbox.style.opacity = 1, 10);
+        this.updatePhotoButtonsPosition();
     },
 
     closeLightbox: function() {
@@ -170,10 +170,20 @@ const app = {
             this.currentPhotoIndex = this.photos.length - 1;
         }
         document.getElementById("lightbox-image").src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
+        this.updatePhotoButtonsPosition();
+    },
+
+    updatePhotoButtonsPosition: function() {
+        const lightboxImage = document.getElementById("lightbox-image");
+        const prevButton = document.getElementById("prev-photo");
+        const nextButton = document.getElementById("next-photo");
+        
+        const imageRect = lightboxImage.getBoundingClientRect();
+        prevButton.style.top = `${imageRect.top + imageRect.height / 2 - 20}px`;
+        nextButton.style.top = `${imageRect.top + imageRect.height / 2 - 20}px`;
     }
 };
 
-// 事件监听
 document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
 document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
 document.getElementById("back-to-album-btn").onclick = () => {
@@ -182,9 +192,3 @@ document.getElementById("back-to-album-btn").onclick = () => {
 };
 
 document.addEventListener("DOMContentLoaded", () => app.getAccessToken());
-
-window.onscroll = function() {
-    if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
-        app.fetchAllPhotos();
-    }
-};
