@@ -190,7 +190,15 @@ const app = {
 
 // 事件监听
 document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
+// 将 closeLightbox 函数绑定到关闭按钮上
 document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
+// 不再给 lightbox 添加 onclick，而是使用事件委托
+document.getElementById("lightbox").addEventListener("click", function(event) {
+    // 如果点击了 lightbox 以外的区域（即在图片以外的位置），则关闭 Lightbox
+    if (event.target.id === "lightbox") {
+        app.closeLightbox();
+    }
+});
 document.getElementById("back-to-album-btn").onclick = () => {
     document.getElementById("photo-container").style.display = "none";
     document.getElementById("album-selection-container").style.display = "block";
