@@ -58,8 +58,45 @@ body {
     display: none;
     opacity: 0;
     transition: opacity 0.3s ease-in-out;
-    cursor: pointer;
 }
+
+#lightbox img {
+    max-width: 90%;
+    max-height: 90%;
+    box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.7);
+    position: relative; /* 确保按钮相对图片定位 */
+}
+
+/* 上下張按钮樣式 */
+#prev-photo, #next-photo {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(255, 255, 255, 0.7); /* 半透明背景 */
+    color: #000;
+    border: none;
+    padding: 10px;
+    font-size: 16px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 1001; /* 确保按钮在图片上方 */
+    transition: background-color 0.2s ease;
+}
+
+#prev-photo:hover, #next-photo:hover {
+    background-color: rgba(255, 255, 255, 1); /* 按钮悬浮时颜色变为不透明 */
+}
+
+/* 上张按钮 - 左侧 */
+#prev-photo {
+    left: 10%;
+}
+
+/* 下张按钮 - 右侧 */
+#next-photo {
+    right: 10%;
+}
+
 
 #lightbox img {
     max-width: 90%;
