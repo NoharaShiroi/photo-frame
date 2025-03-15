@@ -215,7 +215,9 @@ updateNavigationButtonsPosition: function() {
 
 // 事件监听
 document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
-document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
+document.getElementById("close-lightbox").onclick = function() {
+    app.closeLightbox();
+};
 document.getElementById("back-to-album-btn").onclick = () => {
     document.getElementById("photo-container").style.display = "none";
     document.getElementById("album-selection-container").style.display = "block";
