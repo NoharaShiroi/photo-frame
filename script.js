@@ -147,32 +147,32 @@ const app = {
         document.getElementById("app-container").style.display = "flex"; // 显示相片容器
     },
 
-openLightbox: function(index) {
-    this.currentPhotoIndex = index;
-    var lightbox = document.getElementById("lightbox");
-    var lightboxImage = document.getElementById("lightbox-image");
-    lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
+    openLightbox: function(index) {
+        this.currentPhotoIndex = index;
+        var lightbox = document.getElementById("lightbox");
+        var lightboxImage = document.getElementById("lightbox-image");
+        lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
 
-    // 动态调整按钮位置
-    this.updateNavigationButtonsPosition();
+        // 动态调整按钮位置
+        this.updateNavigationButtonsPosition();
 
-    lightbox.style.display = "flex";
-    setTimeout(() => lightbox.style.opacity = 1, 10); // 动画效果
-},
+        lightbox.style.display = "flex";
+        setTimeout(() => lightbox.style.opacity = 1, 10); // 动画效果
+    },
 
-// 动态更新按钮位置，确保按钮紧邻图片左右两侧
-updateNavigationButtonsPosition: function() {
-    var lightboxImage = document.getElementById("lightbox-image");
-    var prevButton = document.getElementById("prev-photo");
-    var nextButton = document.getElementById("next-photo");
+    // 动态更新按钮位置，确保按钮紧邻图片左右两侧
+    updateNavigationButtonsPosition: function() {
+        var lightboxImage = document.getElementById("lightbox-image");
+        var prevButton = document.getElementById("prev-photo");
+        var nextButton = document.getElementById("next-photo");
 
-    // 获取图片的宽度
-    var imageWidth = lightboxImage.offsetWidth;
+        // 获取图片的宽度
+        var imageWidth = lightboxImage.offsetWidth;
 
-    // 设置按钮的位置
-    prevButton.style.left = `${(imageWidth * 0.1)}px`; // 按钮距离左侧 10% 的图片宽度
-    nextButton.style.right = `${(imageWidth * 0.1)}px`; // 按钮距离右侧 10% 的图片宽度
-}
+        // 设置按钮的位置
+        prevButton.style.left = `${(imageWidth * 0.1)}px`; // 按钮距离左侧 10% 的图片宽度
+        nextButton.style.right = `${(imageWidth * 0.1)}px`; // 按钮距离右侧 10% 的图片宽度
+    },
 
     closeLightbox: function() {
         var lightbox = document.getElementById("lightbox");
@@ -190,7 +190,6 @@ updateNavigationButtonsPosition: function() {
         document.getElementById("lightbox-image").src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
         this.updateNavigationButtonsPosition();
     },
-
 };
 
 // 事件监听
