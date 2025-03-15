@@ -191,26 +191,6 @@ updateNavigationButtonsPosition: function() {
         this.updateNavigationButtonsPosition();
     },
 
-    updateNavigationButtonsPosition: function() {
-        var lightboxImage = document.getElementById("lightbox-image");
-        var prevButton = document.getElementById("prev-photo");
-        var nextButton = document.getElementById("next-photo");
-
-        var imageWidth = lightboxImage.naturalWidth;
-        var imageHeight = lightboxImage.naturalHeight;
-
-        // 动态调整按钮的位置
-        var lightbox = document.getElementById("lightbox");
-        var lightboxWidth = lightbox.offsetWidth;
-        var lightboxHeight = lightbox.offsetHeight;
-
-        prevButton.style.top = "50%";
-        nextButton.style.top = "50%";
-
-        // 保证按钮位置居中
-        prevButton.style.left = "20px"; // 靠左
-        nextButton.style.right = "20px"; // 靠右
-    }
 };
 
 // 事件监听
