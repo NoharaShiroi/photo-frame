@@ -7,6 +7,8 @@ const app = {
     photos: [],
     currentPhotoIndex: 0,
     nextPageToken: null,
+    autoplayInterval: null,
+    isAutoplaying: false, // 是否正在自动播放
 
     getAccessToken: function() {
         var hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -174,34 +176,45 @@ const app = {
     closeLightbox: function() {
         var lightbox = document.getElementById("lightbox");
         lightbox.style.opacity = 0;
-        setTimeout(() => lightbox.style.display = "none", 300);
+        setTimeout(() => {
+            lightbox.style.display = "none";
+            clearInterval(this.autoplayInterval); // 关闭时停止自动播放
+        }, 300);
     },
 
     changePhoto: function(direction) {
         this.currentPhotoIndex += direction;
         if (this.currentPhotoIndex < 0) {
-            this.currentPhotoIndex = 0;
+            this.currentPhotoIndex = this.photos.length - 1; // 循环到最后一张
         } else if (this.currentPhotoIndex >= this.photos.length) {
-            this.currentPhotoIndex = this.photos.length - 1;
+            this.currentPhotoIndex = 0; // 循环到第一张
         }
         document.getElementById("lightbox-image").src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
+    },
+
+    toggleAutoplay: function() {
+        if (this.isAutoplaying) {
+            clearInterval(this.autoplayInterval);
+            this.isAutoplaying = false;
+            document.getElementById("autoplay-button").style.backgroundColor = "rgba(255, 255, 255, 0.7)"; // 更改按钮样式
+        } else {
+            this.startAutoplay();
+            this.isAutoplaying = true;
+            document.getElementById("autoplay-button").style.backgroundColor = "rgba(255, 105, 180, 0.9)"; // 悬停时为更强烈的粉红色
+        }
+    },
+
+    startAutoplay: function() {
+        clearInterval(this.autoplayInterval);
+        this.autoplayInterval = setInterval(() => {
+            this.changePhoto(1); // 循环播放
+        }, 3000); // 3秒切换一次
     }
 };
 
 // 事件监听
 document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
-
-// 将 closeLightbox 函数绑定到关闭按钮上
 document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
-
-// 为 lightbox 添加点击事件监听，这里是关键变化
-document.getElementById("lightbox").addEventListener("click", function(event) {
-    // 如果点击的目标是 lightbox 自身，即背景地带
-    if (event.target === this) {
-        app.closeLightbox();
-    }
-});
-
 document.getElementById("back-to-album-btn").onclick = () => {
     document.getElementById("photo-container").style.display = "none";
     document.getElementById("album-selection-container").style.display = "block";
