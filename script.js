@@ -8,6 +8,7 @@ const app = {
     currentPhotoIndex: 0,
     nextPageToken: null,
 
+    // 获取访问令牌
     getAccessToken: function() {
         var hashParams = new URLSearchParams(window.location.hash.substring(1));
         if (hashParams.has("access_token")) {
@@ -27,11 +28,13 @@ const app = {
         }
     },
 
+    // 用户授权
     authorizeUser: function() {
         var authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${this.CLIENT_ID}&redirect_uri=${encodeURIComponent(this.REDIRECT_URI)}&response_type=token&scope=${this.SCOPES}&prompt=consent`;
         window.location.href = authUrl;
     },
 
+    // 获取相册列表
     fetchAlbums: function() {
         if (!this.accessToken) return;
         var url = "https://photoslibrary.googleapis.com/v1/albums?pageSize=50";
@@ -51,6 +54,7 @@ const app = {
         });
     },
 
+    // 渲染相册列表
     renderAlbumList: function(albums) {
         var albumSelect = document.getElementById("album-select");
         albumSelect.innerHTML = '<option value="all">所有相片</option>'; // 去掉多余的选项
@@ -62,6 +66,7 @@ const app = {
         });
     },
 
+    // 加载照片
     loadPhotos: function() {
         const albumSelect = document.getElementById("album-select");
         this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
@@ -73,6 +78,7 @@ const app = {
         }
     },
 
+    // 获取所有照片
     fetchAllPhotos: function() {
         const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
         const body = {
@@ -100,6 +106,7 @@ const app = {
         });
     },
 
+    // 获取特定相册的照片
     fetchPhotos: function() {
         var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
         var body = {
@@ -126,6 +133,7 @@ const app = {
         });
     },
 
+    // 渲染照片
     renderPhotos: function() {
         var photoContainer = document.getElementById("photo-container");
         photoContainer.innerHTML = '';  // 清空照片容器
@@ -147,6 +155,7 @@ const app = {
         document.getElementById("app-container").style.display = "flex"; // 显示相片容器
     },
 
+    // 打开放大查看图片（Lightbox）
     openLightbox: function(index) {
         this.currentPhotoIndex = index;
         var lightbox = document.getElementById("lightbox");
@@ -174,12 +183,14 @@ const app = {
         nextButton.style.right = `${(imageWidth * 0.1)}px`; // 按钮距离右侧 10% 的图片宽度
     },
 
+    // 关闭Lightbox
     closeLightbox: function() {
         var lightbox = document.getElementById("lightbox");
         lightbox.style.opacity = 0;
         setTimeout(() => lightbox.style.display = "none", 300);
     },
 
+    // 切换照片
     changePhoto: function(direction) {
         this.currentPhotoIndex += direction;
         if (this.currentPhotoIndex < 0) {
@@ -202,4 +213,5 @@ document.getElementById("back-to-album-btn").onclick = () => {
     document.getElementById("album-selection-container").style.display = "block";
 };
 
+// 页面加载完成后执行
 document.addEventListener("DOMContentLoaded", () => app.getAccessToken());
