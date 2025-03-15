@@ -57,9 +57,7 @@ body {
     justify-content: center;
     align-items: center;
     z-index: 1000;
-}
-
-/* 使按钮半透明并呈圆形 */
+ /* 使按钮半透明并呈圆形 */
 .nav-button {
     position: absolute;
     background-color: rgba(255, 255, 255, 0.7); /* 半透明的白色背景 */
@@ -103,7 +101,10 @@ body {
     justify-content: center;
     align-items: center;
     z-index: 1000;
+}   
 }
+
+
 
 #lightbox img {
     max-width: 90%;
