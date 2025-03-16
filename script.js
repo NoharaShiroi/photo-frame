@@ -202,12 +202,12 @@ const app = {
 
     startSlideshow: function() {
         if (this.photos.length > 0) {
-            this.currentPhotoIndex = 0; 
-            document.body.requestFullscreen(); 
-            this.showCurrentPhoto();
-            this.autoChangePhoto(); // 只在全屏模式下启动轮播
+        // 运行时保持当前图片索引，而不是重置为 0
+        document.body.requestFullscreen(); 
+        this.showCurrentPhoto();
+        this.autoChangePhoto(); // 启动轮播
         }
-    },
+     },
 
     autoChangePhoto: function() {
         this.slideshowInterval = setInterval(() => {
