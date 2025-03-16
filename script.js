@@ -1,14 +1,14 @@
 const app = {
-    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com", // 替换为你的客户端 ID
-    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/", // 替换为你的重定向 URI
+    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com", 
+    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/", 
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
     accessToken: sessionStorage.getItem("access_token") || null,
     albumId: null,
     photos: [],
     currentPhotoIndex: 0,
     nextPageToken: null,
-    slideshowInterval: null, // 定时器的引用
-    isPlaying: true, // 播放状态
+    slideshowInterval: null, 
+    isPlaying: true, 
 
     getAccessToken: function() {
         var hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -21,7 +21,7 @@ const app = {
             document.getElementById("auth-container").style.display = "none";
             document.getElementById("app-container").style.display = "flex";
             this.fetchAlbums();
-            this.fetchAllPhotos();  // 在授权后预加载所有照片
+            this.fetchAllPhotos(); 
         } else {
             document.getElementById("auth-container").style.display = "flex";
             document.getElementById("app-container").style.display = "none";
@@ -59,7 +59,7 @@ const app = {
 
     renderAlbumList: function(albums) {
         var albumSelect = document.getElementById("album-select");
-        albumSelect.innerHTML = '<option value="all">所有相片</option>'; // 去掉多余的选项
+        albumSelect.innerHTML = '<option value="all">所有相片</option>'; 
         albums.forEach(album => {
             var option = document.createElement("option");
             option.value = album.id;
@@ -75,7 +75,7 @@ const app = {
         if (this.albumId) {
             this.fetchPhotos();
         } else {
-            this.fetchAllPhotos(); // 加载所有照片
+            this.fetchAllPhotos(); 
         }
     },
 
@@ -144,7 +144,7 @@ const app = {
 
     renderPhotos: function() {
         var photoContainer = document.getElementById("photo-container");
-        photoContainer.innerHTML = '';  // 清空照片容器
+        photoContainer.innerHTML = '';  
 
         if (this.photos.length === 0) {
             photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
@@ -160,7 +160,7 @@ const app = {
         }
 
         photoContainer.style.display = "grid";
-        document.getElementById("app-container").style.display = "flex"; // 显示相片容器
+        document.getElementById("app-container").style.display = "flex"; 
     },
 
     openLightbox: function(index) {
@@ -169,7 +169,11 @@ const app = {
         var lightboxImage = document.getElementById("lightbox-image");
         lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
         lightbox.style.display = "flex";
-        setTimeout(() => lightbox.style.opacity = 1, 10); // 动画效果
+        setTimeout(() => lightbox.style.opacity = 1, 10);
+
+        // 绑定上下一张的按钮事件
+        document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
+        document.getElementById("next-photo").onclick = () => this.changePhoto(1);
     },
 
     closeLightbox: function() {
@@ -178,13 +182,14 @@ const app = {
         setTimeout(() => lightbox.style.display = "none", 300);
     },
 
-    startSlideshow: function() {
-        if (this.photos.length > 0) {
-            this.currentPhotoIndex = 0; // 从第一张开始循环
-            document.body.requestFullscreen(); // 进入全屏模式
-            this.showCurrentPhoto();
-            this.autoChangePhoto();
+    changePhoto: function(direction) {
+        this.currentPhotoIndex += direction;
+        if (this.currentPhotoIndex < 0) {
+            this.currentPhotoIndex = this.photos.length - 1; // 循环到最后一张
+        } else if (this.currentPhotoIndex >= this.photos.length) {
+            this.currentPhotoIndex = 0; // 循环到第一张
         }
+        this.showCurrentPhoto(); // 更新显示的照片
     },
 
     showCurrentPhoto: function() {
@@ -192,48 +197,54 @@ const app = {
         lightboxImage.src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
     },
 
+    startSlideshow: function() {
+        if (this.photos.length > 0) {
+            this.currentPhotoIndex = 0; 
+            document.body.requestFullscreen(); 
+            this.showCurrentPhoto();
+            this.autoChangePhoto();
+        }
+    },
+
     autoChangePhoto: function() {
         this.slideshowInterval = setInterval(() => {
             this.currentPhotoIndex = (this.currentPhotoIndex + 1) % this.photos.length;
             this.showCurrentPhoto();
-        }, 5000); // 每5秒自动切换照片
+        }, 5000); 
     },
 
     toggleSlideshow: function() {
         if (this.isPlaying) {
-            clearInterval(this.slideshowInterval); // 清除自动播放
+            clearInterval(this.slideshowInterval); 
         } else {
-            this.autoChangePhoto(); // 恢复自动播放
+            this.autoChangePhoto(); 
         }
-        this.isPlaying = !this.isPlaying; // 切换状态
+        this.isPlaying = !this.isPlaying; 
     },
 
     enterFullScreen: function() {
-        this.startSlideshow(); // 启动全屏播放
+        this.startSlideshow(); 
     }
 };
 
 // 当 DOM 内容加载完成后，添加事件监听
 document.addEventListener("DOMContentLoaded", () => {
-    // 事件监听
     document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
     
     // 关闭 Lightbox 按钮
     document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
-    
+
     // 全屏播放按钮
     document.getElementById("fullscreen-btn").onclick = app.enterFullScreen.bind(app);
-    
+
     // 处理相册返回
     document.getElementById("back-to-album-btn").onclick = () => {
         document.getElementById("photo-container").style.display = "none";
         document.getElementById("album-selection-container").style.display = "block";
     };
 
-    // 加载访问令牌
     app.getAccessToken();
 
-    // 滚动事件，用于加载更多照片
     window.onscroll = function() {
         if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
             app.fetchAllPhotos();
