@@ -175,7 +175,18 @@ const app = {
         document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
         document.getElementById("next-photo").onclick = () => this.changePhoto(1);
     },
+     // 停止任何可能存在的轮播
+    clearInterval(this.slideshowInterval); // 确保在打开 Lightbox 时不运行轮播
+},
 
+startSlideshow: function() {
+    if (this.photos.length > 0) {
+        this.currentPhotoIndex = 0; 
+        document.body.requestFullscreen(); 
+        this.showCurrentPhoto();
+        this.autoChangePhoto(); // 只在全屏模式下启动轮播
+    }
+}
     closeLightbox: function() {
         var lightbox = document.getElementById("lightbox");
         lightbox.style.opacity = 0;
