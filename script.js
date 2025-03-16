@@ -201,13 +201,15 @@ const app = {
     },
 
     startSlideshow: function() {
-        if (this.photos.length > 0) {
-        // 运行时保持当前图片索引，而不是重置为 0
-        document.body.requestFullscreen(); 
-        this.showCurrentPhoto();
-        this.autoChangePhoto(); // 启动轮播
-        }
-     },
+    if (this.photos.length > 0) {
+        // 将当前图片显示即将全屏
+        this.showCurrentPhoto(); 
+        document.body.requestFullscreen().catch(err => {
+            console.error("Error attempting to enable full-screen mode: " + err.message);
+        });
+        this.autoChangePhoto(); // 只在全屏模式下启动轮播
+    }
+},
 
     autoChangePhoto: function() {
         this.slideshowInterval = setInterval(() => {
