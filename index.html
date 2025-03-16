@@ -4,9 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Google 相簿數位相框</title>
-    <link rel="stylesheet" href="style.css"> <!-- 确保有这个样式文件 -->
-    <script src="https://apis.google.com/js/api.js"></script> <!-- 加载 Google API -->
-    <script src="script.js" defer></script> <!-- 引入 JavaScript 文件 -->
+    <link rel="stylesheet" href="style.css"> 
+    <script src="https://apis.google.com/js/api.js"></script> 
+    <script src="script.js" defer></script> 
 </head>
 <body>
 
@@ -35,7 +35,9 @@
     <div id="lightbox" style="display:none;">
         <span id="close-lightbox">&times;</span>
         <img id="lightbox-image" src="" alt="Lightbox Image">
-        <button id="fullscreen-btn" class="nav-button">全屏播放</button>  <!-- 新增全屏按钮 -->
+        <button id="prev-photo" class="nav-button">&#10094;</button>  <!-- 上一张按钮 -->
+        <button id="next-photo" class="nav-button">&#10095;</button>  <!-- 下一张按钮 -->
+        <button id="fullscreen-btn" class="nav-button">全屏播放</button>  
     </div>
 
 </body>
