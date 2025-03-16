@@ -168,25 +168,17 @@ const app = {
         var lightbox = document.getElementById("lightbox");
         var lightboxImage = document.getElementById("lightbox-image");
         lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
-        lightbox.style.display = "flex";
+        lightbox.style.display = "flex"; 
         setTimeout(() => lightbox.style.opacity = 1, 10);
 
         // 绑定上下一张的按钮事件
         document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
         document.getElementById("next-photo").onclick = () => this.changePhoto(1);
-    },
-     // 停止任何可能存在的轮播
-    clearInterval(this.slideshowInterval); // 确保在打开 Lightbox 时不运行轮播
-},
 
-startSlideshow: function() {
-    if (this.photos.length > 0) {
-        this.currentPhotoIndex = 0; 
-        document.body.requestFullscreen(); 
-        this.showCurrentPhoto();
-        this.autoChangePhoto(); // 只在全屏模式下启动轮播
-    }
-}
+        // 停止轮播
+        clearInterval(this.slideshowInterval); // 确保在打开 Lightbox 时不运行轮播
+    },
+
     closeLightbox: function() {
         var lightbox = document.getElementById("lightbox");
         lightbox.style.opacity = 0;
@@ -213,7 +205,7 @@ startSlideshow: function() {
             this.currentPhotoIndex = 0; 
             document.body.requestFullscreen(); 
             this.showCurrentPhoto();
-            this.autoChangePhoto();
+            this.autoChangePhoto(); // 只在全屏模式下启动轮播
         }
     },
 
@@ -239,7 +231,6 @@ startSlideshow: function() {
 };
 
 // 当 DOM 内容加载完成后，添加事件监听
-// 事件监听
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
     document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
@@ -253,7 +244,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     app.getAccessToken();
 
-    // 绑定 Lightbox 的点击事件关闭 Lightbox
+    // 绑定 Lightbox 点击事件关闭
     document.getElementById("lightbox").addEventListener("click", function(event) {
         if (event.target === this) {
             app.closeLightbox();
