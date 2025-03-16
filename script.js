@@ -228,13 +228,10 @@ const app = {
 };
 
 // 当 DOM 内容加载完成后，添加事件监听
+// 事件监听
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
-    
-    // 关闭 Lightbox 按钮
     document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
-
-    // 全屏播放按钮
     document.getElementById("fullscreen-btn").onclick = app.enterFullScreen.bind(app);
 
     // 处理相册返回
@@ -244,6 +241,13 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     app.getAccessToken();
+
+    // 绑定 Lightbox 的点击事件关闭 Lightbox
+    document.getElementById("lightbox").addEventListener("click", function(event) {
+        if (event.target === this) {
+            app.closeLightbox();
+        }
+    });
 
     window.onscroll = function() {
         if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
