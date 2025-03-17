@@ -30,6 +30,7 @@
             <div class="slideshow-controls">
                 <label for="slideshow-speed">輪播速度 (秒): </label>
                 <input type="number" id="slideshow-speed" min="1" value="5">
+                <button id="start-slideshow-btn">開始幻燈片</button>
             </div>
         </div>
 
@@ -39,12 +40,11 @@
 
     <!-- 🔹 放大圖片 (Lightbox) -->
     <div id="lightbox" style="display:none;">
-        <span id="close-lightbox" style="cursor: pointer;">&times;</span> <!-- 关闭按钮 -->
+        <span id="close-lightbox" style="cursor: pointer;">&times;</span>
         <img id="lightbox-image" src="" alt="Lightbox Image">
         <div class="lightbox-buttons">
-            <button id="prev-photo" class="nav-button">&#10094;</button>  <!-- 上一张按钮 -->
-            <button id="start-slideshow-btn" class="nav-button">幻燈片</button> <!-- 开始幻灯片按钮 -->
-            <button id="next-photo" class="nav-button">&#10095;</button>  <!-- 下一张按钮 -->
+            <button id="prev-photo" class="nav-button">&#10094;</button>
+            <button id="next-photo" class="nav-button">&#10095;</button>
         </div>
     </div>
     
