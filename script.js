@@ -126,6 +126,7 @@ const app = {
     });
 },
 
+
     fetchPhotos: function() {
     var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
     var body = {
