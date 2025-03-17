@@ -11,7 +11,7 @@ const app = {
     slideshowInterval: null,
     isLoading: false,
     slideshowSpeed: 3000,
-
+};
     getAccessToken: function() {
         let hashParams = new URLSearchParams(window.location.hash.substring(1));
         if (hashParams.has("access_token")) {
