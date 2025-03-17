@@ -72,6 +72,12 @@ body {
     border-radius: 5px;
     padding: 10px;
     cursor: pointer;
+    margin: 20px; /* 添加间距 */
+    transition: background-color 0.3s ease; /* 添加悬停效果 */
+}
+
+.nav-button:hover {
+    background-color: rgba(255, 105, 180, 0.7);
 }
 
 /* 绝对定位按钮 */
