@@ -60,8 +60,8 @@ body {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 90%; /* 初始宽度 */
+    height: 80%; /* 初始高度 */
     background-color: rgba(0, 0, 0, 0.8);
     display: none; 
     opacity: 0;
@@ -82,10 +82,6 @@ body {
     justify-content: center;
     gap: 20px; /* 按钮之间的间距 */
     margin-top: 10px; /* 按钮与图片之间的间距 */
-    position: absolute;
-    bottom: 10px; /* 靠近底部 */
-    left: 50%;
-    transform: translateX(-50%); /* 居中 */
 }
 
 .nav-button {
