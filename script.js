@@ -70,13 +70,20 @@ const app = {
     },
 
     loadPhotos: function() {
-        const albumSelect = document.getElementById("album-select");
-        this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
+    const albumSelect = document.getElementById("album-select");
+    this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
 
-        this.photos = []; // Reset photos array for new load
-        this.nextPageToken = null; // Reset pagination token
+    // 重置照片数组和分页令牌
+    this.photos = []; 
+    this.nextPageToken = null; 
+
+    if (this.albumId) {
         this.fetchPhotos();
-    },
+    } else {
+        this.fetchAllPhotos(); // 确保调用全部照片加载
+    }
+}
+,
 
     fetchPhotos: function() {
         const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
