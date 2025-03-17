@@ -70,99 +70,122 @@ const app = {
     },
 
     loadPhotos: function() {
-        const albumSelect = document.getElementById("album-select");
-        this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
+    // 增加调试输出
+    console.log("Loading photos...");
+    
+    const albumSelect = document.getElementById("album-select");
+    this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
 
-        if (this.albumId) {
-            this.fetchPhotos();
-        } else {
-            this.fetchAllPhotos(); 
-        }
-    },
+    // 增加调试输出
+    console.log("Selected albumId:", this.albumId);
+
+    if (this.albumId) {
+        this.fetchPhotos();
+    } else {
+        this.fetchAllPhotos(); 
+    }
+},
+
 
     fetchAllPhotos: function() {
-        const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-        const body = {
-            pageSize: 50,
-            pageToken: this.nextPageToken || ''
-        };
+    const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
+    const body = {
+        pageSize: 50,
+        pageToken: this.nextPageToken || ''
+    };
 
-        fetch(url, {
-            method: "POST",
-            headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
-            body: JSON.stringify(body)
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Network response was not ok: " + response.statusText);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.mediaItems) {
-                this.photos = [...this.photos, ...data.mediaItems];
-                this.nextPageToken = data.nextPageToken;
-                this.renderPhotos();
-            } else {
-                console.error("No mediaItems found in the response.");
-            }
-        })
-        .catch(error => {
-            console.error("Error fetching photos:", error);
-        });
-    },
+    // 增加调试输出
+    console.log("Fetching all photos...");
+
+    fetch(url, {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("Network response was not ok: " + response.statusText);
+        }
+        return response.json();
+    })
+    .then(data => {
+        // 增加调试输出，查看获取到的数据
+        console.log("All photos fetched successfully:", data);
+        if (data.mediaItems) {
+            this.photos = [...this.photos, ...data.mediaItems];
+            this.nextPageToken = data.nextPageToken;
+            this.renderPhotos();
+        } else {
+            console.error("No mediaItems found in the response.");
+        }
+    })
+    .catch(error => {
+        console.error("Error fetching photos:", error);
+    });
+},
+
 
     fetchPhotos: function() {
-        var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-        var body = {
-            albumId: this.albumId,
-            pageSize: 50
-        };
+    var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
+    var body = {
+        albumId: this.albumId,
+        pageSize: 50
+    };
 
-        fetch(url, {
-            method: "POST",
-            headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
-            body: JSON.stringify(body)
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Network response was not ok: " + response.statusText);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.mediaItems) {
-                this.photos = data.mediaItems;
-                this.renderPhotos();
-            } else {
-                console.error("No mediaItems found in the response.");
-            }
-        })
-        .catch(error => {
-            console.error("Error fetching photos:", error);
-        });
-    },
+    // 增加调试输出
+    console.log("Fetching photos for albumId:", this.albumId);
+
+    fetch(url, {
+        method: "POST",
+        headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("Network response was not ok: " + response.statusText);
+        }
+        return response.json();
+    })
+    .then(data => {
+        // 增加调试输出，查看获取到的数据
+        console.log("Photos fetched successfully:", data);
+        if (data.mediaItems) {
+            this.photos = data.mediaItems;
+            this.renderPhotos();
+        } else {
+            console.error("No mediaItems found in the response.");
+        }
+    })
+    .catch(error => {
+        console.error("Error fetching photos:", error);
+    });
+},
+
 
     renderPhotos: function() {
-        var photoContainer = document.getElementById("photo-container");
-        photoContainer.innerHTML = '';  
+    var photoContainer = document.getElementById("photo-container");
+    photoContainer.innerHTML = '';  
 
-        if (this.photos.length === 0) {
-            photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
-        } else {
-            this.photos.forEach((photo, index) => {
-                var img = document.createElement("img");
-                img.src = `${photo.baseUrl}=w600-h400`;
-                img.alt = "Photo";
-                img.classList.add("photo");
-                img.onclick = () => this.openLightbox(index);
-                photoContainer.appendChild(img);
-            });
-        }
+    // 增加调试输出
+    console.log("Rendering photos... Total photos:", this.photos.length);
 
-        photoContainer.style.display = "grid";
-        document.getElementById("app-container").style.display = "flex"; 
-    },
+    if (this.photos.length === 0) {
+        photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
+    } else {
+        this.photos.forEach((photo, index) => {
+            var img = document.createElement("img");
+            img.src = `${photo.baseUrl}=w600-h400`;
+            img.alt = "Photo";
+            img.classList.add("photo");
+            img.onclick = () => this.openLightbox(index);
+            photoContainer.appendChild(img);
+        });
+    }
+
+    photoContainer.style.display = "grid";
+    document.getElementById("app-container").style.display = "flex"; 
+},
+
 
     openLightbox: function(index) {
         this.currentPhotoIndex = index;
