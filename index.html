@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Google 相簿數位相框</title>
     <link rel="stylesheet" href="style.css"> 
-    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://apis.google.com/js/api.js"></script> 
     <script src="script.js" defer></script> 
 </head>
 <body>
@@ -27,21 +27,22 @@
                 <option value="all">所有相片</option>
                 <!-- 动态生成的相簿选项 -->
             </select>
+            <label for="slideshow-speed">輪播速度 (毫秒):</label>
+            <input type="number" id="slideshow-speed" value="5000" min="1000" step="100">
         </div>
-        <input type="number" id="slideshow-speed" placeholder="轮播速度（毫秒）" min="100" value="5000" /> <!-- 轮播速度输入 -->
+
+        <!-- 🔹 相片顯示區 -->
+        <div id="photo-container" style="display: none;"></div>
     </div>
 
     <!-- 🔹 放大圖片 (Lightbox) -->
     <div id="lightbox" style="display:none;">
-        <span id="close-lightbox" class="close-button" style="cursor: pointer;">&times;</span> 
+        <span id="close-lightbox" style="cursor: pointer;">&times;</span> <!-- 关闭按钮 -->
         <img id="lightbox-image" src="" alt="Lightbox Image">
-        <div class="button-container"> <!-- 按钮容器 -->
-            <button id="prev-photo" class="nav-button">&#10094;</button>  <!-- 上一张按钮 -->
-            <button id="slideshow-btn" class="nav-button">开始幻灯片播放</button>  <!-- 开始幻灯片按钮 -->
-            <button id="next-photo" class="nav-button">&#10095;</button>  <!-- 下一张按钮 -->
-        </div>
-        <button id="stop-slideshow-btn" class="nav-button" style="display: none;">&#10006;</button>  <!-- 停止幻灯片按钮 -->
+        <button id="prev-photo" class="nav-button">&#10094;</button>  <!-- 上一张按钮 -->
+        <button id="next-photo" class="nav-button">&#10095;</button>  <!-- 下一张按钮 -->
+        <button id="slideshow-btn" class="nav-button">開始幻燈片</button>  
+        <button id="stop-slideshow" class="nav-button" style="display:none;">停止幻燈片</button>  
     </div>
-
 </body>
 </html>
