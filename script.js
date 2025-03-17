@@ -70,22 +70,18 @@ const app = {
     },
 
     loadPhotos: function() {
-    // 增加调试输出
     console.log("Loading photos...");
-    
     const albumSelect = document.getElementById("album-select");
     this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
 
-    // 增加调试输出
     console.log("Selected albumId:", this.albumId);
 
     if (this.albumId) {
-        this.fetchPhotos();
+        this.fetchPhotos(); // 选择相簿时调用 fetchPhotos
     } else {
-        this.(); 
+        this.fetchAllPhotos();  // 呈现所有照片
     }
 },
-
 
     fetchAllPhotos: function() {
     const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
