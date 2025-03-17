@@ -1,4 +1,3 @@
-<!-- script.js -->
 const app = {
     CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
     REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/", 
@@ -11,7 +10,7 @@ const app = {
     slideshowInterval: null,
     isLoading: false,
     slideshowSpeed: 3000,
-};
+
     getAccessToken: function() {
         let hashParams = new URLSearchParams(window.location.hash.substring(1));
         if (hashParams.has("access_token")) {
@@ -64,6 +63,6 @@ const app = {
 
 window.onload = function() {
     document.getElementById("authorize-btn").onclick = () => app.authorizeUser();
-    document.getElementById("start-slideshow-btn").onclick = () => app.startSlideshow();
+    document.getElementById("start-slideshow-btn").onclick = () => app.startSlideshow?.();
     app.getAccessToken();
 };
