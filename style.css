@@ -73,31 +73,32 @@ body {
 
 #lightbox img {
     max-width: 90%;
-    max-height: 90%;
+    max-height: 70%;
     box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.7);
 }
 
 /* 定位按钮 */
+.lightbox-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px; /* 按钮之间的间距 */
+    margin-top: 10px; /* 按钮与图片之间的间距 */
+    position: relative; /* 确保按钮不会超出可视区域 */
+}
+
 .nav-button {
     background-color: rgba(255, 192, 203, 0.7); 
     border: none;
     border-radius: 5px;
-    padding: 10px;
+    padding: 10px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
 }
 
-/* 绝对定位按钮 */
-#prev-photo {
-    position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-#next-photo {
-    position: absolute;
-    right: 10px;
-    top: 50%;
-    transform: translateY(-50%);
+/* 悬停效果 */
+.nav-button:hover {
+    background-color: rgba(255, 192, 203, 1);
+    transform: scale(1.05);
 }
 
 /* 返回選擇相簿按鈕 */
