@@ -34,13 +34,14 @@
     </div>
 
     <!-- 🔹 放大圖片 (Lightbox) -->
-<div id="lightbox" style="display:none;">
-    <span id="close-lightbox" style="cursor: pointer;">&times;</span> <!-- 关闭按钮 -->
-    <img id="lightbox-image" src="" alt="Lightbox Image">
-    <button id="prev-photo" class="nav-button">&#10094;</button>  <!-- 上一张按钮 -->
-    <button id="next-photo" class="nav-button">&#10095;</button>  <!-- 下一张按钮 -->
-    <button id="fullscreen-btn" class="nav-button">全屏播放</button>  
-</div>
+    <div id="lightbox" style="display:none;">
+        <span id="close-lightbox" style="cursor: pointer;">&times;</span> 
+        <img id="lightbox-image" src="" alt="Lightbox Image">
+        <button id="prev-photo" class="nav-button">&#10094;</button>  <!-- 上一张按钮 -->
+        <button id="next-photo" class="nav-button">&#10095;</button>  <!-- 下一张按钮 -->
+        <input type="number" id="slideshow-speed" placeholder="轮播速度（毫秒）" min="100" value="5000" /> <!-- 轮播速度输入 -->
+        <button id="slideshow-btn" class="nav-button">开始幻灯片播放</button>  <!-- 开始轮播按钮 -->
+    </div>
 
 </body>
 </html>
