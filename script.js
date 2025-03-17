@@ -8,7 +8,8 @@ const app = {
     currentPhotoIndex: 0,
     nextPageToken: null,
     slideshowInterval: null, 
-    isPlaying: true, 
+    isPlaying: false, 
+    slideshowSpeed: 5000, // 默认速度（毫秒）
 
     getAccessToken: function() {
         var hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -201,34 +202,20 @@ const app = {
     },
 
     startSlideshow: function() {
-    if (this.photos.length > 0) {
-        // 将当前图片显示即将全屏
-        this.showCurrentPhoto(); 
-        document.body.requestFullscreen().catch(err => {
-            console.error("Error attempting to enable full-screen mode: " + err.message);
-        });
-        this.autoChangePhoto(); // 只在全屏模式下启动轮播
-    }
-},
+        if (this.photos.length > 0) {
+            // 获取用户设置的轮播速度
+            const speedInput = document.getElementById("slideshow-speed");
+            this.slideshowSpeed = speedInput.value * 1000; // 转换为毫秒
+            this.autoChangePhoto(); 
+        }
+    },
 
     autoChangePhoto: function() {
+        clearInterval(this.slideshowInterval); // 清除现有的轮播
         this.slideshowInterval = setInterval(() => {
             this.currentPhotoIndex = (this.currentPhotoIndex + 1) % this.photos.length;
             this.showCurrentPhoto();
-        }, 5000); 
-    },
-
-    toggleSlideshow: function() {
-        if (this.isPlaying) {
-            clearInterval(this.slideshowInterval); 
-        } else {
-            this.autoChangePhoto(); 
-        }
-        this.isPlaying = !this.isPlaying; 
-    },
-
-    enterFullScreen: function() {
-        this.startSlideshow(); 
+        }, this.slideshowSpeed);
     }
 };
 
@@ -236,7 +223,7 @@ const app = {
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
     document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
-    document.getElementById("fullscreen-btn").onclick = app.enterFullScreen.bind(app);
+    document.getElementById("start-slideshow-btn").onclick = app.startSlideshow.bind(app);
 
     // 处理相册返回
     document.getElementById("back-to-album-btn").onclick = () => {
