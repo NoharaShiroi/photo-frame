@@ -37,18 +37,20 @@ const app = {
     },
 
     fetchAlbums: function() {
-        if (!this.accessToken) return;
-        fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
-            method: "GET",
-            headers: { "Authorization": "Bearer " + this.accessToken }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.albums) this.renderAlbumList(data.albums);
-        })
-        .catch(error => console.error("Error fetching albums:", error));
-    },
-
+    if (!this.accessToken) return;
+    fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
+        method: "GET",
+        headers: { "Authorization": "Bearer " + this.accessToken }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.albums) {
+            this.renderAlbumList(data.albums);
+        }
+    })
+    .catch(error => console.error("Error fetching albums:", error));
+}.bind(app),  // 在事件綁定時確保 this 指向 app
+    
     fetchPhotos: function() {
         if (this.isLoading) return;
         this.isLoading = true;
