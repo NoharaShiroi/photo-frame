@@ -51,22 +51,36 @@ const app = {
     
 fetchPhotos: function() {
     if (!this.accessToken) return;
+
     let url = "https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=50";
+    let options = {
+        method: "GET",
+        headers: { "Authorization": "Bearer " + this.accessToken }
+    };
+
     if (this.albumId && this.albumId !== "all") {
-        url = `https://photoslibrary.googleapis.com/v1/mediaItems:search`;
+        url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
+        options.method = "POST";
+        options.body = JSON.stringify({ albumId: this.albumId, pageSize: 50 });
     }
 
-    fetch(url, {
-        method: this.albumId && this.albumId !== "all" ? "POST" : "GET",
-        headers: { "Authorization": "Bearer " + this.accessToken },
-        body: this.albumId && this.albumId !== "all" ? JSON.stringify({ albumId: this.albumId, pageSize: 50 }) : null
-    })
+    fetch(url, options)
     .then(response => response.json())
     .then(data => {
+        if (data.error) {
+            console.error("API Error:", data.error.message);
+            return;
+        }
         if (data.mediaItems) {
             this.photos = data.mediaItems;
             this.currentPhotoIndex = 0;
-            this.displayPhoto();
+            if (this.displayPhoto) {
+                this.displayPhoto();
+            } else {
+                console.warn("displayPhoto function is missing.");
+            }
+        } else {
+            console.warn("No media items found.");
         }
     })
     .catch(error => console.error("Error fetching photos:", error));
