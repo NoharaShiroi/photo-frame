@@ -48,6 +48,29 @@ const app = {
         })
         .catch(error => console.error("Error fetching albums:", error));
     },
+    
+fetchPhotos: function() {
+    if (!this.accessToken) return;
+    let url = "https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=50";
+    if (this.albumId && this.albumId !== "all") {
+        url = `https://photoslibrary.googleapis.com/v1/mediaItems:search`;
+    }
+
+    fetch(url, {
+        method: this.albumId && this.albumId !== "all" ? "POST" : "GET",
+        headers: { "Authorization": "Bearer " + this.accessToken },
+        body: this.albumId && this.albumId !== "all" ? JSON.stringify({ albumId: this.albumId, pageSize: 50 }) : null
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.mediaItems) {
+            this.photos = data.mediaItems;
+            this.currentPhotoIndex = 0;
+            this.displayPhoto();
+        }
+    })
+    .catch(error => console.error("Error fetching photos:", error));
+},
 
     renderAlbumList: function(albums) {
         let albumSelect = document.getElementById("album-select");
