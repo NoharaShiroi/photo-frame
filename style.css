@@ -19,6 +19,18 @@ body {
     margin-bottom: 20px;
 }
 
+/* 幻燈片控制區 */
+.slideshow-controls {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+}
+
+#slideshow-speed {
+    width: 50px;
+    margin-left: 5px;
+}
+
 /* 縮圖顯示區 */
 #photo-container {
     display: grid;
@@ -71,7 +83,6 @@ body {
     border: none;
     border-radius: 5px;
     padding: 10px;
-    cursor: pointer;
 }
 
 /* 绝对定位按钮 */
