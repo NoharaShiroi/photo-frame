@@ -8,7 +8,7 @@ const app = {
     currentPhotoIndex: 0,
     nextPageToken: null,
     slideshowInterval: null, 
-    isPlaying: true, 
+    isPlaying: false, // 状态更改为 false 初始不播放
 
     getAccessToken: function() {
         var hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -174,9 +174,6 @@ const app = {
         // 绑定上下一张的按钮事件
         document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
         document.getElementById("next-photo").onclick = () => this.changePhoto(1);
-        
-        // 停止轮播
-        clearInterval(this.slideshowInterval);
     },
 
     closeLightbox: function() {
@@ -192,7 +189,7 @@ const app = {
         } else if (this.currentPhotoIndex >= this.photos.length) {
             this.currentPhotoIndex = 0; // 循环到第一张
         }
-        this.showCurrentPhoto();
+        this.showCurrentPhoto(); // 更新显示的照片
     },
 
     showCurrentPhoto: function() {
@@ -236,7 +233,7 @@ const app = {
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
     document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
-    document.getElementById("slideshow-btn").onclick = app.startSlideshow.bind(app);
+    document.getElementById("slideshow-btn").onclick = app.startSlideshow.bind(app); // 绑定幻灯片功能
 
     // 处理相册返回
     document.getElementById("back-to-album-btn").onclick = () => {
@@ -246,7 +243,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     app.getAccessToken();
 
-    // 绑定 Lightbox 的点击事件关闭
+    // 绑定 Lightbox 点击事件关闭
     document.getElementById("lightbox").addEventListener("click", function(event) {
         if (event.target === this) {
             app.closeLightbox();
