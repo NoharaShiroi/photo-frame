@@ -9,6 +9,7 @@ const app = {
     nextPageToken: null,
     slideshowInterval: null, 
     isPlaying: false, 
+    isLoading: false, // 新增属性以避免重复加载
     slideshowSpeed: 5000, // 默认速度（毫秒）
 
     getAccessToken: function() {
@@ -69,23 +70,28 @@ const app = {
         });
     },
 
-    loadPhotos: function() {
-    const albumSelect = document.getElementById("album-select");
-    this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
+        loadPhotos: function() {
+        const albumSelect = document.getElementById("album-select");
+        this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
 
-    // 重置照片数组和分页令牌
-    this.photos = []; 
-    this.nextPageToken = null; 
+        // 如果相册未变化，直接返回
+        if (this.photos.length > 0 && this.currentAlbumId === this.albumId) {
+            return; // 已经加载过该相册的照片
+        }
 
-    if (this.albumId) {
+        // 重置照片数组和分页令牌
+        this.photos = []; 
+        this.nextPageToken = null; 
+        this.currentAlbumId = this.albumId; // 当前相册id
+
+        // 开始加载
         this.fetchPhotos();
-    } else {
-        this.fetchAllPhotos(); // 确保调用全部照片加载
-    }
-}
-,
+    },
 
     fetchPhotos: function() {
+        if (this.isLoading) return; // 避免重复请求
+        this.isLoading = true; // 设置加载中状态
+
         const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
         const body = {
             pageSize: 50,
@@ -115,6 +121,9 @@ const app = {
         })
         .catch(error => {
             console.error("Error fetching photos:", error);
+        })
+        .finally(() => {
+            this.isLoading = false; // 结束加载状态
         });
     },
 
@@ -134,6 +143,10 @@ const app = {
                 photoContainer.appendChild(img);
             });
         }
+
+        photoContainer.style.display = "grid";
+        document.getElementById("app-container").style.display = "flex"; 
+    },
 
         photoContainer.style.display = "grid";
         document.getElementById("app-container").style.display = "flex"; 
