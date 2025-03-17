@@ -170,7 +170,9 @@ const app = {
         var lightboxImage = document.getElementById("lightbox-image");
         lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
 
-        // 重置样式以适应幻灯片播放显示
+        // 重置样式以适应浏览器的适配尺寸
+        lightbox.style.width = "90%";
+        lightbox.style.height = "80%";
         lightbox.style.display = "flex"; 
         setTimeout(() => lightbox.style.opacity = 1, 10);
 
