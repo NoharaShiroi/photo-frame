@@ -34,7 +34,7 @@ body {
 /* 縮圖顯示區 */
 #photo-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* 将最小大小改为150px */
     gap: 5px;
     padding: 10px;
     justify-content: center;
@@ -123,6 +123,6 @@ body {
 /* 響應式設計 */
 @media (max-width: 768px) {
     #photo-container {
-        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* 最大集中缩小到120px */
     }
 }
