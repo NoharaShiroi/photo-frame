@@ -1,12 +1,12 @@
+/* style.css */
 body {
     font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
     background-color: #f5f5f5;
     text-align: center;
+    margin: 0;
+    padding: 0;
 }
 
-/* 容器設置 */
 #app-container {
     display: flex;
     flex-direction: column;
@@ -14,37 +14,21 @@ body {
     padding: 10px;
 }
 
-/* 選擇相簿 */
 #album-selection-container {
     margin-bottom: 20px;
 }
 
-/* 幻燈片控制區 */
-.slideshow-controls {
-    margin-top: 10px;
-    display: flex;
-    align-items: center;
-}
-
-#slideshow-speed {
-    width: 50px;
-    margin-left: 5px;
-}
-
-/* 縮圖顯示區 */
 #photo-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* 将最小大小改为150px */
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 5px;
     padding: 10px;
     justify-content: center;
     max-width: 90vw;
 }
 
-/* 縮圖 */
 .photo {
     width: 100%;
-    aspect-ratio: 1/1; 
     object-fit: cover;
     border-radius: 5px;
     cursor: pointer;
@@ -55,7 +39,6 @@ body {
     transform: scale(1.05);
 }
 
-/* 放大圖片 (lightbox) 相關樣式 */
 #lightbox {
     position: fixed;
     top: 0;
@@ -63,9 +46,7 @@ body {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, 0.8);
-    display: none; 
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
+    display: none;
     justify-content: center;
     align-items: center;
     z-index: 1000;
@@ -77,52 +58,15 @@ body {
     box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.7);
 }
 
-/* 定位按钮 */
-.lightbox-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 20px; /* 按钮之间的间距 */
-    margin-top: 10px; /* 按钮与图片之间的间距 */
-    position: absolute;
-    bottom: 10px; /* 靠近底部 */
-    left: 50%;
-    transform: translateX(-50%); /* 居中 */
-}
-
 .nav-button {
-    background-color: rgba(255, 192, 203, 0.7); 
+    background-color: rgba(255, 192, 203, 0.7);
     border: none;
     border-radius: 5px;
     padding: 10px 20px;
     cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
 }
 
-/* 悬停效果 */
 .nav-button:hover {
     background-color: rgba(255, 192, 203, 1);
     transform: scale(1.05);
-}
-
-/* 返回選擇相簿按鈕 */
-#back-to-album-btn {
-    position: fixed;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1001;
-    padding: 10px;
-    font-size: 16px;
-    background-color: #4CAF50;
-    color: white;
-    border-radius: 5px;
-    border: none;
-    cursor: pointer;
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-    #photo-container {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* 最大集中缩小到120px */
-    }
 }
