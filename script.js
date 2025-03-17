@@ -82,7 +82,7 @@ const app = {
     if (this.albumId) {
         this.fetchPhotos();
     } else {
-        this.fetchAllPhotos(); 
+        this.(); 
     }
 },
 
@@ -94,7 +94,6 @@ const app = {
         pageToken: this.nextPageToken || ''
     };
 
-    // 增加调试输出
     console.log("Fetching all photos...");
 
     fetch(url, {
@@ -109,12 +108,19 @@ const app = {
         return response.json();
     })
     .then(data => {
-        // 增加调试输出，查看获取到的数据
         console.log("All photos fetched successfully:", data);
         if (data.mediaItems) {
+            // 将新获取的照片追加到数组中
             this.photos = [...this.photos, ...data.mediaItems];
+            // 更新 nextPageToken
             this.nextPageToken = data.nextPageToken;
-            this.renderPhotos();
+
+            // 检查是否还有更多照片，如果有，则继续请求
+            if (this.nextPageToken) {
+                this.fetchAllPhotos();  // 继续获取剩余的照片
+            } else {
+                this.renderPhotos();  // 所有照片都获取完毕后渲染
+            }
         } else {
             console.error("No mediaItems found in the response.");
         }
@@ -123,7 +129,6 @@ const app = {
         console.error("Error fetching photos:", error);
     });
 },
-
 
     fetchPhotos: function() {
     var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
