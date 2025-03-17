@@ -174,9 +174,9 @@ const app = {
         // 绑定上下一张的按钮事件
         document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
         document.getElementById("next-photo").onclick = () => this.changePhoto(1);
-
+        
         // 停止轮播
-        clearInterval(this.slideshowInterval); // 确保在打开 Lightbox 时不运行轮播
+        clearInterval(this.slideshowInterval);
     },
 
     closeLightbox: function() {
@@ -192,7 +192,7 @@ const app = {
         } else if (this.currentPhotoIndex >= this.photos.length) {
             this.currentPhotoIndex = 0; // 循环到第一张
         }
-        this.showCurrentPhoto(); // 更新显示的照片
+        this.showCurrentPhoto();
     },
 
     showCurrentPhoto: function() {
@@ -200,29 +200,29 @@ const app = {
         lightboxImage.src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
     },
 
+    // 幻灯片播放
     startSlideshow: function() {
-    if (this.photos.length > 0) {
-        // 将当前图片显示即将全屏
-        this.showCurrentPhoto(); 
-        document.body.requestFullscreen().catch(err => {
-            console.error("Error attempting to enable full-screen mode: " + err.message);
-        });
-        this.autoChangePhoto(); // 只在全屏模式下启动轮播
-    }
-},
+        if (this.photos.length > 0) {
+            // 通过获取速度设置，并从当前的图片开始
+            const speed = document.getElementById("slideshow-speed").value || 5000; // 使用用户指定的速度，默认为 5000ms
+            this.autoChangePhoto(parseInt(speed));
+        }
+    },
 
-    autoChangePhoto: function() {
+    autoChangePhoto: function(speed) {
+        // 清除之前的定时器
+        clearInterval(this.slideshowInterval);
         this.slideshowInterval = setInterval(() => {
             this.currentPhotoIndex = (this.currentPhotoIndex + 1) % this.photos.length;
             this.showCurrentPhoto();
-        }, 5000); 
+        }, speed);
     },
 
     toggleSlideshow: function() {
         if (this.isPlaying) {
             clearInterval(this.slideshowInterval); 
         } else {
-            this.autoChangePhoto(); 
+            this.startSlideshow(); 
         }
         this.isPlaying = !this.isPlaying; 
     },
@@ -236,7 +236,7 @@ const app = {
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
     document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
-    document.getElementById("fullscreen-btn").onclick = app.enterFullScreen.bind(app);
+    document.getElementById("slideshow-btn").onclick = app.startSlideshow.bind(app);
 
     // 处理相册返回
     document.getElementById("back-to-album-btn").onclick = () => {
@@ -246,7 +246,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     app.getAccessToken();
 
-    // 绑定 Lightbox 点击事件关闭
+    // 绑定 Lightbox 的点击事件关闭
     document.getElementById("lightbox").addEventListener("click", function(event) {
         if (event.target === this) {
             app.closeLightbox();
