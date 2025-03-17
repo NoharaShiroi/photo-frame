@@ -7,11 +7,11 @@ const app = {
     photos: [],
     currentPhotoIndex: 0,
     nextPageToken: null,
-    slideshowInterval: null, 
-    isPlaying: false, // 状态更改为 false 初始不播放
+    slideshowInterval: null,
+    isPlaying: false, 
 
     getAccessToken: function() {
-        var hashParams = new URLSearchParams(window.location.hash.substring(1));
+       var hashParams = new URLSearchParams(window.location.hash.substring(1));
         if (hashParams.has("access_token")) {
             this.accessToken = hashParams.get("access_token");
             sessionStorage.setItem("access_token", this.accessToken);
@@ -163,6 +163,7 @@ const app = {
         document.getElementById("app-container").style.display = "flex"; 
     },
 
+
     openLightbox: function(index) {
         this.currentPhotoIndex = index;
         var lightbox = document.getElementById("lightbox");
@@ -174,22 +175,26 @@ const app = {
         // 绑定上下一张的按钮事件
         document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
         document.getElementById("next-photo").onclick = () => this.changePhoto(1);
+
+        // 停止轮播
+        clearInterval(this.slideshowInterval);
     },
 
     closeLightbox: function() {
         var lightbox = document.getElementById("lightbox");
         lightbox.style.opacity = 0;
         setTimeout(() => lightbox.style.display = "none", 300);
+        this.stopSlideshow(); // 关闭 Lightbox 时停止幻灯片
     },
 
     changePhoto: function(direction) {
         this.currentPhotoIndex += direction;
         if (this.currentPhotoIndex < 0) {
-            this.currentPhotoIndex = this.photos.length - 1; // 循环到最后一张
+            this.currentPhotoIndex = this.photos.length - 1;
         } else if (this.currentPhotoIndex >= this.photos.length) {
-            this.currentPhotoIndex = 0; // 循环到第一张
+            this.currentPhotoIndex = 0;
         }
-        this.showCurrentPhoto(); // 更新显示的照片
+        this.showCurrentPhoto();
     },
 
     showCurrentPhoto: function() {
@@ -197,45 +202,38 @@ const app = {
         lightboxImage.src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
     },
 
-    // 幻灯片播放
     startSlideshow: function() {
         if (this.photos.length > 0) {
-            // 通过获取速度设置，并从当前的图片开始
-            const speed = document.getElementById("slideshow-speed").value || 5000; // 使用用户指定的速度，默认为 5000ms
-            this.autoChangePhoto(parseInt(speed));
+            this.showCurrentPhoto(); 
+            this.isPlaying = true;
+            document.getElementById("slideshow-btn").style.display = "none";
+            document.getElementById("stop-slideshow").style.display = "block";
+            this.autoChangePhoto(); 
         }
     },
 
-    autoChangePhoto: function(speed) {
-        // 清除之前的定时器
-        clearInterval(this.slideshowInterval);
+    autoChangePhoto: function() {
+        const speed = parseInt(document.getElementById("slideshow-speed").value) || 5000;
         this.slideshowInterval = setInterval(() => {
             this.currentPhotoIndex = (this.currentPhotoIndex + 1) % this.photos.length;
             this.showCurrentPhoto();
         }, speed);
     },
 
-    toggleSlideshow: function() {
-        if (this.isPlaying) {
-            clearInterval(this.slideshowInterval); 
-        } else {
-            this.startSlideshow(); 
-        }
-        this.isPlaying = !this.isPlaying; 
-    },
-
-    enterFullScreen: function() {
-        this.startSlideshow(); 
+    stopSlideshow: function() {
+        this.isPlaying = false; 
+        clearInterval(this.slideshowInterval);
+        document.getElementById("slideshow-btn").style.display = "block";
+        document.getElementById("stop-slideshow").style.display = "none";
     }
 };
 
-// 当 DOM 内容加载完成后，添加事件监听
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
     document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
-    document.getElementById("slideshow-btn").onclick = app.startSlideshow.bind(app); // 绑定幻灯片功能
+    document.getElementById("slideshow-btn").onclick = app.startSlideshow.bind(app);
+    document.getElementById("stop-slideshow").onclick = app.stopSlideshow.bind(app);
 
-    // 处理相册返回
     document.getElementById("back-to-album-btn").onclick = () => {
         document.getElementById("photo-container").style.display = "none";
         document.getElementById("album-selection-container").style.display = "block";
