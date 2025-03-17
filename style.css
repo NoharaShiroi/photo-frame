@@ -72,9 +72,8 @@ body {
 }
 
 #lightbox img {
-    max-width: 90%;
-    max-height: 70%;
-    box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.7);
+    width: 100%; /* 填满可用宽度 */
+    height: auto; /* 自适应高度 */
 }
 
 /* 定位按钮 */
