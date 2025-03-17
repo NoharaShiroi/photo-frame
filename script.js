@@ -22,7 +22,7 @@ const app = {
             document.getElementById("auth-container").style.display = "none";
             document.getElementById("app-container").style.display = "flex";
             this.fetchAlbums();
-            this.fetchAllPhotos(); 
+            this.fetchPhotos(); 
         } else {
             document.getElementById("auth-container").style.display = "flex";
             document.getElementById("app-container").style.display = "none";
@@ -73,18 +73,17 @@ const app = {
         const albumSelect = document.getElementById("album-select");
         this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
 
-        if (this.albumId) {
-            this.fetchPhotos();
-        } else {
-            this.fetchAllPhotos(); 
-        }
+        this.photos = []; // Reset photos array for new load
+        this.nextPageToken = null; // Reset pagination token
+        this.fetchPhotos();
     },
 
-    fetchAllPhotos: function() {
+    fetchPhotos: function() {
         const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
         const body = {
             pageSize: 50,
-            pageToken: this.nextPageToken || ''
+            pageToken: this.nextPageToken || '',
+            albumId: this.albumId
         };
 
         fetch(url, {
@@ -102,37 +101,6 @@ const app = {
             if (data.mediaItems) {
                 this.photos = [...this.photos, ...data.mediaItems];
                 this.nextPageToken = data.nextPageToken;
-                this.renderPhotos();
-            } else {
-                console.error("No mediaItems found in the response.");
-            }
-        })
-        .catch(error => {
-            console.error("Error fetching photos:", error);
-        });
-    },
-
-    fetchPhotos: function() {
-        var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-        var body = {
-            albumId: this.albumId,
-            pageSize: 50
-        };
-
-        fetch(url, {
-            method: "POST",
-            headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
-            body: JSON.stringify(body)
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Network response was not ok: " + response.statusText);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.mediaItems) {
-                this.photos = data.mediaItems;
                 this.renderPhotos();
             } else {
                 console.error("No mediaItems found in the response.");
@@ -242,7 +210,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     window.onscroll = function() {
         if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
-            app.fetchAllPhotos();
+            app.fetchPhotos(); // Fetch next page of photos
         }
     };
 });
