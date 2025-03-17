@@ -83,7 +83,10 @@ body {
     justify-content: center;
     gap: 20px; /* 按钮之间的间距 */
     margin-top: 10px; /* 按钮与图片之间的间距 */
-    position: relative; /* 确保按钮不会超出可视区域 */
+    position: absolute;
+    bottom: 10px; /* 靠近底部 */
+    left: 50%;
+    transform: translateX(-50%); /* 居中 */
 }
 
 .nav-button {
