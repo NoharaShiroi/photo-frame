@@ -7,11 +7,11 @@ const app = {
     photos: [],
     currentPhotoIndex: 0,
     nextPageToken: null,
-    slideshowInterval: null,
-    isPlaying: false, 
+    slideshowInterval: null, 
+    isPlaying: true, 
 
     getAccessToken: function() {
-       var hashParams = new URLSearchParams(window.location.hash.substring(1));
+        var hashParams = new URLSearchParams(window.location.hash.substring(1));
         if (hashParams.has("access_token")) {
             this.accessToken = hashParams.get("access_token");
             sessionStorage.setItem("access_token", this.accessToken);
@@ -163,7 +163,6 @@ const app = {
         document.getElementById("app-container").style.display = "flex"; 
     },
 
-
     openLightbox: function(index) {
         this.currentPhotoIndex = index;
         var lightbox = document.getElementById("lightbox");
@@ -177,24 +176,23 @@ const app = {
         document.getElementById("next-photo").onclick = () => this.changePhoto(1);
 
         // 停止轮播
-        clearInterval(this.slideshowInterval);
+        clearInterval(this.slideshowInterval); // 确保在打开 Lightbox 时不运行轮播
     },
 
     closeLightbox: function() {
         var lightbox = document.getElementById("lightbox");
         lightbox.style.opacity = 0;
         setTimeout(() => lightbox.style.display = "none", 300);
-        this.stopSlideshow(); // 关闭 Lightbox 时停止幻灯片
     },
 
     changePhoto: function(direction) {
         this.currentPhotoIndex += direction;
         if (this.currentPhotoIndex < 0) {
-            this.currentPhotoIndex = this.photos.length - 1;
+            this.currentPhotoIndex = this.photos.length - 1; // 循环到最后一张
         } else if (this.currentPhotoIndex >= this.photos.length) {
-            this.currentPhotoIndex = 0;
+            this.currentPhotoIndex = 0; // 循环到第一张
         }
-        this.showCurrentPhoto();
+        this.showCurrentPhoto(); // 更新显示的照片
     },
 
     showCurrentPhoto: function() {
@@ -203,37 +201,44 @@ const app = {
     },
 
     startSlideshow: function() {
-        if (this.photos.length > 0) {
-            this.showCurrentPhoto(); 
-            this.isPlaying = true;
-            document.getElementById("slideshow-btn").style.display = "none";
-            document.getElementById("stop-slideshow").style.display = "block";
-            this.autoChangePhoto(); 
-        }
-    },
+    if (this.photos.length > 0) {
+        // 将当前图片显示即将全屏
+        this.showCurrentPhoto(); 
+        document.body.requestFullscreen().catch(err => {
+            console.error("Error attempting to enable full-screen mode: " + err.message);
+        });
+        this.autoChangePhoto(); // 只在全屏模式下启动轮播
+    }
+},
 
     autoChangePhoto: function() {
-        const speed = parseInt(document.getElementById("slideshow-speed").value) || 5000;
         this.slideshowInterval = setInterval(() => {
             this.currentPhotoIndex = (this.currentPhotoIndex + 1) % this.photos.length;
             this.showCurrentPhoto();
-        }, speed);
+        }, 5000); 
     },
 
-    stopSlideshow: function() {
-        this.isPlaying = false; 
-        clearInterval(this.slideshowInterval);
-        document.getElementById("slideshow-btn").style.display = "block";
-        document.getElementById("stop-slideshow").style.display = "none";
+    toggleSlideshow: function() {
+        if (this.isPlaying) {
+            clearInterval(this.slideshowInterval); 
+        } else {
+            this.autoChangePhoto(); 
+        }
+        this.isPlaying = !this.isPlaying; 
+    },
+
+    enterFullScreen: function() {
+        this.startSlideshow(); 
     }
 };
 
+// 当 DOM 内容加载完成后，添加事件监听
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
     document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
-    document.getElementById("slideshow-btn").onclick = app.startSlideshow.bind(app);
-    document.getElementById("stop-slideshow").onclick = app.stopSlideshow.bind(app);
+    document.getElementById("fullscreen-btn").onclick = app.enterFullScreen.bind(app);
 
+    // 处理相册返回
     document.getElementById("back-to-album-btn").onclick = () => {
         document.getElementById("photo-container").style.display = "none";
         document.getElementById("album-selection-container").style.display = "block";
