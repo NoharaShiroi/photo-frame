@@ -8,11 +8,11 @@ const app = {
     currentPhotoIndex: 0,
     nextPageToken: null,
     slideshowInterval: null, 
-    isPlaying: false, 
+    isPlaying: false,
     slideshowSpeed: 5000, // 默认速度（毫秒）
 
     getAccessToken: function() {
-        var hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
         if (hashParams.has("access_token")) {
             this.accessToken = hashParams.get("access_token");
             sessionStorage.setItem("access_token", this.accessToken);
@@ -30,13 +30,13 @@ const app = {
     },
 
     authorizeUser: function() {
-        var authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${this.CLIENT_ID}&redirect_uri=${encodeURIComponent(this.REDIRECT_URI)}&response_type=token&scope=${this.SCOPES}&prompt=consent`;
+        const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${this.CLIENT_ID}&redirect_uri=${encodeURIComponent(this.REDIRECT_URI)}&response_type=token&scope=${this.SCOPES}&prompt=consent`;
         window.location.href = authUrl;
     },
 
     fetchAlbums: function() {
         if (!this.accessToken) return;
-        var url = "https://photoslibrary.googleapis.com/v1/albums?pageSize=50";
+        const url = "https://photoslibrary.googleapis.com/v1/albums?pageSize=50";
 
         fetch(url, {
             method: "GET",
@@ -59,10 +59,10 @@ const app = {
     },
 
     renderAlbumList: function(albums) {
-        var albumSelect = document.getElementById("album-select");
+        const albumSelect = document.getElementById("album-select");
         albumSelect.innerHTML = '<option value="all">所有相片</option>'; 
         albums.forEach(album => {
-            var option = document.createElement("option");
+            const option = document.createElement("option");
             option.value = album.id;
             option.textContent = album.title;
             albumSelect.appendChild(option);
@@ -113,8 +113,8 @@ const app = {
     },
 
     fetchPhotos: function() {
-        var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-        var body = {
+        const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
+        const body = {
             albumId: this.albumId,
             pageSize: 50
         };
@@ -144,14 +144,14 @@ const app = {
     },
 
     renderPhotos: function() {
-        var photoContainer = document.getElementById("photo-container");
+        const photoContainer = document.getElementById("photo-container");
         photoContainer.innerHTML = '';  
 
         if (this.photos.length === 0) {
             photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
         } else {
             this.photos.forEach((photo, index) => {
-                var img = document.createElement("img");
+                const img = document.createElement("img");
                 img.src = `${photo.baseUrl}=w600-h400`;
                 img.alt = "Photo";
                 img.classList.add("photo");
@@ -166,8 +166,8 @@ const app = {
 
     openLightbox: function(index) {
         this.currentPhotoIndex = index;
-        var lightbox = document.getElementById("lightbox");
-        var lightboxImage = document.getElementById("lightbox-image");
+        const lightbox = document.getElementById("lightbox");
+        const lightboxImage = document.getElementById("lightbox-image");
         lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
         lightbox.style.display = "flex"; 
         setTimeout(() => lightbox.style.opacity = 1, 10);
@@ -181,7 +181,7 @@ const app = {
     },
 
     closeLightbox: function() {
-        var lightbox = document.getElementById("lightbox");
+        const lightbox = document.getElementById("lightbox");
         lightbox.style.opacity = 0;
         setTimeout(() => lightbox.style.display = "none", 300);
     },
@@ -197,7 +197,7 @@ const app = {
     },
 
     showCurrentPhoto: function() {
-        var lightboxImage = document.getElementById("lightbox-image");
+        const lightboxImage = document.getElementById("lightbox-image");
         lightboxImage.src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
     },
 
@@ -240,6 +240,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // 窗口滚动加载更多照片
     window.onscroll = function() {
         if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
             app.fetchAllPhotos();
