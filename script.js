@@ -169,31 +169,35 @@ const app = {
         var lightbox = document.getElementById("lightbox");
         var lightboxImage = document.getElementById("lightbox-image");
         lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
+
+        // 重置样式以适应幻灯片播放显示
         lightbox.style.display = "flex"; 
         setTimeout(() => lightbox.style.opacity = 1, 10);
 
-        // 绑定上下一张的按钮事件
+        // 绑定按钮事件
         document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
         document.getElementById("next-photo").onclick = () => this.changePhoto(1);
+        document.getElementById("start-slideshow-btn").onclick = () => this.toggleSlideshow();
 
         // 停止轮播
-        clearInterval(this.slideshowInterval); // 确保在打开 Lightbox 时不运行轮播
+        clearInterval(this.slideshowInterval); 
     },
 
     closeLightbox: function() {
         var lightbox = document.getElementById("lightbox");
         lightbox.style.opacity = 0;
         setTimeout(() => lightbox.style.display = "none", 300);
+        clearInterval(this.slideshowInterval); // 关闭时停止幻灯片
     },
 
     changePhoto: function(direction) {
         this.currentPhotoIndex += direction;
         if (this.currentPhotoIndex < 0) {
-            this.currentPhotoIndex = this.photos.length - 1; // 循环到最后一张
+            this.currentPhotoIndex = this.photos.length - 1; 
         } else if (this.currentPhotoIndex >= this.photos.length) {
-            this.currentPhotoIndex = 0; // 循环到第一张
+            this.currentPhotoIndex = 0; 
         }
-        this.showCurrentPhoto(); // 更新显示的照片
+        this.showCurrentPhoto(); 
     },
 
     showCurrentPhoto: function() {
@@ -201,17 +205,27 @@ const app = {
         lightboxImage.src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
     },
 
+    toggleSlideshow: function() {
+        if (this.isPlaying) {
+            clearInterval(this.slideshowInterval);
+            this.isPlaying = false;
+            document.getElementById("start-slideshow-btn").textContent = "幻燈片"; // 更新按钮文本
+        } else {
+            this.startSlideshow();
+            document.getElementById("start-slideshow-btn").textContent = "停止幻燈片"; // 更新按钮文本
+        }
+    },
+
     startSlideshow: function() {
         if (this.photos.length > 0) {
-            // 获取用户设置的轮播速度
             const speedInput = document.getElementById("slideshow-speed");
-            this.slideshowSpeed = speedInput.value * 1000; // 转换为毫秒
+            this.slideshowSpeed = speedInput.value * 1000; 
             this.autoChangePhoto(); 
         }
     },
 
     autoChangePhoto: function() {
-        clearInterval(this.slideshowInterval); // 清除现有的轮播
+        clearInterval(this.slideshowInterval); 
         this.slideshowInterval = setInterval(() => {
             this.currentPhotoIndex = (this.currentPhotoIndex + 1) % this.photos.length;
             this.showCurrentPhoto();
@@ -223,9 +237,8 @@ const app = {
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
     document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
-    document.getElementById("start-slideshow-btn").onclick = app.startSlideshow.bind(app);
+    document.getElementById("start-slideshow-btn").onclick = app.toggleSlideshow.bind(app);
 
-    // 处理相册返回
     document.getElementById("back-to-album-btn").onclick = () => {
         document.getElementById("photo-container").style.display = "none";
         document.getElementById("album-selection-container").style.display = "block";
@@ -233,7 +246,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     app.getAccessToken();
 
-    // 绑定 Lightbox 点击事件关闭
     document.getElementById("lightbox").addEventListener("click", function(event) {
         if (event.target === this) {
             app.closeLightbox();
