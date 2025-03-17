@@ -70,124 +70,99 @@ const app = {
     },
 
     loadPhotos: function() {
-    console.log("Loading photos...");
-    const albumSelect = document.getElementById("album-select");
-    this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
+        const albumSelect = document.getElementById("album-select");
+        this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
 
-    console.log("Selected albumId:", this.albumId);
-
-    if (this.albumId) {
-        this.fetchPhotos(); // 选择相簿时调用 fetchPhotos
-    } else {
-        this.fetchAllPhotos();  // 呈现所有照片
-    }
-},
+        if (this.albumId) {
+            this.fetchPhotos();
+        } else {
+            this.fetchAllPhotos(); 
+        }
+    },
 
     fetchAllPhotos: function() {
-    const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-    const body = {
-        pageSize: 50,
-        pageToken: this.nextPageToken || ''
-    };
+        const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
+        const body = {
+            pageSize: 50,
+            pageToken: this.nextPageToken || ''
+        };
 
-    console.log("Fetching all photos...");
-
-    fetch(url, {
-        method: "POST",
-        headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error("Network response was not ok: " + response.statusText);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log("All photos fetched successfully:", data);
-        if (data.mediaItems) {
-            // 将新获取的照片追加到数组中
-            this.photos = [...this.photos, ...data.mediaItems];
-            // 更新 nextPageToken
-            this.nextPageToken = data.nextPageToken;
-
-            // 检查是否还有更多照片，如果有，则继续请求
-            if (this.nextPageToken) {
-                this.fetchAllPhotos();  // 继续获取剩余的照片
-            } else {
-                this.renderPhotos();  // 所有照片都获取完毕后渲染
+        fetch(url, {
+            method: "POST",
+            headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Network response was not ok: " + response.statusText);
             }
-        } else {
-            console.error("No mediaItems found in the response.");
-        }
-    })
-    .catch(error => {
-        console.error("Error fetching photos:", error);
-    });
-},
-
+            return response.json();
+        })
+        .then(data => {
+            if (data.mediaItems) {
+                this.photos = [...this.photos, ...data.mediaItems];
+                this.nextPageToken = data.nextPageToken;
+                this.renderPhotos();
+            } else {
+                console.error("No mediaItems found in the response.");
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching photos:", error);
+        });
+    },
 
     fetchPhotos: function() {
-    var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-    var body = {
-        albumId: this.albumId,
-        pageSize: 50
-    };
+        var url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
+        var body = {
+            albumId: this.albumId,
+            pageSize: 50
+        };
 
-    // 增加调试输出
-    console.log("Fetching photos for albumId:", this.albumId);
-
-    fetch(url, {
-        method: "POST",
-        headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
-        body: JSON.stringify(body)
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error("Network response was not ok: " + response.statusText);
-        }
-        return response.json();
-    })
-    .then(data => {
-        // 增加调试输出，查看获取到的数据
-        console.log("Photos fetched successfully:", data);
-        if (data.mediaItems) {
-            this.photos = data.mediaItems;
-            this.renderPhotos();
-        } else {
-            console.error("No mediaItems found in the response.");
-        }
-    })
-    .catch(error => {
-        console.error("Error fetching photos:", error);
-    });
-},
-
+        fetch(url, {
+            method: "POST",
+            headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Network response was not ok: " + response.statusText);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.mediaItems) {
+                this.photos = data.mediaItems;
+                this.renderPhotos();
+            } else {
+                console.error("No mediaItems found in the response.");
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching photos:", error);
+        });
+    },
 
     renderPhotos: function() {
-    var photoContainer = document.getElementById("photo-container");
-    photoContainer.innerHTML = '';  
+        var photoContainer = document.getElementById("photo-container");
+        photoContainer.innerHTML = '';  
 
-    // 增加调试输出
-    console.log("Rendering photos... Total photos:", this.photos.length);
+        if (this.photos.length === 0) {
+            photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
+        } else {
+            this.photos.forEach((photo, index) => {
+                var img = document.createElement("img");
+                img.src = `${photo.baseUrl}=w600-h400`;
+                img.alt = "Photo";
+                img.classList.add("photo");
+                img.onclick = () => this.openLightbox(index);
+                photoContainer.appendChild(img);
+            });
+        }
 
-    if (this.photos.length === 0) {
-        photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
-    } else {
-        this.photos.forEach((photo, index) => {
-            var img = document.createElement("img");
-            img.src = `${photo.baseUrl}=w600-h400`;
-            img.alt = "Photo";
-            img.classList.add("photo");
-            img.onclick = () => this.openLightbox(index);
-            photoContainer.appendChild(img);
-        });
-    }
-
-    photoContainer.style.display = "grid";
-    document.getElementById("app-container").style.display = "flex"; 
-},
-
+        photoContainer.style.display = "grid";
+        document.getElementById("app-container").style.display = "flex"; 
+    },
 
     openLightbox: function(index) {
         this.currentPhotoIndex = index;
