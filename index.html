@@ -7,7 +7,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Google 相簿數位相框</title>
     <link rel="stylesheet" href="style.css"> 
-    <script src="https://apis.google.com/js/api.js"></script> 
+    <script src="https://apis.google.com/js/api.js"></script>
     <script src="script.js" defer></script> 
 </head>
 <body>
@@ -28,19 +28,19 @@
                 <!-- 动态生成的相簿选项 -->
             </select>
         </div>
-
-        <!-- 🔹 相片顯示區 -->
-        <div id="photo-container" style="display: none;"></div>
+        <input type="number" id="slideshow-speed" placeholder="轮播速度（毫秒）" min="100" value="5000" /> <!-- 轮播速度输入 -->
     </div>
 
     <!-- 🔹 放大圖片 (Lightbox) -->
     <div id="lightbox" style="display:none;">
-        <span id="close-lightbox" style="cursor: pointer;">&times;</span> 
+        <span id="close-lightbox" class="close-button" style="cursor: pointer;">&times;</span> 
         <img id="lightbox-image" src="" alt="Lightbox Image">
-        <button id="prev-photo" class="nav-button">&#10094;</button>  <!-- 上一张按钮 -->
-        <button id="next-photo" class="nav-button">&#10095;</button>  <!-- 下一张按钮 -->
-        <input type="number" id="slideshow-speed" placeholder="轮播速度（毫秒）" min="100" value="5000" /> <!-- 轮播速度输入 -->
-        <button id="slideshow-btn" class="nav-button">开始幻灯片播放</button>  <!-- 开始轮播按钮 -->
+        <div class="button-container"> <!-- 按钮容器 -->
+            <button id="prev-photo" class="nav-button">&#10094;</button>  <!-- 上一张按钮 -->
+            <button id="slideshow-btn" class="nav-button">开始幻灯片播放</button>  <!-- 开始幻灯片按钮 -->
+            <button id="next-photo" class="nav-button">&#10095;</button>  <!-- 下一张按钮 -->
+        </div>
+        <button id="stop-slideshow-btn" class="nav-button" style="display: none;">&#10006;</button>  <!-- 停止幻灯片按钮 -->
     </div>
 
 </body>
