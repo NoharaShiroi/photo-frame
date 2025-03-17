@@ -19,22 +19,10 @@ body {
     margin-bottom: 20px;
 }
 
-/* 幻燈片控制區 */
-.slideshow-controls {
-    margin-top: 10px;
-    display: flex;
-    align-items: center;
-}
-
-#slideshow-speed {
-    width: 50px;
-    margin-left: 5px;
-}
-
 /* 縮圖顯示區 */
 #photo-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); /* 将最小大小改为150px */
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 5px;
     padding: 10px;
     justify-content: center;
@@ -73,35 +61,32 @@ body {
 
 #lightbox img {
     max-width: 90%;
-    max-height: 70%;
+    max-height: 90%;
     box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.7);
 }
 
 /* 定位按钮 */
-.lightbox-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 20px; /* 按钮之间的间距 */
-    margin-top: 10px; /* 按钮与图片之间的间距 */
-    position: absolute;
-    bottom: 10px; /* 靠近底部 */
-    left: 50%;
-    transform: translateX(-50%); /* 居中 */
-}
-
 .nav-button {
     background-color: rgba(255, 192, 203, 0.7); 
     border: none;
     border-radius: 5px;
-    padding: 10px 20px;
+    padding: 10px;
     cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
 }
 
-/* 悬停效果 */
-.nav-button:hover {
-    background-color: rgba(255, 192, 203, 1);
-    transform: scale(1.05);
+/* 绝对定位按钮 */
+#prev-photo {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+#next-photo {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
 /* 返回選擇相簿按鈕 */
@@ -123,6 +108,6 @@ body {
 /* 響應式設計 */
 @media (max-width: 768px) {
     #photo-container {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* 最大集中缩小到120px */
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
     }
 }
