@@ -10,7 +10,8 @@ const app = {
     slideshowInterval: null, 
     isPlaying: false, 
     isLoading: false, // 新增属性以避免重复加载
-    slideshowSpeed: 5000, // 默认速度（毫秒）
+    slideshowSpeed: 3000, // 默认速度（毫秒）
+    currentAlbumId: null, // 新增相册ID
 
     getAccessToken: function() {
         var hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -88,48 +89,10 @@ const app = {
         this.fetchPhotos();
     },
 
-    fetchPhotos: function() {
-        if (this.isLoading) return; // 避免重复请求
-        this.isLoading = true; // 设置加载中状态
-
-        const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-        const body = {
-            pageSize: 50,
-            pageToken: this.nextPageToken || '',
-            albumId: this.albumId
-        };
-
-        fetch(url, {
-            method: "POST",
-            headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
-            body: JSON.stringify(body)
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Network response was not ok: " + response.statusText);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.mediaItems) {
-                this.photos = [...this.photos, ...data.mediaItems];
-                this.nextPageToken = data.nextPageToken;
-                this.renderPhotos();
-            } else {
-                console.error("No mediaItems found in the response.");
-            }
-        })
-        .catch(error => {
-            console.error("Error fetching photos:", error);
-        })
-        .finally(() => {
-            this.isLoading = false; // 结束加载状态
-        });
-    },
+ //我先刪除fetch photo//
 
     renderPhotos: function() {
         var photoContainer = document.getElementById("photo-container");
-        photoContainer.innerHTML = '';  
 
         if (this.photos.length === 0) {
             photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
@@ -144,12 +107,8 @@ const app = {
             });
         }
 
-        photoContainer.style.display = "grid";
-        document.getElementById("app-container").style.display = "flex"; 
-    },
-
-        photoContainer.style.display = "grid";
-        document.getElementById("app-container").style.display = "flex"; 
+        photoContainer.style.display = "grid"; // 保留这行
+        document.getElementById("app-container").style.display = "flex"; // 保留这行
     },
 
     openLightbox: function(index) {
