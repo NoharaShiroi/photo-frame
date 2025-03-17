@@ -10,7 +10,7 @@ const app = {
     nextPageToken: null,
     slideshowInterval: null,
     isLoading: false,
-    slideshowSpeed: 5000,
+    slideshowSpeed: 3000,
 
     getAccessToken: function() {
         let hashParams = new URLSearchParams(window.location.hash.substring(1));
