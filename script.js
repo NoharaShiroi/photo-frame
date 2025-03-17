@@ -51,6 +51,8 @@ const app = {
         .then(data => {
             if (data.albums) {
                 this.renderAlbumList(data.albums);
+            } else {
+                console.error("No albums found in the response.");
             }
         })
         .catch(error => {
@@ -72,6 +74,10 @@ const app = {
     loadPhotos: function() {
         const albumSelect = document.getElementById("album-select");
         this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
+
+        // Reset the photos array and nextPageToken to avoid issues with repeated loads
+        this.photos = [];
+        this.nextPageToken = null;
 
         if (this.albumId) {
             this.fetchPhotos();
@@ -162,6 +168,7 @@ const app = {
 
         photoContainer.style.display = "grid";
         document.getElementById("app-container").style.display = "flex"; 
+        document.getElementById("photo-container").style.display = "grid"; // 确保照片容器可见
     },
 
     openLightbox: function(index) {
