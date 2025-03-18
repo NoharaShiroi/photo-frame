@@ -4,6 +4,7 @@ body {
     padding: 0;
     background-color: #f5f5f5;
     text-align: center;
+    overflow: hidden; /* 禁用滾動 */
 }
 
 /* 容器設置 */
@@ -98,7 +99,7 @@ body {
     transition: background-color 0.3s, transform 0.2s;
 }
 
-/* 悬停效果 */
+/* 懸停效果 */
 .nav-button:hover {
     background-color: rgba(255, 192, 203, 1);
     transform: scale(1.05);
