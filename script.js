@@ -119,6 +119,8 @@ const app = {
         })
         .catch(error => {
             console.error("Error fetching photos:", error);
+            const photoContainer = document.getElementById("photo-container");
+            photoContainer.innerHTML = "<p>Failed to load photos. Please try again.</p>";
         });
     },
 
@@ -150,34 +152,36 @@ const app = {
         })
         .catch(error => {
             console.error("Error fetching photos:", error);
+            const photoContainer = document.getElementById("photo-container");
+            photoContainer.innerHTML = "<p>Failed to load photos. Please try again.</p>";
         });
     },
 
     renderPhotos: function() {
-    const photoContainer = document.getElementById("photo-container");
-    const loadingIndicator = document.getElementById("loading-indicator");
-    
-    // 顯示載入指示
-    loadingIndicator.style.display = "block";
-    photoContainer.innerHTML = '';  
+        const photoContainer = document.getElementById("photo-container");
+        const loadingIndicator = document.getElementById("loading-indicator");
+        
+        // 顯示載入指示
+        loadingIndicator.style.display = "block";
+        photoContainer.innerHTML = '';  
 
-    if (this.photos.length === 0) {
-        photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
-    } else {
-        const total = this.photos.length;
-        const portionSize = Math.ceil(total / 2);
-        const firstPortion = this.photos.slice(0, portionSize);
-        const secondPortion = this.photos.slice(portionSize);
+        if (this.photos.length === 0) {
+            photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
+        } else {
+            const total = this.photos.length;
+            const portionSize = Math.ceil(total / 2);
+            const firstPortion = this.photos.slice(0, portionSize);
+            const secondPortion = this.photos.slice(portionSize);
 
-        // 分批渲染，提升性能
-        firstPortion.forEach((photo, index) => {
-            const img = document.createElement("img");
-            img.src = `${photo.baseUrl}=w600-h400`;
-            img.alt = "Photo";
-            img.classList.add("photo");
-            img.onclick = () => this.openLightbox(index);
-            photoContainer.appendChild(img);
-        });
+            // 分批渲染，提升性能
+            firstPortion.forEach((photo, index) => {
+                const img = document.createElement("img");
+                img.src = `${photo.baseUrl}=w600-h400`;
+                img.alt = "Photo";
+                img.classList.add("photo");
+                img.onclick = () => this.openLightbox(index);
+                photoContainer.appendChild(img);
+            });
 
         // 等待第一批渲染完成後，再渲染第二批
         setTimeout(() => {
