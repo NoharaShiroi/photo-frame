@@ -154,51 +154,50 @@ const app = {
     },
 
     renderPhotos: function() {
-        const photoContainer = document.getElementById("photo-container");
-        const loadingIndicator = document.getElementById("loading-indicator");
-        
-        // 顯示載入指示
-        loadingIndicator.style.display = "block";
-        photoContainer.innerHTML = '';  
+    const photoContainer = document.getElementById("photo-container");
+    const loadingIndicator = document.getElementById("loading-indicator");
+    
+    // 顯示載入指示
+    loadingIndicator.style.display = "block";
+    photoContainer.innerHTML = '';  
 
-        if (this.photos.length === 0) {
-            photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
-        } else {
-            const total = this.photos.length;
-            const portionSize = Math.ceil(total / 2);
-            const firstPortion = this.photos.slice(0, portionSize);
-            const secondPortion = this.photos.slice(portionSize);
+    if (this.photos.length === 0) {
+        photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
+    } else {
+        const total = this.photos.length;
+        const portionSize = Math.ceil(total / 2);
+        const firstPortion = this.photos.slice(0, portionSize);
+        const secondPortion = this.photos.slice(portionSize);
 
-            // 分批渲染，提升性能
-            const imgElements = [];
-            firstPortion.forEach((photo, index) => {
+        // 分批渲染，提升性能
+        firstPortion.forEach((photo, index) => {
+            const img = document.createElement("img");
+            img.src = `${photo.baseUrl}=w600-h400`;
+            img.alt = "Photo";
+            img.classList.add("photo");
+            img.onclick = () => this.openLightbox(index);
+            photoContainer.appendChild(img);
+        });
+
+        // 等待第一批渲染完成後，再渲染第二批
+        setTimeout(() => {
+            secondPortion.forEach((photo, index) => {
                 const img = document.createElement("img");
                 img.src = `${photo.baseUrl}=w600-h400`;
                 img.alt = "Photo";
                 img.classList.add("photo");
-                img.onclick = () => this.openLightbox(index);
-                imgElements.push(img);
+                img.onclick = () => this.openLightbox(index + portionSize);
+                photoContainer.appendChild(img);
             });
+        }, 100);
+    }
 
-            // 等待第一批渲染完成後，再渲染第二批
-            setTimeout(() => {
-                secondPortion.forEach((photo, index) => {
-                    const img = document.createElement("img");
-                    img.src = `${photo.baseUrl}=w600-h400`;
-                    img.alt = "Photo";
-                    img.classList.add("photo");
-                    img.onclick = () => this.openLightbox(index + portionSize);
-                    imgElements.push(img);
-                });
-                photoContainer.appendChild(imgElements);
-            }, 100);
+    // 轉碼完成後隱藏載入指示
+    setTimeout(() => {
+        loadingIndicator.style.display = "none";
+    }, 1000);
+},
 
-            // 轉碼完成後隱藏載入指示
-            setTimeout(() => {
-                loadingIndicator.style.display = "none";
-            }, 1000);
-        }
-    },
 
     openLightbox: function(index) {
         this.currentPhotoIndex = index;
