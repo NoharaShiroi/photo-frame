@@ -8,7 +8,6 @@ const app = {
     currentPhotoIndex: 0,
     nextPageToken: null,
     slideshowInterval: null, 
-    isPlaying: false,
     slideshowSpeed: 5000, // 默认速度（毫秒）
 
     getAccessToken: function() {
@@ -154,6 +153,11 @@ const app = {
 
     renderPhotos: function() {
         const photoContainer = document.getElementById("photo-container");
+        if (!photoContainer) {
+            console.error('Photo container not found.');
+            return; // 如果没有找到容器，直接返回
+        }
+
         photoContainer.innerHTML = '';  
 
         if (this.photos.length === 0) {
@@ -169,9 +173,10 @@ const app = {
             });
         }
 
+        // 确保容器可见
         photoContainer.style.display = "grid";
         document.getElementById("app-container").style.display = "flex"; 
-        document.getElementById("photo-container").style.display = "grid"; // 确保照片容器可见
+        document.getElementById("photo-container").style.display = "grid"; 
     },
 
     openLightbox: function(index) {
