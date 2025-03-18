@@ -1,25 +1,16 @@
 const app = {
-    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
-    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
+    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com", 
+    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/", 
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
     accessToken: sessionStorage.getItem("access_token") || null,
     albumId: null,
     photos: [],
     currentPhotoIndex: 0,
     nextPageToken: null,
-    slideshowInterval: null,
-    slideshowSpeed: 5000,
-    isSlideshowPlaying: false,
-    idleTime: 0,
+    slideshowInterval: null, 
+    slideshowSpeed: 3000, // 默认速度（毫秒）
+    isSlideshowPlaying: false, 
 
-    // 初始化函数
-    init: function() {
-        this.getAccessToken();
-        this.setupEventListeners();
-        setInterval(this.idleCheck.bind(this), 1000);
-    },
-
-    // 获取访问令牌
     getAccessToken: function() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         if (hashParams.has("access_token")) {
@@ -51,18 +42,27 @@ const app = {
             method: "GET",
             headers: { "Authorization": "Bearer " + this.accessToken }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Network response was not ok: " + response.statusText);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.albums) {
                 this.renderAlbumList(data.albums);
+            } else {
+                console.error("No albums found in the response.");
             }
         })
-        .catch(error => console.error("Error fetching albums:", error));
+        .catch(error => {
+            console.error("Error fetching albums:", error);
+        });
     },
 
     renderAlbumList: function(albums) {
         const albumSelect = document.getElementById("album-select");
-        albumSelect.innerHTML = '<option value="all">所有相片</option>';
+        albumSelect.innerHTML = '<option value="all">所有相片</option>'; 
         albums.forEach(album => {
             const option = document.createElement("option");
             option.value = album.id;
@@ -74,14 +74,15 @@ const app = {
     loadPhotos: function() {
         const albumSelect = document.getElementById("album-select");
         this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
-        
+
+        // Reset the photos array and nextPageToken to avoid issues with repeated loads
         this.photos = [];
         this.nextPageToken = null;
 
         if (this.albumId) {
             this.fetchPhotos();
         } else {
-            this.fetchAllPhotos();
+            this.fetchAllPhotos(); 
         }
     },
 
@@ -98,15 +99,24 @@ const app = {
             headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
             body: JSON.stringify(body)
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Network response was not ok: " + response.statusText);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.mediaItems) {
                 this.photos = [...new Map(this.photos.concat(data.mediaItems).map(item => [item.id, item])).values()];
                 this.nextPageToken = data.nextPageToken;
                 this.renderPhotos();
+            } else {
+                console.error("No mediaItems found in the response.");
             }
         })
-        .catch(error => console.error("Error fetching photos:", error));
+        .catch(error => {
+            console.error("Error fetching photos:", error);
+        });
     },
 
     fetchPhotos: function() {
@@ -121,19 +131,33 @@ const app = {
             headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
             body: JSON.stringify(body)
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Network response was not ok: " + response.statusText);
+            }
+            return response.json();
+        })
         .then(data => {
             if (data.mediaItems) {
                 this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()];
                 this.renderPhotos();
+            } else {
+                console.error("No mediaItems found in the response.");
             }
         })
-        .catch(error => console.error("Error fetching photos:", error));
+        .catch(error => {
+            console.error("Error fetching photos:", error);
+        });
     },
 
     renderPhotos: function() {
         const photoContainer = document.getElementById("photo-container");
-        photoContainer.innerHTML = '';
+        if (!photoContainer) {
+            console.error('Photo container not found.');
+            return; 
+        }
+
+        photoContainer.innerHTML = '';  
 
         if (this.photos.length === 0) {
             photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
@@ -150,7 +174,6 @@ const app = {
 
         photoContainer.style.display = "grid";
         document.getElementById("app-container").style.display = "flex"; 
-        document.getElementById("photo-container").style.display = "grid"; 
     },
 
     openLightbox: function(index) {
@@ -161,34 +184,54 @@ const app = {
         lightbox.style.display = "flex"; 
         setTimeout(() => lightbox.style.opacity = 1, 10);
 
+        // 绑定上下一张的按钮事件
         document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
         document.getElementById("next-photo").onclick = () => this.changePhoto(1);
-        
-        clearInterval(this.slideshowInterval);
+
+        // 停止轮播
+        clearInterval(this.slideshowInterval); 
+
+        // 设置 Lightbox 图片单击事件
         this.setupLightboxClick();
     },
 
     setupLightboxClick: function() {
-        const lightbox = document.getElementById("lightbox");
-        lightbox.onclick = (e) => {
-            if (e.target === lightbox || e.target.id === "close-lightbox") {
-                this.closeLightbox();
-            }
+        const lightboxImage = document.getElementById("lightbox-image");
+        let clickTimeout; 
+
+        lightboxImage.onclick = (event) => {
+            event.stopPropagation(); 
+            clearTimeout(clickTimeout); 
+
+            clickTimeout = setTimeout(() => {
+                if (this.isSlideshowPlaying) {
+                    this.pauseSlideshow(); 
+                } else {
+                    this.resumeSlideshow(); 
+                }
+            }, 250); 
+
+            lightboxImage.ondblclick = () => {
+                clearTimeout(clickTimeout); 
+                this.closeLightbox(); 
+            };
         };
     },
 
     closeLightbox: function() {
         const lightbox = document.getElementById("lightbox");
         lightbox.style.opacity = 0;
-        setTimeout(() => {
-            lightbox.style.display = "none";
-            document.body.style.overflow = "auto"; // 恢复滚动
-        }, 300);
+        setTimeout(() => lightbox.style.display = "none", 300);
     },
 
     changePhoto: function(direction) {
-        this.currentPhotoIndex = (this.currentPhotoIndex + direction + this.photos.length) % this.photos.length;
-        this.showCurrentPhoto();
+        this.currentPhotoIndex += direction;
+        if (this.currentPhotoIndex < 0) {
+            this.currentPhotoIndex = this.photos.length - 1; 
+        } else if (this.currentPhotoIndex >= this.photos.length) {
+            this.currentPhotoIndex = 0; 
+        }
+        this.showCurrentPhoto(); 
     },
 
     showCurrentPhoto: function() {
@@ -199,62 +242,60 @@ const app = {
     startSlideshow: function() {
         if (this.photos.length > 0) {
             const speedInput = document.getElementById("slideshow-speed");
+            let playOrder = document.getElementById("play-order").value;
             this.slideshowSpeed = speedInput.value * 1000; 
-            this.autoChangePhoto(); 
+            this.autoChangePhoto(playOrder); 
             this.isSlideshowPlaying = true; 
         }
     },
 
     pauseSlideshow: function() {
-        clearInterval(this.slideshowInterval);
+        clearInterval(this.slideshowInterval); 
         this.isSlideshowPlaying = false; 
     },
 
     resumeSlideshow: function() {
-        this.autoChangePhoto(); 
+        this.startSlideshow(); 
         this.isSlideshowPlaying = true; 
     },
 
-    autoChangePhoto: function() {
+    autoChangePhoto: function(playOrder) {
         clearInterval(this.slideshowInterval);
         this.slideshowInterval = setInterval(() => {
-            this.currentPhotoIndex = (this.currentPhotoIndex + 1) % this.photos.length;
+            if (playOrder === "random") {
+                this.currentPhotoIndex = Math.floor(Math.random() * this.photos.length);
+            } else {
+                this.currentPhotoIndex = (this.currentPhotoIndex + 1) % this.photos.length;
+            }
             this.showCurrentPhoto();
         }, this.slideshowSpeed);
-    },
-
-    setupEventListeners: function() {
-        document.getElementById("authorize-btn").onclick = this.authorizeUser.bind(this);
-        document.getElementById("start-slideshow-btn").onclick = this.startSlideshow.bind(this);
-        document.getElementById("back-to-album-btn").onclick = this.showAlbumSelection.bind(this);
-
-        document.getElementById("lightbox").addEventListener("click", e => {
-            if (e.target === document.getElementById("lightbox")) {
-                this.closeLightbox();
-            }
-        });
-    },
-
-    showAlbumSelection: function() {
-        document.getElementById("photo-container").style.display = "none";
-        document.getElementById("album-selection-container").style.display = "block";
-    },
-
-    idleCheck: function() {
-        this.idleTime++;
-        if (this.idleTime > 100) {
-            document.getElementById("screenOverlay").style.display = "block";
-        }
-    },
-
-    resetIdleTimer: function() {
-        this.idleTime = 0;
-        document.getElementById("screenOverlay").style.display = "none";
     }
 };
 
+// 当 DOM 内容加载完成后，添加事件监听
 document.addEventListener("DOMContentLoaded", () => {
-    app.init();
-    document.addEventListener("mousemove", app.resetIdleTimer.bind(app));
-    document.addEventListener("touchstart", app.resetIdleTimer.bind(app));
+    document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
+    document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
+
+    // 处理相册返回
+    document.getElementById("back-to-album-btn").onclick = () => {
+        document.getElementById("photo-container").style.display = "none";
+        document.getElementById("album-selection-container").style.display = "block";
+    };
+
+    app.getAccessToken();
+
+    // 绑定 Lightbox 点击事件关闭
+    document.getElementById("lightbox").addEventListener("click", function(event) {
+        if (event.target === this) {
+            app.closeLightbox();
+        }
+    });
+
+    // 窗口滚动加载更多照片
+    window.onscroll = function() {
+        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+            app.fetchAllPhotos();
+        }
+    };
 });
