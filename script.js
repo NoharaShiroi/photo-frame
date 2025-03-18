@@ -26,7 +26,6 @@ const app = {
     },
 
     initializeApp: function() {
-        // 初始化应用程序设置
         document.getElementById("auth-container").style.display = "none";
         document.getElementById("app-container").style.display = "flex";
         this.fetchAlbums();
@@ -114,7 +113,6 @@ const app = {
         })
         .then(data => {
             if (data.mediaItems) {
-                // Remove duplicates before adding
                 this.photos = [...new Map(this.photos.concat(data.mediaItems).map(item => [item.id, item])).values()];
                 this.nextPageToken = data.nextPageToken;
                 this.renderPhotos();
@@ -147,7 +145,6 @@ const app = {
         })
         .then(data => {
             if (data.mediaItems) {
-                // Remove duplicates in case of fetching photos from album
                 this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()];
                 this.renderPhotos();
             } else {
@@ -195,11 +192,29 @@ const app = {
         lightbox.style.display = "flex";
         setTimeout(() => lightbox.style.opacity = 1, 10);
 
-        // 绑定按钮的事件
-        document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
-        document.getElementById("next-photo").onclick = () => this.changePhoto(1);
-        document.getElementById("start-slideshow-lightbox").onclick = () => this.startSlideshow();
-        document.getElementById("exit-slideshow").onclick = () => this.stopSlideshow();
+        // 确保按钮存在再绑定事件
+        const prevButton = document.getElementById("prev-photo");
+        const nextButton = document.getElementById("next-photo");
+        const slideshowButton = document.getElementById("start-slideshow-lightbox");
+        const exitButton = document.getElementById("exit-slideshow");
+
+        if (prevButton) {
+            prevButton.onclick = () => this.changePhoto(-1);
+        }
+        if (nextButton) {
+            nextButton.onclick = () => this.changePhoto(1);
+        }
+        if (slideshowButton) {
+            slideshowButton.onclick = () => {
+                this.slideshowEffect = document.getElementById("slideshow-effect").value;
+                this.startSlideshow();
+            };
+        }
+        if (exitButton) {
+            exitButton.onclick = () => {
+                this.stopSlideshow();
+            };
+        }
 
         // 停止轮播
         clearInterval(this.slideshowInterval);
@@ -213,6 +228,7 @@ const app = {
             this.slideshowSpeed = speedInput.value * 1000; // 转换为毫秒
             this.autoChangePhoto();
 
+            // 将 Lightbox 扩展到全屏
             const lightbox = document.getElementById("lightbox");
             lightbox.style.width = "100%";
             lightbox.style.height = "100%";
@@ -220,7 +236,9 @@ const app = {
     },
 
     stopSlideshow: function() {
-        clearInterval(this.slideshowInterval);
+        clearInterval(this.slideshowInterval); // 清除幻灯片间隔
+
+        // 隐藏退出幻灯片按钮
         document.getElementById("exit-slideshow").style.display = "none";
 
         // 将 Lightbox 恢复为适配屏幕大小
@@ -256,9 +274,10 @@ const app = {
         const lightboxImage = document.getElementById("lightbox-image");
         lightboxImage.src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
 
-        lightboxImage.classList.remove('fade', 'slide', 'zoom');
+        // 应用动画效果
+        lightboxImage.classList.remove('fade', 'slide', 'zoom'); // 清除之前的动画类
         void lightboxImage.offsetWidth; // 触发重排以重新应用动画
-        lightboxImage.classList.add(this.slideshowEffect);
+        lightboxImage.classList.add(this.slideshowEffect); // 添加当前选择的动画效果
     },
 
     autoChangePhoto: function() {
@@ -274,7 +293,6 @@ const app = {
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
     
-    // 确保元素存在后再设置事件
     const closeLightboxButton = document.getElementById("close-lightbox");
     if (closeLightboxButton) {
         closeLightboxButton.onclick = app.closeLightbox.bind(app);   
@@ -285,7 +303,6 @@ document.addEventListener("DOMContentLoaded", () => {
         startSlideshowButton.onclick = app.startSlideshow.bind(app);
     }
 
-    // 处理相册返回
     const backToAlbumButton = document.getElementById("back-to-album-btn");
     if (backToAlbumButton) {
         backToAlbumButton.onclick = () => {
@@ -296,7 +313,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     app.getAccessToken();
 
-    // 绑定 Lightbox 点击事件关闭
     const lightbox = document.getElementById("lightbox");
     if (lightbox) {
         lightbox.addEventListener("click", function(event) {
@@ -306,7 +322,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 
-    // 窗口滚动加载更多照片
     window.onscroll = function() {
         if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
             app.fetchAllPhotos();
