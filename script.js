@@ -181,26 +181,69 @@ const app = {
     },
 
     openLightbox: function(index) {
-        this.currentPhotoIndex = index;
-        const lightbox = document.getElementById("lightbox");
-        const lightboxImage = document.getElementById("lightbox-image");
-        lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
-        lightbox.style.display = "flex"; 
-        setTimeout(() => lightbox.style.opacity = 1, 10);
+    this.currentPhotoIndex = index;
+    const lightbox = document.getElementById("lightbox");
+    const lightboxImage = document.getElementById("lightbox-image");
+    lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
+    lightbox.style.display = "flex"; 
+    setTimeout(() => lightbox.style.opacity = 1, 10);
 
-        // 绑定上下一张的按钮事件
-        document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
-        document.getElementById("next-photo").onclick = () => this.changePhoto(1);
+    // 绑定上下一张的按钮事件
+    document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
+    document.getElementById("next-photo").onclick = () => this.changePhoto(1);
+    
+    // 绑定幻灯片按钮
+    document.getElementById("start-slideshow-lightbox").onclick = () => {
+        this.slideshowEffect = document.getElementById("slideshow-effect").value;
+        this.startSlideshow();
+    };
+
+    // 绑定退出幻灯片按钮
+    document.getElementById("exit-slideshow").onclick = () => {
+        this.stopSlideshow();
+    };
+
+    // 停止轮播
+    clearInterval(this.slideshowInterval); // 确保在打开 Lightbox 时不运行轮播
+},
+
+startSlideshow: function() {
+    if (this.photos.length > 0) {
+        // 显示退出幻灯片按钮
+        document.getElementById("exit-slideshow").style.display = "inline-block";
+
+        // 获取用户设置的轮播速度
+        const speedInput = document.getElementById("slideshow-speed");
+        this.slideshowSpeed = speedInput.value * 1000; // 转换为毫秒
+        this.autoChangePhoto(); 
         
-        // 绑定幻灯片按钮
-        document.getElementById("start-slideshow-lightbox").onclick = () => {
-            this.slideshowEffect = document.getElementById("slideshow-effect").value;
-            this.startSlideshow();
-        };
+        // 将 Lightbox 扩展到全屏
+        const lightbox = document.getElementById("lightbox");
+        lightbox.style.width = "100%";
+        lightbox.style.height = "100%";
+    }
+},
 
-        // 停止轮播
-        clearInterval(this.slideshowInterval); // 确保在打开 Lightbox 时不运行轮播
-    },
+stopSlideshow: function() {
+    clearInterval(this.slideshowInterval); // 清除幻灯片间隔
+    
+    // 隐藏退出幻灯片按钮
+    document.getElementById("exit-slideshow").style.display = "none";
+
+    // 将 Lightbox 恢复为适配屏幕大小
+    const lightbox = document.getElementById("lightbox");
+    lightbox.style.width = "auto";
+    lightbox.style.height = "auto";
+
+    // 重设光箱背景的 opacity
+    lightbox.style.opacity = 0;
+    setTimeout(() => {
+        lightbox.style.display = "none"; // 撤销显示
+    }, 300);
+
+    // 重新显示当前图片
+    this.showCurrentPhoto();
+}
 
     closeLightbox: function() {
         const lightbox = document.getElementById("lightbox");
