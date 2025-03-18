@@ -129,7 +129,7 @@ body {
 
 /* 幻灯片效果的动画 */
 .fade {
-    animation: fadeIn 0.5s forwards;
+    animation: fadeIn 1s forwards;
 }
 
 @keyframes fadeIn {
