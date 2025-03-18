@@ -106,7 +106,6 @@ const app = {
         })
         .then(data => {
             if (data.mediaItems) {
-                // Remove duplicates before adding
                 this.photos = [...new Map(this.photos.concat(data.mediaItems).map(item => [item.id, item])).values()];
                 this.nextPageToken = data.nextPageToken;
                 this.renderPhotos();
@@ -139,7 +138,6 @@ const app = {
         })
         .then(data => {
             if (data.mediaItems) {
-                // Remove duplicates in case of fetching photos from album
                 this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()];
                 this.renderPhotos();
             } else {
@@ -187,10 +185,10 @@ const app = {
         lightbox.style.display = "flex";
         setTimeout(() => lightbox.style.opacity = 1, 10);
 
-        // 绑定上下一张的按钮事件
+        // 绑定上下左右按钮的事件
         document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
         document.getElementById("next-photo").onclick = () => this.changePhoto(1);
-
+        
         // 幻灯片按钮
         document.getElementById("start-slideshow-lightbox").onclick = () => {
             this.slideshowEffect = document.getElementById("slideshow-effect").value;
