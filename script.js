@@ -1,15 +1,18 @@
 const app = {
-    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com", 
-    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/", 
+    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
+    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
     accessToken: sessionStorage.getItem("access_token") || null,
     albumId: null,
     photos: [],
     currentPhotoIndex: 0,
     nextPageToken: null,
-    slideshowInterval: null, 
+    slideshowInterval: null,
     slideshowSpeed: 3000, // 默认速度（毫秒）
-    isSlideshowPlaying: false, 
+    isSlideshowPlaying: false,
+    sleepStartTime: null,
+    sleepEndTime: null,
+    sleepModeActive: false, // 自动休眠模式是否激活
 
     getAccessToken: function() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -75,9 +78,11 @@ const app = {
         const albumSelect = document.getElementById("album-select");
         this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
 
-        // Reset the photos array and nextPageToken to avoid issues with repeated loads
+        // 清空目前显示的照片
         this.photos = [];
         this.nextPageToken = null;
+        const photoContainer = document.getElementById("photo-container");
+        photoContainer.innerHTML = ''; // 清空照片显示区
 
         if (this.albumId) {
             this.fetchPhotos();
@@ -188,10 +193,8 @@ const app = {
         document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
         document.getElementById("next-photo").onclick = () => this.changePhoto(1);
 
-        // 停止轮播
         clearInterval(this.slideshowInterval); 
 
-        // 设置 Lightbox 图片单击事件
         this.setupLightboxClick();
     },
 
@@ -214,6 +217,7 @@ const app = {
             lightboxImage.ondblclick = () => {
                 clearTimeout(clickTimeout); 
                 this.closeLightbox(); 
+                this.pauseSlideshow(); // 退出幻灯片模式
             };
         };
     },
@@ -246,16 +250,21 @@ const app = {
             this.slideshowSpeed = speedInput.value * 1000; 
             this.autoChangePhoto(playOrder); 
             this.isSlideshowPlaying = true; 
+
+            // 添加幻灯片模式的 CSS 类
+            document.body.classList.add('slideshow-active');
         }
     },
 
     pauseSlideshow: function() {
         clearInterval(this.slideshowInterval); 
         this.isSlideshowPlaying = false; 
+        document.body.classList.remove('slideshow-active'); // 移除 CSS 类，恢复 UI
     },
 
     resumeSlideshow: function() {
-        this.startSlideshow(); 
+        const playOrder = document.getElementById("play-order").value;
+        this.autoChangePhoto(playOrder); 
         this.isSlideshowPlaying = true; 
     },
 
@@ -269,6 +278,59 @@ const app = {
             }
             this.showCurrentPhoto();
         }, this.slideshowSpeed);
+    },
+
+    setSleepMode: function() {
+        const startTime = document.getElementById("sleep-time-start").value;
+        const endTime = document.getElementById("sleep-time-end").value;
+
+        if (startTime && endTime) {
+            this.sleepStartTime = startTime;
+            this.sleepEndTime = endTime;
+
+            alert('休眠时间已设定，从 ' + this.sleepStartTime + ' 至 ' + this.sleepEndTime);
+            this.checkSleepMode();
+            // 在这里设置定时器用于检查时间
+            setInterval(() => this.checkSleepMode(), 60000); // 每分钟检查一次
+        } else {
+            alert('请设置完整的休眠时间');
+        }
+    },
+
+    checkSleepMode: function() {
+        const now = new Date();
+        const startHour = parseInt(this.sleepStartTime.split(':')[0], 10);
+        const startMinute = parseInt(this.sleepStartTime.split(':')[1], 10);
+        const endHour = parseInt(this.sleepEndTime.split(':')[0], 10);
+        const endMinute = parseInt(this.sleepEndTime.split(':')[1], 10);
+
+        const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, startMinute);
+        const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, endMinute);
+
+        if (now >= startTime && now < endTime) {
+            this.activateSleepMode();
+        } else {
+            this.deactivateSleepMode();
+        }
+    },
+
+    activateSleepMode: function() {
+        if (!this.sleepModeActive) {
+            this.sleepModeActive = true;
+            this.pauseSlideshow();
+            document.getElementById("photo-container").style.display = "none"; // 隐藏照片
+            document.body.style.filter = "brightness(20%)"; // 降低亮度
+            console.log('进入休眠模式');
+        }
+    },
+
+    deactivateSleepMode: function() {
+        if (this.sleepModeActive) {
+            this.sleepModeActive = false;
+            document.body.style.filter = "brightness(100%)"; // 恢复亮度
+            document.getElementById("photo-container").style.display = "grid"; // 显示照片
+            console.log('退出休眠模式');
+        }
     }
 };
 
@@ -276,7 +338,7 @@ const app = {
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
     document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
-
+    
     // 处理相册返回
     document.getElementById("back-to-album-btn").onclick = () => {
         document.getElementById("photo-container").style.display = "none";
@@ -296,6 +358,17 @@ document.addEventListener("DOMContentLoaded", () => {
     window.onscroll = function() {
         if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
             app.fetchAllPhotos();
+        }
+    };
+
+    // 设置休眠模式
+    document.getElementById("set-sleep-btn").onclick = app.setSleepMode.bind(app);
+    document.getElementById("activate-btn").onclick = function() {
+        app.sleepModeActive = !app.sleepModeActive; // 切换休眠模式状态
+        if (app.sleepModeActive) {
+            app.activateSleepMode();
+        } else {
+            app.deactivateSleepMode();
         }
     };
 });
