@@ -2,13 +2,13 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Google 相簿數位相框</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script src="script.js" defer></script>
+    <link rel="stylesheet" href="style.css"> 
+    <script src="https://apis.google.com/js/api.js"></script> 
+    <script src="script.js" defer></script> 
 </head>
 <body>
 
@@ -29,7 +29,12 @@
             </select>
             <div class="slideshow-controls">
                 <label for="slideshow-speed">輪播速度 (秒): </label>
-                <input type="number" id="slideshow-speed" min="1" value="5">
+                <input type="number" id="slideshow-speed" min="1" value="3">
+                <label for="play-order">播放順序:</label>
+                <select id="play-order" onchange="app.startSlideshow()">
+                    <option value="normal">依相片順序播放</option>
+                    <option value="random">隨機播放</option>
+                </select>
             </div>
         </div>
 
@@ -47,8 +52,6 @@
             <button id="start-slideshow-btn" class="nav-button">幻燈片</button>
         </div>
     </div>
-
-    <div id="screenOverlay"></div>
-
+    
 </body>
 </html>
