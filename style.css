@@ -17,14 +17,17 @@ body {
     margin-bottom: 20px;
 }
 
-.slideshow-controls {
+.slideshow-controls,
+.sleep-settings {
     margin-top: 10px;
     display: flex;
     align-items: center;
 }
 
-#slideshow-speed, 
-#play-order {
+#slideshow-speed,
+#play-order,
+#sleep-time-start,
+#sleep-time-end {
     margin-left: 5px;
 }
 
@@ -106,4 +109,17 @@ body {
     border-radius: 5px;
     border: none;
     cursor: pointer;
+}
+
+/* 幻燈片模式按鈕透明化 */
+.slideshow-active .nav-button {
+    opacity: 0;
+    pointer-events: auto; /* 保持可点击 */
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+    #photo-container {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
 }
