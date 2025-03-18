@@ -129,7 +129,7 @@ body {
 
 /* 幻灯片效果的动画 */
 .fade {
-    animation: fadeIn 2.0s forwards;
+    animation: fadeIn 1.5s forwards;
 }
 
 @keyframes fadeIn {
@@ -142,7 +142,7 @@ body {
 }
 
 .slide {
-    animation: slideIn 0.5s forwards;
+    animation: slideIn 1.5s forwards;
 }
 
 @keyframes slideIn {
@@ -157,7 +157,7 @@ body {
 }
 
 .zoom {
-    animation: zoomIn 0.5s forwards;
+    animation: zoomIn 1.5s forwards;
 }
 
 @keyframes zoomIn {
