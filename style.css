@@ -12,7 +12,6 @@ body {
     flex-direction: column;
     align-items: center;
     padding: 10px;
-    min-height: 100vh;
 }
 
 /* 選擇相簿 */
@@ -25,7 +24,6 @@ body {
     margin-top: 10px;
     display: flex;
     align-items: center;
-    gap: 10px;
 }
 
 #slideshow-speed {
@@ -51,7 +49,6 @@ body {
     border-radius: 5px;
     cursor: pointer;
     transition: transform 0.2s ease-in-out;
-    border: none;
 }
 
 .photo:hover {
@@ -128,16 +125,4 @@ body {
     #photo-container {
         grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
     }
-}
-
-/* 載入指示 */
-#loading-indicator {
-    font-size: 1.2rem;
-    padding: 10px;
-    border-radius: 5px;
-    background-color: rgba(255, 255, 255, 0.8);
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
 }
