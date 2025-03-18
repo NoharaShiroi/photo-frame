@@ -9,6 +9,7 @@ const app = {
     nextPageToken: null,
     slideshowInterval: null, 
     slideshowSpeed: 5000, // 默认速度（毫秒）
+    slideshowEffect: "fade", // 默认幻灯片效果
 
     getAccessToken: function() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -190,6 +191,12 @@ const app = {
         // 绑定上下一张的按钮事件
         document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
         document.getElementById("next-photo").onclick = () => this.changePhoto(1);
+        
+        // 绑定幻灯片按钮
+        document.getElementById("start-slideshow-lightbox").onclick = () => {
+            this.slideshowEffect = document.getElementById("slideshow-effect").value;
+            this.startSlideshow();
+        };
 
         // 停止轮播
         clearInterval(this.slideshowInterval); // 确保在打开 Lightbox 时不运行轮播
@@ -214,6 +221,11 @@ const app = {
     showCurrentPhoto: function() {
         const lightboxImage = document.getElementById("lightbox-image");
         lightboxImage.src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
+        
+        // 应用动画效果
+        lightboxImage.classList.remove('fade', 'slide', 'zoom'); // 清除之前的动画类
+        void lightboxImage.offsetWidth; // 触发重排以重新应用动画
+        lightboxImage.classList.add(this.slideshowEffect); // 添加当前选择的动画效果
     },
 
     startSlideshow: function() {
