@@ -8,8 +8,8 @@ const app = {
     currentPhotoIndex: 0,
     nextPageToken: null,
     slideshowInterval: null, 
-    slideshowSpeed: 5000,
-    isSlideshowPlaying: false,
+    slideshowSpeed: 5000, // 默认速度（毫秒）
+    isSlideshowPlaying: false, // 幻灯片播放状态
 
     getAccessToken: function() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -22,7 +22,7 @@ const app = {
             document.getElementById("auth-container").style.display = "none";
             document.getElementById("app-container").style.display = "flex";
             this.fetchAlbums();
-            this.loadPhotos();
+            this.loadPhotos(); // Load photos after fetching albums
         } else {
             document.getElementById("auth-container").style.display = "flex";
             document.getElementById("app-container").style.display = "none";
@@ -75,6 +75,7 @@ const app = {
         const albumSelect = document.getElementById("album-select");
         this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
 
+        // Reset the photos array and nextPageToken to avoid issues with repeated loads
         this.photos = [];
         this.nextPageToken = null;
 
@@ -87,6 +88,7 @@ const app = {
 
     fetchAllPhotos: function() {
         const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
+
         const body = {
             pageSize: 50,
             pageToken: this.nextPageToken || ''
@@ -105,6 +107,7 @@ const app = {
         })
         .then(data => {
             if (data.mediaItems) {
+                // Remove duplicates before adding
                 this.photos = [...new Map(this.photos.concat(data.mediaItems).map(item => [item.id, item])).values()];
                 this.nextPageToken = data.nextPageToken;
                 this.renderPhotos();
@@ -137,6 +140,7 @@ const app = {
         })
         .then(data => {
             if (data.mediaItems) {
+                // Remove duplicates in case of fetching photos from album
                 this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()];
                 this.renderPhotos();
             } else {
@@ -152,7 +156,7 @@ const app = {
         const photoContainer = document.getElementById("photo-container");
         if (!photoContainer) {
             console.error('Photo container not found.');
-            return;
+            return; // 如果没有找到容器，直接返回
         }
 
         photoContainer.innerHTML = '';  
@@ -170,86 +174,113 @@ const app = {
             });
         }
 
+        // 确保容器可见
         photoContainer.style.display = "grid";
         document.getElementById("app-container").style.display = "flex"; 
-        photoContainer.style.display = "grid"; 
+        document.getElementById("photo-container").style.display = "grid"; 
     },
 
     openLightbox: function(index) {
         this.currentPhotoIndex = index;
         const lightbox = document.getElementById("lightbox");
         const lightboxImage = document.getElementById("lightbox-image");
-        lightboxImage.src = `${this.photos[index].baseUrl}=w1024-h768`;
+        lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
         lightbox.style.display = "flex"; 
         setTimeout(() => lightbox.style.opacity = 1, 10);
-    
-        clearInterval(this.slideshowInterval);
 
-        // 點擊空白處關閉 Lightbox
-        lightbox.onclick = (event) => {
-            if (event.target === lightbox || event.target.id === "close-lightbox") {
-                this.closeLightbox();
-            }
+        // 绑定上下一张的按钮事件
+        document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
+        document.getElementById("next-photo").onclick = () => this.changePhoto(1);
+
+        // 停止轮播
+        clearInterval(this.slideshowInterval); // 确保在打开 Lightbox 时不运行轮播
+
+        // 设置 Lightbox 图片单击事件
+        this.setupLightboxClick();
+    },
+
+    setupLightboxClick: function() {
+        const lightboxImage = document.getElementById("lightbox-image");
+        let clickTimeout; // 用于使用 setTimeout 实现双击检测
+
+        lightboxImage.onclick = (event) => {
+            event.stopPropagation(); // 阻止事件冒泡
+            clearTimeout(clickTimeout); // 清除之前的定时器
+
+            // 单击处理
+            clickTimeout = setTimeout(() => {
+                if (this.isSlideshowPlaying) {
+                    this.pauseSlideshow(); // 暂停幻灯片播放
+                } else {
+                    this.resumeSlideshow(); // 恢复幻灯片播放
+                }
+            }, 250); // 设置时间阈值为 250ms
+
+            // 双击处理
+            lightboxImage.ondblclick = () => {
+                clearTimeout(clickTimeout); // 清除单击定时器
+                this.closeLightbox(); // 关闭 Lightbox
+            };
         };
-
-        // 隱藏滾動
-        document.body.style.overflow = "hidden";
     },
 
     closeLightbox: function() {
         const lightbox = document.getElementById("lightbox");
         lightbox.style.opacity = 0;
-        setTimeout(() => {
-            lightbox.style.display = "none"; // 隱藏 Lightbox
-            document.body.style.overflow = "auto"; // 恢復滾動
-        }, 300);
+        setTimeout(() => lightbox.style.display = "none", 300);
     },
 
     changePhoto: function(direction) {
         this.currentPhotoIndex += direction;
         if (this.currentPhotoIndex < 0) {
-            this.currentPhotoIndex = this.photos.length - 1; 
+            this.currentPhotoIndex = this.photos.length - 1; // 循环到最后一张
         } else if (this.currentPhotoIndex >= this.photos.length) {
-            this.currentPhotoIndex = 0; 
+            this.currentPhotoIndex = 0; // 循环到第一张
         }
-        this.showCurrentPhoto();
+        this.showCurrentPhoto(); // 更新显示的照片
     },
 
     showCurrentPhoto: function() {
         const lightboxImage = document.getElementById("lightbox-image");
-        lightboxImage.src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1024-h768`;
-
-        // 預加載下一張圖片
-        if (this.photos[this.currentPhotoIndex + 1]) {
-            const nextImage = new Image();
-            nextImage.src = `${this.photos[this.currentPhotoIndex + 1].baseUrl}=w1024-h768`;
-        }
+        lightboxImage.src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
     },
 
     startSlideshow: function() {
         if (this.photos.length > 0) {
+            // 获取用户设置的轮播速度
             const speedInput = document.getElementById("slideshow-speed");
-            this.slideshowSpeed = speedInput.value * 1000; 
+            this.slideshowSpeed = speedInput.value * 1000; // 转换为毫秒
             this.autoChangePhoto(); 
-            this.isSlideshowPlaying = true; 
+            this.isSlideshowPlaying = true; // 设置为正在播放状态
         }
     },
 
+    pauseSlideshow: function() {
+        clearInterval(this.slideshowInterval); // 暂停幻灯片播放
+        this.isSlideshowPlaying = false; // 更新状态为暂停
+    },
+
+    resumeSlideshow: function() {
+        this.autoChangePhoto(); // 继续幻灯片播放
+        this.isSlideshowPlaying = true; // 更新状态为播放
+    },
+
     autoChangePhoto: function() {
-        clearInterval(this.slideshowInterval); 
+        clearInterval(this.slideshowInterval); // 清除现有的轮播
         this.slideshowInterval = setInterval(() => {
             this.currentPhotoIndex = (this.currentPhotoIndex + 1) % this.photos.length;
             this.showCurrentPhoto();
         }, this.slideshowSpeed);
-    },
-
+    }
 };
 
+// 当 DOM 内容加载完成后，添加事件监听
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
     document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
     document.getElementById("start-slideshow-btn").onclick = app.startSlideshow.bind(app);
 
+    // 处理相册返回
     document.getElementById("back-to-album-btn").onclick = () => {
         document.getElementById("photo-container").style.display = "none";
         document.getElementById("album-selection-container").style.display = "block";
@@ -257,6 +288,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     app.getAccessToken();
 
+    // 绑定 Lightbox 点击事件关闭
+    document.getElementById("lightbox").addEventListener("click", function(event) {
+        if (event.target === this) {
+            app.closeLightbox();
+        }
+    });
+
+    // 窗口滚动加载更多照片
     window.onscroll = function() {
         if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
             app.fetchAllPhotos();
