@@ -22,7 +22,7 @@ const app = {
             document.getElementById("auth-container").style.display = "none";
             document.getElementById("app-container").style.display = "flex";
             this.fetchAlbums();
-            this.fetchAllPhotos(); 
+            this.loadPhotos(); // Load photos after fetching albums
         } else {
             document.getElementById("auth-container").style.display = "flex";
             document.getElementById("app-container").style.display = "none";
@@ -75,7 +75,7 @@ const app = {
         const albumSelect = document.getElementById("album-select");
         this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
 
-        // 重置照片數組和 nextPageToken
+        // Reset the photos array and nextPageToken to avoid issues with repeated loads
         this.photos = [];
         this.nextPageToken = null;
 
@@ -88,6 +88,7 @@ const app = {
 
     fetchAllPhotos: function() {
         const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
+
         const body = {
             pageSize: 50,
             pageToken: this.nextPageToken || ''
@@ -106,11 +107,8 @@ const app = {
         })
         .then(data => {
             if (data.mediaItems) {
-                // 使用filter過濾掉已存在的照片
-                const newPhotos = data.mediaItems.filter(photo => 
-                    !this.photos.some(p => p.id === photo.id)
-                );
-                this.photos.push(...newPhotos);
+                // Remove duplicates before adding
+                this.photos = [...new Map(this.photos.concat(data.mediaItems).map(item => [item.id, item])).values()];
                 this.nextPageToken = data.nextPageToken;
                 this.renderPhotos();
             } else {
@@ -119,8 +117,6 @@ const app = {
         })
         .catch(error => {
             console.error("Error fetching photos:", error);
-            const photoContainer = document.getElementById("photo-container");
-            photoContainer.innerHTML = "<p>Failed to load photos. Please try again.</p>";
         });
     },
 
@@ -144,7 +140,8 @@ const app = {
         })
         .then(data => {
             if (data.mediaItems) {
-                this.photos = data.mediaItems;
+                // Remove duplicates in case of fetching photos from album
+                this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()];
                 this.renderPhotos();
             } else {
                 console.error("No mediaItems found in the response.");
@@ -152,59 +149,30 @@ const app = {
         })
         .catch(error => {
             console.error("Error fetching photos:", error);
-            const photoContainer = document.getElementById("photo-container");
-            photoContainer.innerHTML = "<p>Failed to load photos. Please try again.</p>";
         });
     },
 
     renderPhotos: function() {
-        const photoContainer = document.getElementById('photo-container');
-        const loadingIndicator = document.getElementById('loading-indicator');
-        
-        // 顯示載入指示
-        loadingIndicator.style.display = 'block';
+        const photoContainer = document.getElementById("photo-container");
         photoContainer.innerHTML = '';  
 
         if (this.photos.length === 0) {
-            photoContainer.innerHTML = '<p>此相簿沒有照片</p>';
-            loadingIndicator.style.display = 'none';
-            return;
-        }
-
-        const total = this.photos.length;
-        const portionSize = Math.ceil(total / 2);
-        const firstPortion = this.photos.slice(0, portionSize);
-        const secondPortion = this.photos.slice(portionSize);
-
-        let allImagesLoaded = 0;
-
-        // 分批渲染，提升性能
-        const renderBatch = (batch, callback) => {
-            batch.forEach((photo, index) => {
-                const img = document.createElement('img');
+            photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
+        } else {
+            this.photos.forEach((photo, index) => {
+                const img = document.createElement("img");
                 img.src = `${photo.baseUrl}=w600-h400`;
                 img.alt = "Photo";
-                img.classList.add('photo');
-                img.onclick = () => this.openLightbox(index + (batch === firstPortion ? 0 : portionSize));
+                img.classList.add("photo");
+                img.onclick = () => this.openLightbox(index);
                 photoContainer.appendChild(img);
-                
-                img.onload = () => {
-                    allImagesLoaded++;
-                    if (allImagesLoaded === total) {
-                        loadingIndicator.style.display = 'none';
-                    }
-                };
             });
-        };
+        }
 
-        // 第一批渲染
-        renderBatch(firstPortion, () => {
-            // 第二批渲染
-            renderBatch(secondPortion);
-        });
+        photoContainer.style.display = "grid";
+        document.getElementById("app-container").style.display = "flex"; 
+        document.getElementById("photo-container").style.display = "grid"; // 确保照片容器可见
     },
-
-
 
     openLightbox: function(index) {
         this.currentPhotoIndex = index;
@@ -214,12 +182,12 @@ const app = {
         lightbox.style.display = "flex"; 
         setTimeout(() => lightbox.style.opacity = 1, 10);
 
-        // 綁定上下一張的按鈕事件
+        // 绑定上下一张的按钮事件
         document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
         document.getElementById("next-photo").onclick = () => this.changePhoto(1);
 
-        // 停止輪播
-        clearInterval(this.slideshowInterval);
+        // 停止轮播
+        clearInterval(this.slideshowInterval); // 确保在打开 Lightbox 时不运行轮播
     },
 
     closeLightbox: function() {
@@ -231,11 +199,11 @@ const app = {
     changePhoto: function(direction) {
         this.currentPhotoIndex += direction;
         if (this.currentPhotoIndex < 0) {
-            this.currentPhotoIndex = this.photos.length - 1;
+            this.currentPhotoIndex = this.photos.length - 1; // 循环到最后一张
         } else if (this.currentPhotoIndex >= this.photos.length) {
-            this.currentPhotoIndex = 0;
+            this.currentPhotoIndex = 0; // 循环到第一张
         }
-        this.showCurrentPhoto();
+        this.showCurrentPhoto(); // 更新显示的照片
     },
 
     showCurrentPhoto: function() {
@@ -245,39 +213,47 @@ const app = {
 
     startSlideshow: function() {
         if (this.photos.length > 0) {
+            // 获取用户设置的轮播速度
             const speedInput = document.getElementById("slideshow-speed");
-            this.slideshowSpeed = speedInput.value * 1000;
-            this.autoChangePhoto();
+            this.slideshowSpeed = speedInput.value * 1000; // 转换为毫秒
+            this.autoChangePhoto(); 
         }
     },
 
     autoChangePhoto: function() {
-        clearInterval(this.slideshowInterval);
-        if (this.photos.length > 0) {
-            this.slideshowInterval = setInterval(() => {
-                this.currentPhotoIndex = (this.currentPhotoIndex + 1) % this.photos.length;
-                this.showCurrentPhoto();
-            }, this.slideshowSpeed);
-        }
+        clearInterval(this.slideshowInterval); // 清除现有的轮播
+        this.slideshowInterval = setInterval(() => {
+            this.currentPhotoIndex = (this.currentPhotoIndex + 1) % this.photos.length;
+            this.showCurrentPhoto();
+        }, this.slideshowSpeed);
     }
 };
 
+// 当 DOM 内容加载完成后，添加事件监听
 document.addEventListener("DOMContentLoaded", () => {
+    document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
+    document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
+    document.getElementById("start-slideshow-btn").onclick = app.startSlideshow.bind(app);
+
+    // 处理相册返回
+    document.getElementById("back-to-album-btn").onclick = () => {
+        document.getElementById("photo-container").style.display = "none";
+        document.getElementById("album-selection-container").style.display = "block";
+    };
+
     app.getAccessToken();
-});
 
-    // 總頁滾動加載
+    // 绑定 Lightbox 点击事件关闭
+    document.getElementById("lightbox").addEventListener("click", function(event) {
+        if (event.target === this) {
+            app.closeLightbox();
+        }
+    });
+
+    // 窗口滚动加载更多照片
     window.onscroll = function() {
-        const windowHeight = window.innerHeight;
-        const scrollY = window.scrollY;
-        const bodyHeight = document.body.offsetHeight;
-
-        // 檢查是否需要加載更多照片
-        if (bodyHeight - (windowHeight + scrollY) < 100) {
-            if (!this.isFetchingMore) {
-                this.isFetchingMore = true;
-                app.fetchAllPhotos();
-            }
+        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
+            app.fetchAllPhotos();
         }
     };
 });
