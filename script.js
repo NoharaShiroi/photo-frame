@@ -1,14 +1,14 @@
 const app = {
-    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com", 
-    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/", 
+    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
+    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
     accessToken: sessionStorage.getItem("access_token") || null,
     albumId: null,
     photos: [],
     currentPhotoIndex: 0,
     nextPageToken: null,
-    slideshowInterval: null, 
-    slideshowSpeed: 5000, // 默认速度（毫秒）
+    slideshowInterval: null,
+    slideshowSpeed: 3000, // 默认速度（毫秒）
     slideshowEffect: "fade", // 默认幻灯片效果
 
     getAccessToken: function() {
@@ -62,7 +62,7 @@ const app = {
 
     renderAlbumList: function(albums) {
         const albumSelect = document.getElementById("album-select");
-        albumSelect.innerHTML = '<option value="all">所有相片</option>'; 
+        albumSelect.innerHTML = '<option value="all">所有相片</option>';
         albums.forEach(album => {
             const option = document.createElement("option");
             option.value = album.id;
@@ -82,13 +82,12 @@ const app = {
         if (this.albumId) {
             this.fetchPhotos();
         } else {
-            this.fetchAllPhotos(); 
+            this.fetchAllPhotos();
         }
     },
 
     fetchAllPhotos: function() {
         const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-
         const body = {
             pageSize: 50,
             pageToken: this.nextPageToken || ''
@@ -159,7 +158,7 @@ const app = {
             return; // 如果没有找到容器，直接返回
         }
 
-        photoContainer.innerHTML = '';  
+        photoContainer.innerHTML = '';
 
         if (this.photos.length === 0) {
             photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
@@ -176,8 +175,8 @@ const app = {
 
         // 确保容器可见
         photoContainer.style.display = "grid";
-        document.getElementById("app-container").style.display = "flex"; 
-        document.getElementById("photo-container").style.display = "grid"; 
+        document.getElementById("app-container").style.display = "flex";
+        document.getElementById("photo-container").style.display = "grid";
     },
 
     openLightbox: function(index) {
@@ -185,20 +184,20 @@ const app = {
         const lightbox = document.getElementById("lightbox");
         const lightboxImage = document.getElementById("lightbox-image");
         lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
-        lightbox.style.display = "flex"; 
+        lightbox.style.display = "flex";
         setTimeout(() => lightbox.style.opacity = 1, 10);
 
         // 绑定上下一张的按钮事件
         document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
         document.getElementById("next-photo").onclick = () => this.changePhoto(1);
-        
-        // 绑定幻灯片按钮
+
+        // 幻灯片按钮
         document.getElementById("start-slideshow-lightbox").onclick = () => {
             this.slideshowEffect = document.getElementById("slideshow-effect").value;
             this.startSlideshow();
         };
 
-        // 绑定退出幻灯片按钮
+        // 退出幻灯片按钮
         document.getElementById("exit-slideshow").onclick = () => {
             this.stopSlideshow();
         };
@@ -215,7 +214,7 @@ const app = {
             // 获取用户设置的轮播速度
             const speedInput = document.getElementById("slideshow-speed");
             this.slideshowSpeed = speedInput.value * 1000; // 转换为毫秒
-            this.autoChangePhoto(); 
+            this.autoChangePhoto();
 
             // 将 Lightbox 扩展到全屏
             const lightbox = document.getElementById("lightbox");
@@ -226,7 +225,7 @@ const app = {
 
     stopSlideshow: function() {
         clearInterval(this.slideshowInterval); // 清除幻灯片间隔
-        
+
         // 隐藏退出幻灯片按钮
         document.getElementById("exit-slideshow").style.display = "none";
 
@@ -264,7 +263,7 @@ const app = {
     showCurrentPhoto: function() {
         const lightboxImage = document.getElementById("lightbox-image");
         lightboxImage.src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
-        
+
         // 应用动画效果
         lightboxImage.classList.remove('fade', 'slide', 'zoom'); // 清除之前的动画类
         void lightboxImage.offsetWidth; // 触发重排以重新应用动画
