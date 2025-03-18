@@ -9,6 +9,7 @@ const app = {
     nextPageToken: null,
     slideshowInterval: null, 
     slideshowSpeed: 5000, // 默认速度（毫秒）
+    isSlideshowPlaying: false, // 幻灯片播放状态
 
     getAccessToken: function() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -193,6 +194,34 @@ const app = {
 
         // 停止轮播
         clearInterval(this.slideshowInterval); // 确保在打开 Lightbox 时不运行轮播
+
+        // 设置 Lightbox 图片单击事件
+        this.setupLightboxClick();
+    },
+
+    setupLightboxClick: function() {
+        const lightboxImage = document.getElementById("lightbox-image");
+        let clickTimeout; // 用于使用 setTimeout 实现双击检测
+
+        lightboxImage.onclick = (event) => {
+            event.stopPropagation(); // 阻止事件冒泡
+            clearTimeout(clickTimeout); // 清除之前的定时器
+
+            // 单击处理
+            clickTimeout = setTimeout(() => {
+                if (this.isSlideshowPlaying) {
+                    this.pauseSlideshow(); // 暂停幻灯片播放
+                } else {
+                    this.resumeSlideshow(); // 恢复幻灯片播放
+                }
+            }, 250); // 设置时间阈值为 250ms
+
+            // 双击处理
+            lightboxImage.ondblclick = () => {
+                clearTimeout(clickTimeout); // 清除单击定时器
+                this.closeLightbox(); // 关闭 Lightbox
+            };
+        };
     },
 
     closeLightbox: function() {
@@ -222,7 +251,18 @@ const app = {
             const speedInput = document.getElementById("slideshow-speed");
             this.slideshowSpeed = speedInput.value * 1000; // 转换为毫秒
             this.autoChangePhoto(); 
+            this.isSlideshowPlaying = true; // 设置为正在播放状态
         }
+    },
+
+    pauseSlideshow: function() {
+        clearInterval(this.slideshowInterval); // 暂停幻灯片播放
+        this.isSlideshowPlaying = false; // 更新状态为暂停
+    },
+
+    resumeSlideshow: function() {
+        this.autoChangePhoto(); // 继续幻灯片播放
+        this.isSlideshowPlaying = true; // 更新状态为播放
     },
 
     autoChangePhoto: function() {
