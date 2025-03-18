@@ -1,16 +1,25 @@
 const app = {
-    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com", 
-    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/", 
+    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
+    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
     accessToken: sessionStorage.getItem("access_token") || null,
     albumId: null,
     photos: [],
     currentPhotoIndex: 0,
     nextPageToken: null,
-    slideshowInterval: null, 
-    slideshowSpeed: 5000, // 默认速度（毫秒）
-    isSlideshowPlaying: false, // 幻灯片播放状态
+    slideshowInterval: null,
+    slideshowSpeed: 5000,
+    isSlideshowPlaying: false,
+    idleTime: 0,
 
+    // 初始化函数
+    init: function() {
+        this.getAccessToken();
+        this.setupEventListeners();
+        setInterval(this.idleCheck.bind(this), 1000);
+    },
+
+    // 获取访问令牌
     getAccessToken: function() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         if (hashParams.has("access_token")) {
@@ -22,7 +31,7 @@ const app = {
             document.getElementById("auth-container").style.display = "none";
             document.getElementById("app-container").style.display = "flex";
             this.fetchAlbums();
-            this.loadPhotos(); // Load photos after fetching albums
+            this.loadPhotos();
         } else {
             document.getElementById("auth-container").style.display = "flex";
             document.getElementById("app-container").style.display = "none";
@@ -42,27 +51,18 @@ const app = {
             method: "GET",
             headers: { "Authorization": "Bearer " + this.accessToken }
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Network response was not ok: " + response.statusText);
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
             if (data.albums) {
                 this.renderAlbumList(data.albums);
-            } else {
-                console.error("No albums found in the response.");
             }
         })
-        .catch(error => {
-            console.error("Error fetching albums:", error);
-        });
+        .catch(error => console.error("Error fetching albums:", error));
     },
 
     renderAlbumList: function(albums) {
         const albumSelect = document.getElementById("album-select");
-        albumSelect.innerHTML = '<option value="all">所有相片</option>'; 
+        albumSelect.innerHTML = '<option value="all">所有相片</option>';
         albums.forEach(album => {
             const option = document.createElement("option");
             option.value = album.id;
@@ -74,15 +74,14 @@ const app = {
     loadPhotos: function() {
         const albumSelect = document.getElementById("album-select");
         this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
-
-        // Reset the photos array and nextPageToken to avoid issues with repeated loads
+        
         this.photos = [];
         this.nextPageToken = null;
 
         if (this.albumId) {
             this.fetchPhotos();
         } else {
-            this.fetchAllPhotos(); 
+            this.fetchAllPhotos();
         }
     },
 
@@ -99,25 +98,15 @@ const app = {
             headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
             body: JSON.stringify(body)
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Network response was not ok: " + response.statusText);
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
             if (data.mediaItems) {
-                // Remove duplicates before adding
                 this.photos = [...new Map(this.photos.concat(data.mediaItems).map(item => [item.id, item])).values()];
                 this.nextPageToken = data.nextPageToken;
                 this.renderPhotos();
-            } else {
-                console.error("No mediaItems found in the response.");
             }
         })
-        .catch(error => {
-            console.error("Error fetching photos:", error);
-        });
+        .catch(error => console.error("Error fetching photos:", error));
     },
 
     fetchPhotos: function() {
@@ -132,34 +121,19 @@ const app = {
             headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
             body: JSON.stringify(body)
         })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Network response was not ok: " + response.statusText);
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
             if (data.mediaItems) {
-                // Remove duplicates in case of fetching photos from album
                 this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()];
                 this.renderPhotos();
-            } else {
-                console.error("No mediaItems found in the response.");
             }
         })
-        .catch(error => {
-            console.error("Error fetching photos:", error);
-        });
+        .catch(error => console.error("Error fetching photos:", error));
     },
 
     renderPhotos: function() {
         const photoContainer = document.getElementById("photo-container");
-        if (!photoContainer) {
-            console.error('Photo container not found.');
-            return; // 如果没有找到容器，直接返回
-        }
-
-        photoContainer.innerHTML = '';  
+        photoContainer.innerHTML = '';
 
         if (this.photos.length === 0) {
             photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
@@ -174,7 +148,6 @@ const app = {
             });
         }
 
-        // 确保容器可见
         photoContainer.style.display = "grid";
         document.getElementById("app-container").style.display = "flex"; 
         document.getElementById("photo-container").style.display = "grid"; 
@@ -188,56 +161,34 @@ const app = {
         lightbox.style.display = "flex"; 
         setTimeout(() => lightbox.style.opacity = 1, 10);
 
-        // 绑定上下一张的按钮事件
         document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
         document.getElementById("next-photo").onclick = () => this.changePhoto(1);
-
-        // 停止轮播
-        clearInterval(this.slideshowInterval); // 确保在打开 Lightbox 时不运行轮播
-
-        // 设置 Lightbox 图片单击事件
+        
+        clearInterval(this.slideshowInterval);
         this.setupLightboxClick();
     },
 
     setupLightboxClick: function() {
-        const lightboxImage = document.getElementById("lightbox-image");
-        let clickTimeout; // 用于使用 setTimeout 实现双击检测
-
-        lightboxImage.onclick = (event) => {
-            event.stopPropagation(); // 阻止事件冒泡
-            clearTimeout(clickTimeout); // 清除之前的定时器
-
-            // 单击处理
-            clickTimeout = setTimeout(() => {
-                if (this.isSlideshowPlaying) {
-                    this.pauseSlideshow(); // 暂停幻灯片播放
-                } else {
-                    this.resumeSlideshow(); // 恢复幻灯片播放
-                }
-            }, 250); // 设置时间阈值为 250ms
-
-            // 双击处理
-            lightboxImage.ondblclick = () => {
-                clearTimeout(clickTimeout); // 清除单击定时器
-                this.closeLightbox(); // 关闭 Lightbox
-            };
+        const lightbox = document.getElementById("lightbox");
+        lightbox.onclick = (e) => {
+            if (e.target === lightbox || e.target.id === "close-lightbox") {
+                this.closeLightbox();
+            }
         };
     },
 
     closeLightbox: function() {
         const lightbox = document.getElementById("lightbox");
         lightbox.style.opacity = 0;
-        setTimeout(() => lightbox.style.display = "none", 300);
+        setTimeout(() => {
+            lightbox.style.display = "none";
+            document.body.style.overflow = "auto"; // 恢复滚动
+        }, 300);
     },
 
     changePhoto: function(direction) {
-        this.currentPhotoIndex += direction;
-        if (this.currentPhotoIndex < 0) {
-            this.currentPhotoIndex = this.photos.length - 1; // 循环到最后一张
-        } else if (this.currentPhotoIndex >= this.photos.length) {
-            this.currentPhotoIndex = 0; // 循环到第一张
-        }
-        this.showCurrentPhoto(); // 更新显示的照片
+        this.currentPhotoIndex = (this.currentPhotoIndex + direction + this.photos.length) % this.photos.length;
+        this.showCurrentPhoto();
     },
 
     showCurrentPhoto: function() {
@@ -247,58 +198,63 @@ const app = {
 
     startSlideshow: function() {
         if (this.photos.length > 0) {
-            // 获取用户设置的轮播速度
             const speedInput = document.getElementById("slideshow-speed");
-            this.slideshowSpeed = speedInput.value * 1000; // 转换为毫秒
+            this.slideshowSpeed = speedInput.value * 1000; 
             this.autoChangePhoto(); 
-            this.isSlideshowPlaying = true; // 设置为正在播放状态
+            this.isSlideshowPlaying = true; 
         }
     },
 
     pauseSlideshow: function() {
-        clearInterval(this.slideshowInterval); // 暂停幻灯片播放
-        this.isSlideshowPlaying = false; // 更新状态为暂停
+        clearInterval(this.slideshowInterval);
+        this.isSlideshowPlaying = false; 
     },
 
     resumeSlideshow: function() {
-        this.autoChangePhoto(); // 继续幻灯片播放
-        this.isSlideshowPlaying = true; // 更新状态为播放
+        this.autoChangePhoto(); 
+        this.isSlideshowPlaying = true; 
     },
 
     autoChangePhoto: function() {
-        clearInterval(this.slideshowInterval); // 清除现有的轮播
+        clearInterval(this.slideshowInterval);
         this.slideshowInterval = setInterval(() => {
             this.currentPhotoIndex = (this.currentPhotoIndex + 1) % this.photos.length;
             this.showCurrentPhoto();
         }, this.slideshowSpeed);
+    },
+
+    setupEventListeners: function() {
+        document.getElementById("authorize-btn").onclick = this.authorizeUser.bind(this);
+        document.getElementById("start-slideshow-btn").onclick = this.startSlideshow.bind(this);
+        document.getElementById("back-to-album-btn").onclick = this.showAlbumSelection.bind(this);
+
+        document.getElementById("lightbox").addEventListener("click", e => {
+            if (e.target === document.getElementById("lightbox")) {
+                this.closeLightbox();
+            }
+        });
+    },
+
+    showAlbumSelection: function() {
+        document.getElementById("photo-container").style.display = "none";
+        document.getElementById("album-selection-container").style.display = "block";
+    },
+
+    idleCheck: function() {
+        this.idleTime++;
+        if (this.idleTime > 100) {
+            document.getElementById("screenOverlay").style.display = "block";
+        }
+    },
+
+    resetIdleTimer: function() {
+        this.idleTime = 0;
+        document.getElementById("screenOverlay").style.display = "none";
     }
 };
 
-// 当 DOM 内容加载完成后，添加事件监听
 document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
-    document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
-    document.getElementById("start-slideshow-btn").onclick = app.startSlideshow.bind(app);
-
-    // 处理相册返回
-    document.getElementById("back-to-album-btn").onclick = () => {
-        document.getElementById("photo-container").style.display = "none";
-        document.getElementById("album-selection-container").style.display = "block";
-    };
-
-    app.getAccessToken();
-
-    // 绑定 Lightbox 点击事件关闭
-    document.getElementById("lightbox").addEventListener("click", function(event) {
-        if (event.target === this) {
-            app.closeLightbox();
-        }
-    });
-
-    // 窗口滚动加载更多照片
-    window.onscroll = function() {
-        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
-            app.fetchAllPhotos();
-        }
-    };
+    app.init();
+    document.addEventListener("mousemove", app.resetIdleTimer.bind(app));
+    document.addEventListener("touchstart", app.resetIdleTimer.bind(app));
 });
