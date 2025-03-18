@@ -12,13 +12,13 @@
 </head>
 <body>
 
-    <!-- 🔹 授權登入 -->
+    <!-- 授權登入 -->
     <div id="auth-container">
         <h1>Google 相簿 數位相框</h1>
         <button id="authorize-btn">使用 Google 帳戶登入</button>
     </div>
 
-    <!-- 🔹 相簿選擇與播放設置 -->
+    <!-- 相簿選擇與播放設置 -->
     <div id="app-container" style="display: none;">
         <button id="back-to-album-btn" style="display: none;">選擇其他相簿</button>
         <div id="album-selection-container">
@@ -34,11 +34,13 @@
             </div>
         </div>
 
-        <!-- 🔹 相片顯示區 -->
-        <div id="photo-container" style="display: none;"></div>
+        <!-- 相片顯示區 -->
+        <div id="photo-container" style="display: none;">
+            <div id="loading-indicator" style="display: none; color: white;">載入中...</div>
+        </div>
     </div>
 
-    <!-- 🔹 放大圖片 (Lightbox) -->
+    <!-- 放大圖片 (Lightbox) -->
     <div id="lightbox" style="display:none;">
         <span id="close-lightbox" style="cursor: pointer;">&times;</span>
         <img id="lightbox-image" src="" alt="Lightbox Image">
