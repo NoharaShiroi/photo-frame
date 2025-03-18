@@ -158,49 +158,52 @@ const app = {
     },
 
     renderPhotos: function() {
-        const photoContainer = document.getElementById("photo-container");
-        const loadingIndicator = document.getElementById("loading-indicator");
+        const photoContainer = document.getElementById('photo-container');
+        const loadingIndicator = document.getElementById('loading-indicator');
         
         // 顯示載入指示
-        loadingIndicator.style.display = "block";
+        loadingIndicator.style.display = 'block';
         photoContainer.innerHTML = '';  
 
         if (this.photos.length === 0) {
-            photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
-        } else {
-            const total = this.photos.length;
-            const portionSize = Math.ceil(total / 2);
-            const firstPortion = this.photos.slice(0, portionSize);
-            const secondPortion = this.photos.slice(portionSize);
+            photoContainer.innerHTML = '<p>此相簿沒有照片</p>';
+            loadingIndicator.style.display = 'none';
+            return;
+        }
 
-            // 分批渲染，提升性能
-            firstPortion.forEach((photo, index) => {
-                const img = document.createElement("img");
+        const total = this.photos.length;
+        const portionSize = Math.ceil(total / 2);
+        const firstPortion = this.photos.slice(0, portionSize);
+        const secondPortion = this.photos.slice(portionSize);
+
+        let allImagesLoaded = 0;
+
+        // 分批渲染，提升性能
+        const renderBatch = (batch, callback) => {
+            batch.forEach((photo, index) => {
+                const img = document.createElement('img');
                 img.src = `${photo.baseUrl}=w600-h400`;
                 img.alt = "Photo";
-                img.classList.add("photo");
-                img.onclick = () => this.openLightbox(index);
+                img.classList.add('photo');
+                img.onclick = () => this.openLightbox(index + (batch === firstPortion ? 0 : portionSize));
                 photoContainer.appendChild(img);
+                
+                img.onload = () => {
+                    allImagesLoaded++;
+                    if (allImagesLoaded === total) {
+                        loadingIndicator.style.display = 'none';
+                    }
+                };
             });
+        };
 
-        // 等待第一批渲染完成後，再渲染第二批
-        setTimeout(() => {
-            secondPortion.forEach((photo, index) => {
-                const img = document.createElement("img");
-                img.src = `${photo.baseUrl}=w600-h400`;
-                img.alt = "Photo";
-                img.classList.add("photo");
-                img.onclick = () => this.openLightbox(index + portionSize);
-                photoContainer.appendChild(img);
-            });
-        }, 100);
-    }
+        // 第一批渲染
+        renderBatch(firstPortion, () => {
+            // 第二批渲染
+            renderBatch(secondPortion);
+        });
+    },
 
-    // 轉碼完成後隱藏載入指示
-    setTimeout(() => {
-        loadingIndicator.style.display = "none";
-    }, 1000);
-},
 
 
     openLightbox: function(index) {
@@ -259,27 +262,9 @@ const app = {
     }
 };
 
-// DOMContentLoaded 事件聆聽器
 document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
-    document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
-    document.getElementById("start-slideshow-btn").onclick = app.startSlideshow.bind(app);
-
-    // 返回相簿列表
-    document.getElementById("back-to-album-btn").onclick = () => {
-        document.getElementById("photo-container").style.display = "none";
-        document.getElementById("album-selection-container").style.display = "block";
-        app.photos = [];
-    };
-
     app.getAccessToken();
-
-    // 點擊lightbox.waitKey
-    document.getElementById("lightbox").addEventListener("click", function(event) {
-        if (event.target === this) {
-            app.closeLightbox();
-        }
-    });
+});
 
     // 總頁滾動加載
     window.onscroll = function() {
