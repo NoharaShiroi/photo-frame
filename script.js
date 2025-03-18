@@ -1,15 +1,14 @@
 const app = {
-    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
-    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
+    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com", 
+    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/", 
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
     accessToken: sessionStorage.getItem("access_token") || null,
     albumId: null,
     photos: [],
     currentPhotoIndex: 0,
     nextPageToken: null,
-    slideshowInterval: null,
-    slideshowSpeed: 3000, // 默认速度（毫秒）
-    slideshowEffect: "fade", // 默认幻灯片效果
+    slideshowInterval: null, 
+    slideshowSpeed: 5000, // 默认速度（毫秒）
 
     getAccessToken: function() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -19,21 +18,14 @@ const app = {
             window.history.replaceState({}, document.title, window.location.pathname);
         }
         if (this.accessToken) {
-            this.initializeApp();
+            document.getElementById("auth-container").style.display = "none";
+            document.getElementById("app-container").style.display = "flex";
+            this.fetchAlbums();
+            this.loadPhotos(); // Load photos after fetching albums
         } else {
-            this.showAuthContainer();
+            document.getElementById("auth-container").style.display = "flex";
+            document.getElementById("app-container").style.display = "none";
         }
-    },
-
-    initializeApp: function() {
-        document.getElementById("auth-container").style.display = "none";
-        document.getElementById("app-container").style.display = "flex";
-        this.fetchAlbums();
-    },
-
-    showAuthContainer: function() {
-        document.getElementById("auth-container").style.display = "flex";
-        document.getElementById("app-container").style.display = "none";
     },
 
     authorizeUser: function() {
@@ -69,7 +61,7 @@ const app = {
 
     renderAlbumList: function(albums) {
         const albumSelect = document.getElementById("album-select");
-        albumSelect.innerHTML = '<option value="all">所有相片</option>';
+        albumSelect.innerHTML = '<option value="all">所有相片</option>'; 
         albums.forEach(album => {
             const option = document.createElement("option");
             option.value = album.id;
@@ -89,12 +81,13 @@ const app = {
         if (this.albumId) {
             this.fetchPhotos();
         } else {
-            this.fetchAllPhotos();
+            this.fetchAllPhotos(); 
         }
     },
 
     fetchAllPhotos: function() {
         const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
+
         const body = {
             pageSize: 50,
             pageToken: this.nextPageToken || ''
@@ -113,6 +106,7 @@ const app = {
         })
         .then(data => {
             if (data.mediaItems) {
+                // Remove duplicates before adding
                 this.photos = [...new Map(this.photos.concat(data.mediaItems).map(item => [item.id, item])).values()];
                 this.nextPageToken = data.nextPageToken;
                 this.renderPhotos();
@@ -145,6 +139,7 @@ const app = {
         })
         .then(data => {
             if (data.mediaItems) {
+                // Remove duplicates in case of fetching photos from album
                 this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()];
                 this.renderPhotos();
             } else {
@@ -163,7 +158,7 @@ const app = {
             return; // 如果没有找到容器，直接返回
         }
 
-        photoContainer.innerHTML = '';
+        photoContainer.innerHTML = '';  
 
         if (this.photos.length === 0) {
             photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
@@ -180,8 +175,8 @@ const app = {
 
         // 确保容器可见
         photoContainer.style.display = "grid";
-        document.getElementById("app-container").style.display = "flex";
-        document.getElementById("photo-container").style.display = "grid";
+        document.getElementById("app-container").style.display = "flex"; 
+        document.getElementById("photo-container").style.display = "grid"; 
     },
 
     openLightbox: function(index) {
@@ -189,69 +184,15 @@ const app = {
         const lightbox = document.getElementById("lightbox");
         const lightboxImage = document.getElementById("lightbox-image");
         lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
-        lightbox.style.display = "flex";
+        lightbox.style.display = "flex"; 
         setTimeout(() => lightbox.style.opacity = 1, 10);
 
-        // 确保按钮存在再绑定事件
-        const prevButton = document.getElementById("prev-photo");
-        const nextButton = document.getElementById("next-photo");
-        const slideshowButton = document.getElementById("start-slideshow-lightbox");
-        const exitButton = document.getElementById("exit-slideshow");
-
-        if (prevButton) {
-            prevButton.onclick = () => this.changePhoto(-1);
-        }
-        if (nextButton) {
-            nextButton.onclick = () => this.changePhoto(1);
-        }
-        if (slideshowButton) {
-            slideshowButton.onclick = () => {
-                this.slideshowEffect = document.getElementById("slideshow-effect").value;
-                this.startSlideshow();
-            };
-        }
-        if (exitButton) {
-            exitButton.onclick = () => {
-                this.stopSlideshow();
-            };
-        }
+        // 绑定上下一张的按钮事件
+        document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
+        document.getElementById("next-photo").onclick = () => this.changePhoto(1);
 
         // 停止轮播
-        clearInterval(this.slideshowInterval);
-    },
-
-    startSlideshow: function() {
-        if (this.photos.length > 0) {
-            document.getElementById("exit-slideshow").style.display = "inline-block";
-
-            const speedInput = document.getElementById("slideshow-speed");
-            this.slideshowSpeed = speedInput.value * 1000; // 转换为毫秒
-            this.autoChangePhoto();
-
-            // 将 Lightbox 扩展到全屏
-            const lightbox = document.getElementById("lightbox");
-            lightbox.style.width = "100%";
-            lightbox.style.height = "100%";
-        }
-    },
-
-    stopSlideshow: function() {
-        clearInterval(this.slideshowInterval); // 清除幻灯片间隔
-
-        // 隐藏退出幻灯片按钮
-        document.getElementById("exit-slideshow").style.display = "none";
-
-        // 将 Lightbox 恢复为适配屏幕大小
-        const lightbox = document.getElementById("lightbox");
-        lightbox.style.width = "auto";
-        lightbox.style.height = "auto";
-
-        lightbox.style.opacity = 0;
-        setTimeout(() => {
-            lightbox.style.display = "none"; // 撤销显示
-        }, 300);
-
-        this.showCurrentPhoto();
+        clearInterval(this.slideshowInterval); // 确保在打开 Lightbox 时不运行轮播
     },
 
     closeLightbox: function() {
@@ -273,11 +214,15 @@ const app = {
     showCurrentPhoto: function() {
         const lightboxImage = document.getElementById("lightbox-image");
         lightboxImage.src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
+    },
 
-        // 应用动画效果
-        lightboxImage.classList.remove('fade', 'slide', 'zoom'); // 清除之前的动画类
-        void lightboxImage.offsetWidth; // 触发重排以重新应用动画
-        lightboxImage.classList.add(this.slideshowEffect); // 添加当前选择的动画效果
+    startSlideshow: function() {
+        if (this.photos.length > 0) {
+            // 获取用户设置的轮播速度
+            const speedInput = document.getElementById("slideshow-speed");
+            this.slideshowSpeed = speedInput.value * 1000; // 转换为毫秒
+            this.autoChangePhoto(); 
+        }
     },
 
     autoChangePhoto: function() {
@@ -292,36 +237,25 @@ const app = {
 // 当 DOM 内容加载完成后，添加事件监听
 document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("authorize-btn").onclick = app.authorizeUser.bind(app);
-    
-    const closeLightboxButton = document.getElementById("close-lightbox");
-    if (closeLightboxButton) {
-        closeLightboxButton.onclick = app.closeLightbox.bind(app);   
-    }
+    document.getElementById("close-lightbox").onclick = app.closeLightbox.bind(app);
+    document.getElementById("start-slideshow-btn").onclick = app.startSlideshow.bind(app);
 
-    const startSlideshowButton = document.getElementById("start-slideshow-btn");
-    if (startSlideshowButton) {
-        startSlideshowButton.onclick = app.startSlideshow.bind(app);
-    }
-
-    const backToAlbumButton = document.getElementById("back-to-album-btn");
-    if (backToAlbumButton) {
-        backToAlbumButton.onclick = () => {
-            document.getElementById("photo-container").style.display = "none";
-            document.getElementById("album-selection-container").style.display = "block";
-        };
-    }
+    // 处理相册返回
+    document.getElementById("back-to-album-btn").onclick = () => {
+        document.getElementById("photo-container").style.display = "none";
+        document.getElementById("album-selection-container").style.display = "block";
+    };
 
     app.getAccessToken();
 
-    const lightbox = document.getElementById("lightbox");
-    if (lightbox) {
-        lightbox.addEventListener("click", function(event) {
-            if (event.target === this) {
-                app.closeLightbox();
-            }
-        });
-    }
+    // 绑定 Lightbox 点击事件关闭
+    document.getElementById("lightbox").addEventListener("click", function(event) {
+        if (event.target === this) {
+            app.closeLightbox();
+        }
+    });
 
+    // 窗口滚动加载更多照片
     window.onscroll = function() {
         if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
             app.fetchAllPhotos();
