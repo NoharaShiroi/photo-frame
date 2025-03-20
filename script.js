@@ -260,7 +260,7 @@ const app = {
     openLightbox: function(index) {
         const lightbox = document.getElementById("lightbox");
         const lightboxImage = document.getElementById("lightbox-image");
-        const loadingIndicator = document.getElementById('lightbox-loading');
+        nst loadingIndicator = document.getElementById('loading-indicator');
 
         lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
         lightbox.style.display = "flex";
