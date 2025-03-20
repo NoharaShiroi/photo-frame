@@ -1,15 +1,86 @@
-/* 全螢幕模式樣式 */
-body.sleep-mode {
+/* 基本CSS樣式 */
+.photo {
+    width: 100%;
+    height: auto;
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.photo.is-enlarging {
+    transform: scale(1.1);
+}
+
+.lightbox {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.lightbox-image {
+    max-width: 90%;
+    max-height: 90vh;
+    object-fit: contain;
+}
+
+.lightbox-buttons {
+    position: fixed;
+    bottom: 20px;
+    display: flex;
+    gap: 10px;
+    color: white;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 5px;
+}
+
+.nav-button {
+    display: none;
+    padding: 5px 10px;
+    border: none;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: white;
+    cursor: pointer;
+}
+
+.slideshow-active .nav-button {
+    display: flex; /* Ensure buttons show during slideshow */
+}
+
+.sleep-mode {
     filter: brightness(20%);
 }
 
-/* 觸控按鈕顯示/隱藏アニメーション */
-.nav-button {
-    transition: display 0.3s ease-in-out;
+.thumbnail {
+    width: 80px;
+    height: 80px;
+    margin: 5px;
+    border-radius: 5px;
+    cursor: pointer;
+    overflow: hidden; /* 確保內部圖片不會溢出 */
 }
 
-.nav-button.hide {
+.thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.loading {
     display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    color: white;
+    text-align: center;
 }
 
 /* 縮圖列表樣式 */
@@ -19,21 +90,44 @@ body.sleep-mode {
     padding: 10px;
     gap: 5px;
     margin: 10px 0;
+    display: flex; /* 確保使用 flexbox 布局 */
 }
 
-.thumbnail {
-    min-width: 100px;
-    height: 100px;
+/* 懸浮按鈕樣式 */
+#back-to-album-btn {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1001;
+    padding: 10px;
+    font-size: 16px;
+    background-color: #4CAF50;
+    color: white;
     border-radius: 5px;
+    border: none;
     cursor: pointer;
-    transition: transform 0.2s ease-in-out;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    transition: all 0.2s ease;
 }
 
-.thumbnail:hover {
-    transform: scale(1.1);
+#back-to-album-btn:hover {
+    background-color: #45a049;
+}
+
+/* 螢幕亮度過渡效果 */
+body {
+    transition: filter 0.3s ease;
+}
+
+/* 超連結懸浮效果 */
+.thumbnail img,
+.photo {
+    transition: transform 0.2s ease-in-out;
+}
+
+.thumbnail img:hover,
+.photo:hover {
+    transform: scale(1.05);
 }
 
 /* 幻燈片模式樣式 */
@@ -72,60 +166,11 @@ body.sleep-mode {
     background: rgba(255, 255, 255, 0.1);
 }
 
-/* 螢幕亮度過渡效果 */
-body {
-    transition: filter 0.3s ease;
+/* 触控按钮显示/隐藏动画 */
+.nav-button {
+    transition: display 0.3s ease-in-out;
 }
 
-/* 超連結懸浮效果 */
-.thumbnail img,
-.photo {
-    transition: transform 0.2s ease-in-out;
-}
-
-.thumbnail img:hover,
-.photo:hover {
-    transform: scale(1.05);
-}
-
-/* 懸浮按鈕樣式 */
-#back-to-album-btn {
-    position: fixed;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1001;
-    padding: 10px;
-    font-size: 16px;
-    background-color: #4CAF50;
-    color: white;
-    border-radius: 5px;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-#back-to-album-btn:hover {
-    background-color: #45a049;
-}
-
-/* 録影模式切換效果 */
-button[onclick="app.togglePhotoMode()] {
-    position: fixed;
-    bottom: 10px;
-    right: 10px;
-    padding: 10px;
-    background-color: #f00;
-    color: white;
-    border-radius: 5px;
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-}
-
-button[onclick="app.togglePhotoMode()]::after {
-    content: "□";
-    display: inline-block;
-    transform: rotate(45deg);
-    margin-left: 5px;
+.nav-button.hide {
+    display: none;
 }
