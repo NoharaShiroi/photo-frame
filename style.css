@@ -43,7 +43,7 @@ body {
 .photo {
     width: 100%;
     aspect-ratio: 1/1; 
-    object-fit: contain; /* 确保图片完整显示 */
+    object-fit: contain; 
     border-radius: 5px;
     cursor: pointer;
     transition: transform 0.2s ease-in-out;
@@ -114,7 +114,7 @@ body {
 /* 幻燈片模式按鈕透明化 */
 .slideshow-active .nav-button {
     opacity: 0;
-    pointer-events: auto; /* 保持可点击 */
+    pointer-events: auto; 
 }
 
 /* 響應式設計 */
