@@ -39,30 +39,31 @@ const app = {
     },
 
     fetchAlbums: function() {
-        if (!this.accessToken) return;
-        const url = "https://photoslibrary.googleapis.com/v1/albums?pageSize=50";
+    if (!this.accessToken) return;
+    const url = "https://photoslibrary.googleapis.com/v1/albums?pageSize=50";
 
-        fetch(url, {
-            method: "GET",
-            headers: { "Authorization": "Bearer " + this.accessToken }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Network response was not ok: " + response.statusText);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.albums) {
-                this.renderAlbumList(data.albums);
-            } else {
-                console.error("No albums found in the response.");
-            }
-        })
-        .catch(error => {
-            console.error("Error fetching albums:", error);
-        });
-    },
+    fetch(url, {
+        method: "GET",
+        headers: { "Authorization": "Bearer " + this.accessToken }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error("Network response was not ok: " + response.statusText);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.albums) {
+            this.albums = data.albums;
+            this.renderAlbumList(data.albums);
+        } else {
+            console.error("No albums found in the response.");
+        }
+    })
+    .catch(error => {
+        console.error("Error fetching albums:", error);
+    });
+},
 
     renderAlbumList: function(albums) {
         const albumSelect = document.getElementById("album-select");
@@ -155,7 +156,7 @@ const app = {
         } else {
             this.photos.forEach((photo, index) => {
                 const img = document.createElement("img");
-                img.src = ${photo.baseUrl}=w600-h400;
+                img.src = `${photo.baseUrl}=w600-h400`;
                 img.alt = "Photo";
                 img.classList.add("photo");
                 img.onclick = () => this.openLightbox(index);
@@ -370,13 +371,25 @@ const app = {
 
     // 快取處理
     initCache: function() {
-        if (this.cacheEnabled) {
-            const cachedAlbums = localStorage.getItem(' albums');
-            if (cachedAlbums) {
-                this.albums = JSON.parse(cachedAlbums);
-            }
+    if (this.cacheEnabled) {
+        // 初始化albums數據
+        this.albums = JSON.parse(localStorage.getItem('albums')) || [];
+        // 初始化photos數據
+        this.photos = JSON.parse(localStorage.getItem('photos')) || [];
+        
+        // 檢查數據 validity
+        if (!this.albums || !Array.isArray(this.albums)) {
+            console.error("Cached albums data is invalid or not found. Clearing cache...");
+            localStorage.removeItem('albums');
+            localStorage.removeItem('photos');
         }
-    },
+        if (!this.photos || !Array.isArray(this.photos)) {
+            console.error("Cached photos data is invalid or not found. Clearing cache...");
+            localStorage.removeItem('photos');
+        }
+    }
+},
+
 
     // 處理錯誤
     handleError: function(error, retriesLeft = 3) {
