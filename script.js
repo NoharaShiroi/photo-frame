@@ -82,12 +82,64 @@ const app = {
         albumSelect.appendChild(option);
     });
 },
+loadCachedPhotos: function(albumId) {
+    if (!this.cacheEnabled) return;
+    
+    const albumId = this.albumId || 'all'; // 处理'所有相片'的情况
+    const cachedData = localStorage.getItem(`photos-${albumId}`);
+    
+    if (cachedData) {
+        try {
+            const photos = JSON.parse(cachedData);
+            this.photos = photos.items;
+            this.nextPageToken = photos.nextPageToken;
+            this.renderPhotos();
+        } catch (error) {
+            console.error('Error parsing cached photos:', error);
+            this.cacheEnabled = false; // 如果解析失败，禁用缓存
+        }
+    }
+},
+
+isCached: function(albumId) {
+    if (!this.cacheEnabled) return false;
+    
+    // 获取缓存数据
+    const cachedData = localStorage.getItem(`photos-${albumId}`);
+    
+    // 如果没有缓存数据，返回false
+    if (!cachedData) return false;
+    
+    // 解析缓存数据中的时间戳
+    const cacheTime = JSON.parse(cachedData).cacheTime || 0;
+    
+    // 判断当前时间与缓存时间的差值是否小于等于缓存过期时间
+    const currentTime = Date.now();
+    if (currentTime - cacheTime <= this.cacheExpiration) {
+        return true;
+    }
+    
+    // 如果缓存已过期，返回false
+    return false;
+},
+cachePhotos: function() {
+    if (!this.cacheEnabled) return;
+    
+    const albumId = this.albumId || 'all'; // 处理'所有相片'的情况
+    const cacheData = {
+        items: this.photos,
+        nextPageToken: this.nextPageToken,
+        cacheTime: Date.now() // 存储缓存的时间戳
+    };
+    
+    localStorage.setItem(`photos-${albumId}`, JSON.stringify(cacheData));
+},
 
     loadPhotos: function() {
-        const albumSelect = document.getElementById("album-select");
-        this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
-        this.loadCachedPhotos();
-    },
+    const albumSelect = document.getElementById("album-select");
+    this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
+    this.loadCachedPhotos();
+},
 
 fetchPhotos: function() {
     if (this.cacheEnabled && this.isCached(this.albumId)) {
@@ -96,14 +148,11 @@ fetchPhotos: function() {
     }
 
     const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-    let body = {
+    const body = {
+        albumId: this.albumId ? this.albumId : '', // 确保不传递null
         pageSize: 50,
         pageToken: this.nextPageToken || ''
     };
-
-    if (this.albumId !== null) {
-        body.albumId = this.albumId;
-    }
 
     fetch(url, {
         method: "POST",
@@ -113,29 +162,29 @@ fetchPhotos: function() {
         },
         body: JSON.stringify(body)
     })
-        .then(response => {
-            console.log('fetchPhotos response:', response);
-            if (!response.ok) {
-                throw new Error("Network response was not ok: " + response.statusText);
-            }
-            return response.json();
-        })
-        .then(data => {
-            console.log('fetchPhotos data:', data);
-            if (data.mediaItems) {
-                this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()];
-                this.nextPageToken = data.nextPageToken;
-                this.cachePhotos();
-                this.renderPhotos();
-            } else {
-                console.error("No mediaItems found in the response.");
-            }
-        })
-        .catch(error => {
-            console.error("Error fetching photos:", error);
-            this.handleError(error, 3);
-        });
-    },
+    .then(response => {
+        console.log('fetchPhotos response:', response);
+        if (!response.ok) {
+            throw new Error("Network response was not ok: " + response.statusText);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('fetchPhotos data:', data);
+        if (data.mediaItems) {
+            this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()];
+            this.nextPageToken = data.nextPageToken;
+            this.cachePhotos();
+            this.renderPhotos();
+        } else {
+            console.error("No mediaItems found in the response.");
+        }
+    })
+    .catch(error => {
+        console.error("Error fetching photos:", error);
+        this.handleError(error, 3);
+    });
+},
 
     renderPhotos: function() {
         const photoContainer = document.getElementById("photo-container");
