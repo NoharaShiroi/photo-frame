@@ -86,57 +86,54 @@ const app = {
 
     loadPhotos: function() {
         const albumSelect = document.getElementById("album-select");
-    this albumId = albumSelect.value === "all" ? null : albumSelect.value;
-    this.loadCachedPhotos();
-}
+        this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
+        this.loadCachedPhotos();
+    },
 
-    fetchPhotos: function() {
-       fetchPhotos: function() {
-    if (this.cacheEnabled && this.isCached(this.albumId)) {
-        this.photos = JSON.parse(localStorage.getItem(`photos-${this.albumId}`));
-        return;
-    }
-
-    const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-    const body = {
-        albumId: this.albumId,
-        pageSize: 50,
-        pageToken: this.nextPageToken || ''
-    };
-
-    fetch(url, {
-        method: "POST",
-        headers: { 
-            "Authorization": "Bearer " + this.accessToken, 
-            "Content-Type": "application/json" 
-        },
-        body: JSON.stringify(body)
-    })
-    .then(response => {
-        console.log('fetchPhotos response:', response);
-        if (!response.ok) {
-            throw new Error("Network response was not ok: " + response.statusText);
+fetchPhotos: function() {
+        if (this.cacheEnabled && this.isCached(this.albumId)) {
+            this.photos = JSON.parse(localStorage.getItem(`photos-${this.albumId}`));
+            return;
         }
-        return response.json();
-    })
-    .then(data => {
-        console.log('fetchPhotos data:', data);
-        if (data.mediaItems) {
-            this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()];
-            this.nextPageToken = data.nextPageToken;
-            this.cachePhotos();
-            this.renderPhotos();
-        } else {
-            console.error("No mediaItems found in the response.");
-        }
-    })
-    .catch(error => {
-        console.error("Error fetching photos:", error);
-        this.handleError(error, 3);
-    });
-}
 
+        const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
+        const body = {
+            albumId: this.albumId,
+            pageSize: 50,
+            pageToken: this.nextPageToken || ''
+        };
 
+        fetch(url, {
+            method: "POST",
+            headers: { 
+                "Authorization": "Bearer " + this.accessToken, 
+                "Content-Type": "application/json" 
+            },
+            body: JSON.stringify(body)
+        })
+        .then(response => {
+            console.log('fetchPhotos response:', response);
+            if (!response.ok) {
+                throw new Error("Network response was not ok: " + response.statusText);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('fetchPhotos data:', data);
+            if (data.mediaItems) {
+                this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()];
+                this.nextPageToken = data.nextPageToken;
+                this.cachePhotos();
+                this.renderPhotos();
+            } else {
+                console.error("No mediaItems found in the response.");
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching photos:", error);
+            this.handleError(error, 3);
+        });
+    },
     loadCachedPhotos: function() {
         if (this.cacheEnabled) {
             const cachedPhotos = JSON.parse(localStorage.getItem(`photos-${this.albumId}`));
@@ -172,16 +169,20 @@ const app = {
         } else {
             this.photos.forEach((photo, index) => {
                 const img = document.createElement("img");
-                img.src = `${photo.baseUrl}=w600-h400`;
+                img.src = `${photo.baseUrl}=w600-h400&v=3`;
                 img.alt = "Photo";
                 img.classList.add("photo");
                 img.onclick = () => this.openLightbox(index);
+                img.onload = () => {
+                    if (this.isSlideshowPlaying) {
+                        this.resumeSlideshow();
+                    }
+                };
                 photoContainer.appendChild(img);
 
-                // 縮圖列表 scroll loading
                 const thumbnail = document.createElement("div");
                 thumbnail.className = "thumbnail";
-                thumbnail.innerHTML = `<img src="${photo.baseUrl}=w60-h40" alt="Thumbnail">`;
+                thumbnail.innerHTML = `<img src="${photo.baseUrl}=w60-h40&v=3" alt="Thumbnail">`;
                 thumbnail.onclick = () => this.openLightbox(index);
                 document.querySelector('.thumbnail-list').appendChild(thumbnail);
             });
