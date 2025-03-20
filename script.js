@@ -1,18 +1,21 @@
 const app = {
+    // Google API相关配置
     CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
     REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
     accessToken: sessionStorage.getItem("access_token") || null,
+
+    // 数据储存
     albumId: null,
     photos: [],
     currentPhotoIndex: 0,
     nextPageToken: null,
     slideshowInterval: null,
-    slideshowSpeed: 3000, // 默认速度（毫秒）
+    slideshowSpeed: 3000,
     isSlideshowPlaying: false,
     sleepStartTime: null,
     sleepEndTime: null,
-    sleepModeActive: false, // 自动休眠模式是否激活
+    sleepModeActive: false,
 
     getAccessToken: function() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -84,10 +87,21 @@ const app = {
         const photoContainer = document.getElementById("photo-container");
         photoContainer.innerHTML = ''; // 清空照片显示区
 
+        // 使用缓存加载照片
+        this.loadPhotosFromCache();
+        
         if (this.albumId) {
             this.fetchPhotos();
         } else {
             this.fetchAllPhotos(); 
+        }
+    },
+
+    loadPhotosFromCache: function() {
+        const cachedPhotos = JSON.parse(localStorage.getItem(`photos_${this.albumId}`)) || [];
+        if (cachedPhotos.length > 0) {
+            this.photos = cachedPhotos;
+            this.renderPhotos();
         }
     },
 
@@ -112,8 +126,13 @@ const app = {
         })
         .then(data => {
             if (data.mediaItems) {
+                // 增加处理数据更新的逻辑
                 this.photos = [...new Map(this.photos.concat(data.mediaItems).map(item => [item.id, item])).values()];
                 this.nextPageToken = data.nextPageToken;
+
+                // 写入缓存
+                localStorage.setItem(`photos_${this.albumId}`, JSON.stringify(this.photos));
+                
                 this.renderPhotos();
             } else {
                 console.error("No mediaItems found in the response.");
@@ -144,8 +163,12 @@ const app = {
         })
         .then(data => {
             if (data.mediaItems) {
-                this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()];
+                // 处理重复项逻辑
+                this.photos = [...new Map(this.photos.concat(data.mediaItems).map(item => [item.id, item])).values()];
                 this.renderPhotos();
+
+                // 写入缓存
+                localStorage.setItem(`photos_${this.albumId}`, JSON.stringify(this.photos));
             } else {
                 console.error("No mediaItems found in the response.");
             }
@@ -157,11 +180,6 @@ const app = {
 
     renderPhotos: function() {
         const photoContainer = document.getElementById("photo-container");
-        if (!photoContainer) {
-            console.error('Photo container not found.');
-            return; 
-        }
-
         photoContainer.innerHTML = '';  
 
         if (this.photos.length === 0) {
@@ -189,7 +207,7 @@ const app = {
         lightbox.style.display = "flex"; 
         setTimeout(() => lightbox.style.opacity = 1, 10);
 
-        // 绑定上下一张的按钮事件
+        // 绑定上下两张的按钮事件
         document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
         document.getElementById("next-photo").onclick = () => this.changePhoto(1);
 
@@ -217,7 +235,7 @@ const app = {
             lightboxImage.ondblclick = () => {
                 clearTimeout(clickTimeout); 
                 this.closeLightbox(); 
-                this.pauseSlideshow(); // 退出幻灯片模式
+                this.pauseSlideshow(); 
             };
         };
     },
@@ -251,7 +269,6 @@ const app = {
             this.autoChangePhoto(playOrder); 
             this.isSlideshowPlaying = true; 
 
-            // 添加幻灯片模式的 CSS 类
             document.body.classList.add('slideshow-active');
         }
     },
@@ -259,7 +276,7 @@ const app = {
     pauseSlideshow: function() {
         clearInterval(this.slideshowInterval); 
         this.isSlideshowPlaying = false; 
-        document.body.classList.remove('slideshow-active'); // 移除 CSS 类，恢复 UI
+        document.body.classList.remove('slideshow-active');
     },
 
     resumeSlideshow: function() {
@@ -290,8 +307,7 @@ const app = {
 
             alert('休眠时间已设定，从 ' + this.sleepStartTime + ' 至 ' + this.sleepEndTime);
             this.checkSleepMode();
-            // 在这里设置定时器用于检查时间
-            setInterval(() => this.checkSleepMode(), 60000); // 每分钟检查一次
+            setInterval(() => this.checkSleepMode(), 60000); 
         } else {
             alert('请设置完整的休眠时间');
         }
@@ -307,6 +323,14 @@ const app = {
         const startTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), startHour, startMinute);
         const endTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), endHour, endMinute);
 
+        if (endTime < startTime) { // 处理跨天情况
+            endTime.setDate(endTime.getDate() + 1);
+            if (now < endTime && now >= startTime) {
+                this.activateSleepMode();
+                return;
+            }
+        }
+
         if (now >= startTime && now < endTime) {
             this.activateSleepMode();
         } else {
@@ -318,8 +342,8 @@ const app = {
         if (!this.sleepModeActive) {
             this.sleepModeActive = true;
             this.pauseSlideshow();
-            document.getElementById("photo-container").style.display = "none"; // 隐藏照片
-            document.body.style.filter = "brightness(20%)"; // 降低亮度
+            document.getElementById("photo-container").style.display = "none"; 
+            document.body.style.filter = "brightness(20%)"; 
             console.log('进入休眠模式');
         }
     },
@@ -327,10 +351,18 @@ const app = {
     deactivateSleepMode: function() {
         if (this.sleepModeActive) {
             this.sleepModeActive = false;
-            document.body.style.filter = "brightness(100%)"; // 恢复亮度
-            document.getElementById("photo-container").style.display = "grid"; // 显示照片
+            document.body.style.filter = "brightness(100%)"; 
+            document.getElementById("photo-container").style.display = "grid"; 
             console.log('退出休眠模式');
         }
+    },
+
+    // 新增的错误处理
+    handleErrors: function(response) {
+        if (!response.ok) {
+            throw new Error(response.statusText);
+        }
+        return response;
     }
 };
 
@@ -347,24 +379,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
     app.getAccessToken();
 
-    // 绑定 Lightbox 点击事件关闭
     document.getElementById("lightbox").addEventListener("click", function(event) {
         if (event.target === this) {
             app.closeLightbox();
         }
     });
 
-    // 窗口滚动加载更多照片
     window.onscroll = function() {
         if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100) {
             app.fetchAllPhotos();
         }
     };
 
-    // 设置休眠模式
     document.getElementById("set-sleep-btn").onclick = app.setSleepMode.bind(app);
     document.getElementById("activate-btn").onclick = function() {
-        app.sleepModeActive = !app.sleepModeActive; // 切换休眠模式状态
+        app.sleepModeActive = !app.sleepModeActive; 
         if (app.sleepModeActive) {
             app.activateSleepMode();
         } else {
