@@ -21,6 +21,7 @@ const app = {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         if (hashParams.has("access_token")) {
             this.accessToken = hashParams.get("access_token");
+            console.log("Access token obtained:", this.accessToken); // 添加此行
             if (hashParams.has("refresh_token")) {
                 this.refresh_token = hashParams.get("refresh_token");
                 sessionStorage.setItem("refresh_token", this.refresh_token);
@@ -54,12 +55,14 @@ const app = {
             }
         })
         .then(response => {
+            console.log("Fetch Albums response:", response); // 添加此行
             if (!response.ok) {
                 throw new Error("Network response was not ok: " + response.statusText);
             }
             return response.json();
         })
         .then(data => {
+            console.log("Fetched albums data:", data); // 添加此行
             if (data.albums) {
                 this.albums = data.albums;
                 this.renderAlbumList();
@@ -154,7 +157,7 @@ const app = {
         if (this.albumId !== null) {
             body.albumId = this.albumId;
         }
-
+        console.log("Requesting photos with body:", body); // 添加此行
         const start = Date.now();
         const loadingIndicator = document.getElementById('global-loading');
         loadingIndicator.style.display = 'block';
@@ -220,6 +223,7 @@ const app = {
         this.photos.forEach((photo, index) => {
             const img = document.createElement("img");
             img.src = `${photo.baseUrl}=w600-h400&v=3`;
+            console.log("Rendering photo with URL:", img.src); // 添加此行
             img.alt = "Photo" + (index + 1);
             img.classList.add("photo");
             img.onclick = () => this.openLightbox(index);
