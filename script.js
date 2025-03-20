@@ -38,70 +38,43 @@ const app = {
         window.location.href = `https://accounts.google.com/o/oauth2/auth?client_id=${this.CLIENT_ID}&redirect_uri=${encodeURIComponent(this.REDIRECT_URI)}&response_type=token&scope=${this.SCOPES}&prompt=consent`;
     },
 
-    if (!this.accessToken) return;
-    const url = "https://photoslibrary.googleapis.com/v1/albums?pageSize=50";
+    fetchAlbums: function() {
+        if (!this.accessToken) return;
+        const url = "https://photoslibrary.googleapis.com/v1/albums?pageSize=50";
 
-    fetch(url, {
-        method: "GET",
-        headers: { "Authorization": "Bearer " + this.accessToken }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error("Network response was not ok: " + response.statusText);
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.albums) {
-            this.albums = data.albums; // ** 新增：保存albums數據到app.albums屬性
-            this.(data.albums); // 或 this.(this.albums);
-        } else {
-            console.error("No albums found in the response.");
-        }
-    })
-    .catch(error => {
-        console.error("Error fetching albums:", error);
-    });
-},
+        fetch(url, {
+            method: "GET",
+            headers: { "Authorization": "Bearer " + this.accessToken }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Network response was not ok: " + response.statusText);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.albums) {
+                this.albums = data.albums;
+                this.renderAlbumList();
+            } else {
+                console.error("No albums found in the response.");
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching albums:", error);
+        });
+    },
 
     renderAlbumList: function() {
-    const albumSelect = document.getElementById("album-select");
-    albumSelect.innerHTML = '<option value="all">所有相片</option>';
-    this.albums.forEach(album => {
-        const option = document.createElement("option");
-        option.value = album.id;
-        option.textContent = album.title;
-        albumSelect.appendChild(option);
-    });
-},
-
-fetchAlbums: function() {
-    if (!this.accessToken) return;
-    const url = "https://photoslibrary.googleapis.com/v1/albums?pageSize=50";
-
-    fetch(url, {
-        method: "GET",
-        headers: { "Authorization": "Bearer " + this.accessToken }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error("Network response was not ok: " + response.statusText);
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.albums) {
-            // 将albums数据保存到app.albums属性
-            this.albums = data.albums;
-            this.renderAlbumList(data.albums); // 或者使用this.albums
-        } else {
-            console.error("No albums found in the response.");
-        }
-    })
-    .catch(error => {
-        console.error("Error fetching albums:", error);
-    });
-},
+        const albumSelect = document.getElementById("album-select");
+        albumSelect.innerHTML = '<option value="all">所有相片</option>';
+        this.albums.forEach(album => {
+            const option = document.createElement("option");
+            option.value = album.id;
+            option.textContent = album.title;
+            albumSelect.appendChild(option);
+        });
+    },
 
     loadPhotos: function() {
         const albumSelect = document.getElementById("album-select");
@@ -110,47 +83,47 @@ fetchAlbums: function() {
     },
 
     fetchPhotos: function() {
-    if (this.cacheEnabled && this.isCached(this.albumId)) {
-        this.photos = JSON.parse(localStorage.getItem(`photos-${this.albumId}`));
-        return;
-    }
-
-    const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-    const body = {
-        albumId: this.albumId,
-        pageSize: 50,
-        pageToken: this.nextPageToken || ''
-    };
-
-    fetch(url, {
-        method: "POST",
-        headers: { 
-            "Authorization": "Bearer " + this.accessToken, 
-            "Content-Type": "application/json" 
-        },
-        body: JSON.stringify(body)
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error("Network response was not ok: " + response.statusText);
+        if (this.cacheEnabled && this.isCached(this.albumId)) {
+            this.photos = JSON.parse(localStorage.getItem(`photos-${this.albumId}`));
+            return;
         }
-        return response.json();
-    })
-    .then(data => {
-        if (data.mediaItems) {
-            this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()];
-            this.nextPageToken = data.nextPageToken;
-            this.cachePhotos();
-            this.renderPhotos();
-        } else {
-            console.error("No mediaItems found in the response.");
-        }
-    })
-    .catch(error => {
-        console.error("Error fetching photos:", error);
-        this.handleError(error, 3); // ** 修正：傳遞retriesLeft
-    });
-},
+
+        const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
+        const body = {
+            albumId: this.albumId,
+            pageSize: 50,
+            pageToken: this.nextPageToken || ''
+        };
+
+        fetch(url, {
+            method: "POST",
+            headers: { 
+                "Authorization": "Bearer " + this.accessToken, 
+                "Content-Type": "application/json" 
+            },
+            body: JSON.stringify(body)
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Network response was not ok: " + response.statusText);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.mediaItems) {
+                this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()];
+                this.nextPageToken = data.nextPageToken;
+                this.cachePhotos();
+                this.renderPhotos();
+            } else {
+                console.error("No mediaItems found in the response.");
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching photos:", error);
+            this.handleError(error, 3); // 修正：傳遞retriesLeft
+        });
+    },
 
     loadCachedPhotos: function() {
         if (this.cacheEnabled) {
@@ -170,8 +143,8 @@ fetchAlbums: function() {
     },
 
     isCached: function(albumId) {
-    return localStorage.getItem(`photos-${albumId}`) !== null;
-},
+        return localStorage.getItem(`photos-${albumId}`) !== null;
+    },
 
     renderPhotos: function() {
         const photoContainer = document.getElementById("photo-container");
@@ -269,8 +242,8 @@ fetchAlbums: function() {
 
     showCurrentPhoto: function() {
         const lightboxImage = document.getElementById("lightbox-image");
-    lightboxImage.src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
-},
+        lightboxImage.src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
+    },
 
     startSlideshow: function() {
         if (this.photos.length > 0) {
@@ -402,33 +375,34 @@ fetchAlbums: function() {
 
     // 快取處理
     initCache: function() {
-    if (this.cacheEnabled) {
-        // 初始化albums數據
-        this.albums = JSON.parse(localStorage.getItem('albums')) || [];
-        // 初始化photos數據
-        this.photos = JSON.parse(localStorage.getItem('photos')) || [];
-        
-        // 檢查數據 validity
-        if (!this.albums || !Array.isArray(this.albums)) {
-            console.error("Cached albums data is invalid or not found. Clearing cache...");
-            localStorage.removeItem('albums');
-            localStorage.removeItem('photos');
+        if (this.cacheEnabled) {
+            // 初始化albums數據
+            this.albums = JSON.parse(localStorage.getItem('albums')) || [];
+            // 初始化photos數據
+            this.photos = JSON.parse(localStorage.getItem('photos')) || [];
+            
+            // 檢查數據 validity
+            if (!this.albums || !Array.isArray(this.albums)) {
+                console.error("Cached albums data is invalid or not found. Clearing cache...");
+                localStorage.removeItem('albums');
+                localStorage.removeItem('photos');
+            }
+            if (!this.photos || !Array.isArray(this.photos)) {
+                console.error("Cached photos data is invalid or not found. Clearing cache...");
+                localStorage.removeItem('photos');
+            }
         }
-        if (!this.photos || !Array.isArray(this.photos)) {
-            console.error("Cached photos data is invalid or not found. Clearing cache...");
-            localStorage.removeItem('photos');
-        }
-    }
-},
+    },
+
     // 處理錯誤
     handleError: function(error, retriesLeft = 3) {
-    console.error("Error:", error);
-    if (retriesLeft > 1) {
-        setTimeout(() => {
-            app.fetchPhotos(retriesLeft - 1);
-        }, 1000);
-    }
-},
+        console.error("Error:", error);
+        if (retriesLeft > 1) {
+            setTimeout(() => {
+                app.fetchPhotos(retriesLeft - 1);
+            }, 1000);
+        }
+    },
 
     // 自動刷新 OAuth Token
     initToken_refresh: function() {
@@ -442,7 +416,7 @@ fetchAlbums: function() {
         }
     },
 
-    efreshToken: function() {
+    refreshToken: function() {
         const url = `https://www.googleapis.com/oauth2/v4/token?client_id=${app.CLIENT_ID}&client_secret=your_client_secret&refresh_token=${sessionStorage.getItem('refresh_token')}&grant_type=refresh_token`;
         
         fetch(url, {
