@@ -47,6 +47,7 @@
     background-color: rgba(255, 255, 255, 0.1);
     color: white;
     cursor: pointer;
+    transition: display 0.3s ease-in-out; /* 合并 */
 }
 
 .slideshow-active .nav-button {
@@ -63,7 +64,7 @@
     margin: 5px;
     border-radius: 5px;
     cursor: pointer;
-    overflow: hidden; /* 確保內部圖片不會溢出 */
+    overflow: hidden; /* 确保内部分图片不溢出 */
 }
 
 .thumbnail img {
@@ -81,6 +82,7 @@
     font-size: 24px;
     color: white;
     text-align: center;
+    z-index: 1001; /* 增加 z-index */
 }
 
 /* 縮圖列表樣式 */
@@ -90,7 +92,7 @@
     padding: 10px;
     gap: 5px;
     margin: 10px 0;
-    display: flex; /* 確保使用 flexbox 布局 */
+    display: flex; /* 确保使用 flexbox 布局 */
 }
 
 /* 懸浮按鈕樣式 */
@@ -111,7 +113,7 @@
 }
 
 #back-to-album-btn:hover {
-    background-color: #45a049;
+    background-color: #45a049; /* 色彩悬浮效果 */
 }
 
 /* 螢幕亮度過渡效果 */
@@ -164,13 +166,4 @@ body {
 
 .fullscreen .lightbox-buttons button:hover {
     background: rgba(255, 255, 255, 0.1);
-}
-
-/* 触控按钮显示/隐藏动画 */
-.nav-button {
-    transition: display 0.3s ease-in-out;
-}
-
-.nav-button.hide {
-    display: none;
 }
