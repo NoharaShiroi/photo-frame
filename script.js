@@ -1,7 +1,7 @@
 const app = {
     
 const CLIENT_ID = "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com";
-const API_KEY = 'AIzaSyCAH7QXRNibRjIbwRYMvrLmBeuC5DH97Fc';
+const API_KEY = process.env.REACT_APP_GOOGLE_API_KEY;
 const DISCOVERY_DOCS = [
     'https://photoslibrary.googleapis.com/$discovery/rest?version=v1'
 ];
