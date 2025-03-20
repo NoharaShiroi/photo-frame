@@ -133,26 +133,6 @@ fetchPhotos: function() {
             this.handleError(error, 3);
         });
     },
-    loadCachedPhotos: function() {
-        if (this.cacheEnabled) {
-            const cachedPhotos = JSON.parse(localStorage.getItem(`photos-${this.albumId}`));
-            if (cachedPhotos) {
-                this.photos = cachedPhotos;
-                this.renderPhotos();
-            }
-        }
-    },
-
-    cachePhotos: function() {
-        if (this.cacheEnabled) {
-            localStorage.setItem(`photos-${this.albumId}`, JSON.stringify(this.photos));
-            localStorage.setItem(`photos-token-${this.albumId}`, this.nextPageToken);
-        }
-    },
-
-    isCached: function(albumId) {
-        return localStorage.getItem(`photos-${albumId}`) !== null;
-    },
 
     renderPhotos: function() {
         const photoContainer = document.getElementById("photo-container");
