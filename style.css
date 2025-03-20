@@ -1,89 +1,131 @@
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f4f4f9;
-    color: #333;
+/* 全螢幕模式樣式 */
+body.sleep-mode {
+    filter: brightness(20%);
 }
 
-header {
-    background-color: #4a90e2;
-    color: white;
-    padding: 10px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+/* 觸控按鈕顯示/隱藏アニメーション */
+.nav-button {
+    transition: display 0.3s ease-in-out;
 }
 
-button {
-    background-color: #4a90e2;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    margin: 5px;
-    cursor: pointer;
-    border-radius: 5px;
+.nav-button.hide {
+    display: none;
 }
 
-button:hover {
-    background-color: #357ab8;
-}
-
-#photo-gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 10px;
-    padding: 20px;
-    max-width: 1000px;
-    margin: auto;
+/* 縮圖列表樣式 */
+.thumbnail-list {
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 10px;
+    gap: 5px;
+    margin: 10px 0;
 }
 
 .thumbnail {
-    width: 100%;
-    height: auto;
-    object-fit: cover;
+    min-width: 100px;
+    height: 100px;
+    border-radius: 5px;
     cursor: pointer;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transition: transform 0.2s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-#lightbox {
-    display: none;
+.thumbnail:hover {
+    transform: scale(1.1);
+}
+
+/* 幻燈片模式樣式 */
+.fullscreen {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0,0,0,0.8);
-    justify-content: center;
-    align-items: center;
+    background: #000;
+    z-index: 1000;
 }
 
-#lightbox img {
-    max-width: 90%;
-    max-height: 80%;
-    border-radius: 10px;
-}
-
-#close-lightbox {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    color: white;
-    font-size: 24px;
-    cursor: pointer;
-}
-
-input {
+.fullscreen .lightbox-buttons {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.7);
     padding: 10px;
-    margin: 5px;
-    border-radius: 5px;
-    border: 1px solid #ccc;
+    border-radius: 3px;
+    display: flex;
+    gap: 10px;
 }
 
-@media screen and (max-width: 600px) {
-    #photo-gallery {
-        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-        padding: 10px;
-    }
+.fullscreen .lightbox-buttons button {
+    color: white;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 3px;
+}
+
+.fullscreen .lightbox-buttons button:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* 螢幕亮度過渡效果 */
+body {
+    transition: filter 0.3s ease;
+}
+
+/* 超連結懸浮效果 */
+.thumbnail img,
+.photo {
+    transition: transform 0.2s ease-in-out;
+}
+
+.thumbnail img:hover,
+.photo:hover {
+    transform: scale(1.05);
+}
+
+/* 懸浮按鈕樣式 */
+#back-to-album-btn {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1001;
+    padding: 10px;
+    font-size: 16px;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#back-to-album-btn:hover {
+    background-color: #45a049;
+}
+
+/* 録影模式切換效果 */
+button[onclick="app.togglePhotoMode()] {
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
+    padding: 10px;
+    background-color: #f00;
+    color: white;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+button[onclick="app.togglePhotoMode()]::after {
+    content: "□";
+    display: inline-block;
+    transform: rotate(45deg);
+    margin-left: 5px;
 }
