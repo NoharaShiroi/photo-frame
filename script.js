@@ -82,10 +82,10 @@ const app = {
         albumSelect.appendChild(option);
     });
 },
-loadCachedPhotos: function(albumId) {
+loadCachedPhotos: function() {
     if (!this.cacheEnabled) return;
     
-    const albumId = this.albumId || 'all'; // 处理'所有相片'的情况
+    const albumId = this.albumId === null ? 'all' : this.albumId;
     const cachedData = localStorage.getItem(`photos-${albumId}`);
     
     if (cachedData) {
@@ -95,41 +95,40 @@ loadCachedPhotos: function(albumId) {
             this.nextPageToken = photos.nextPageToken;
             this.renderPhotos();
         } catch (error) {
-            console.error('Error parsing cached photos:', error);
-            this.cacheEnabled = false; // 如果解析失败，禁用缓存
+            console.error('Error loading cached photos:', error);
+            this.cacheEnabled = false; // 如果解析失败，禁用缓存以防止后续问题
         }
     }
 },
 
+
 isCached: function(albumId) {
     if (!this.cacheEnabled) return false;
     
-    // 获取缓存数据
+    // 检查缓存是否存在
     const cachedData = localStorage.getItem(`photos-${albumId}`);
     
-    // 如果没有缓存数据，返回false
     if (!cachedData) return false;
     
-    // 解析缓存数据中的时间戳
-    const cacheTime = JSON.parse(cachedData).cacheTime || 0;
-    
-    // 判断当前时间与缓存时间的差值是否小于等于缓存过期时间
+    // 检查缓存时间
+    const cacheTime = JSON.parse(cachedData).cacheTime;
     const currentTime = Date.now();
+    
     if (currentTime - cacheTime <= this.cacheExpiration) {
         return true;
     }
     
-    // 如果缓存已过期，返回false
     return false;
 },
+
 cachePhotos: function() {
     if (!this.cacheEnabled) return;
     
-    const albumId = this.albumId || 'all'; // 处理'所有相片'的情况
+    const albumId = this.albumId === null ? 'all' : this.albumId;
     const cacheData = {
         items: this.photos,
         nextPageToken: this.nextPageToken,
-        cacheTime: Date.now() // 存储缓存的时间戳
+        cacheTime: Date.now()
     };
     
     localStorage.setItem(`photos-${albumId}`, JSON.stringify(cacheData));
@@ -149,7 +148,7 @@ fetchPhotos: function() {
 
     const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
     const body = {
-        albumId: this.albumId ? this.albumId : '', // 确保不传递null
+        albumId: this.albumId,
         pageSize: 50,
         pageToken: this.nextPageToken || ''
     };
