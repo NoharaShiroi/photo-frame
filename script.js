@@ -71,7 +71,7 @@ const app = {
             console.error('權限不足，請重新授權');
         }
     });
-}
+},
     renderAlbumList: function() {
     const albumSelect = document.getElementById("album-select");
     albumSelect.innerHTML = '<option value="all">所有相片</option>';
@@ -81,8 +81,7 @@ const app = {
         option.textContent = album.title;
         albumSelect.appendChild(option);
     });
-}
-
+},
 
     loadPhotos: function() {
         const albumSelect = document.getElementById("album-select");
