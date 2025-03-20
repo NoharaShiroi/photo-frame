@@ -90,26 +90,29 @@ const app = {
     },
 
 fetchPhotos: function() {
-        if (this.cacheEnabled && this.isCached(this.albumId)) {
-            this.photos = JSON.parse(localStorage.getItem(`photos-${this.albumId}`));
-            return;
-        }
+    if (this.cacheEnabled && this.isCached(this.albumId)) {
+        this.photos = JSON.parse(localStorage.getItem(`photos-${this.albumId}`));
+        return;
+    }
 
-        const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-        const body = {
-            albumId: this.albumId,
-            pageSize: 50,
-            pageToken: this.nextPageToken || ''
-        };
+    const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
+    let body = {
+        pageSize: 50,
+        pageToken: this.nextPageToken || ''
+    };
 
-        fetch(url, {
-            method: "POST",
-            headers: { 
-                "Authorization": "Bearer " + this.accessToken, 
-                "Content-Type": "application/json" 
-            },
-            body: JSON.stringify(body)
-        })
+    if (this.albumId !== null) {
+        body.albumId = this.albumId;
+    }
+
+    fetch(url, {
+        method: "POST",
+        headers: { 
+            "Authorization": "Bearer " + this.accessToken, 
+            "Content-Type": "application/json" 
+        },
+        body: JSON.stringify(body)
+    })
         .then(response => {
             console.log('fetchPhotos response:', response);
             if (!response.ok) {
