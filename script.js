@@ -94,16 +94,21 @@ const app = {
 
     loadCachedPhotos: function() {
         if (!this.cacheEnabled) return;
-        
+
         const albumId = this.albumId === null ? 'all' : this.albumId;
         const cachedData = localStorage.getItem(`photos-${albumId}`);
-        
+
         if (cachedData) {
             try {
                 const data = JSON.parse(cachedData);
-                this.photos = data.items || [];
-                this.nextPageToken = data.nextPageToken || null;
-                this.cacheEnabled = true;
+                const currentTime = Date.now();
+                // 检查缓存的有效性
+                if (currentTime - data.cacheTime <= this.cacheExpiration) {
+                    this.photos = data.items || [];
+                    this.nextPageToken = data.nextPageToken || null;
+                } else {
+                    console.warn('缓存已过期，重新加载照片');
+                }
             } catch (error) {
                 console.error('Error loading cached photos:', error);
                 this.cacheEnabled = false;
@@ -111,28 +116,16 @@ const app = {
         }
     },
 
-    isCached: function(albumId) {
-        if (!this.cacheEnabled) return false;
-        
-        const cachedData = localStorage.getItem(`photos-${albumId}`);
-        if (!cachedData) return false;
-        
-        const cacheTime = JSON.parse(cachedData).cacheTime;
-        const currentTime = Date.now();
-        
-        return currentTime - cacheTime <= this.cacheExpiration;
-    },
-
     cachePhotos: function() {
         if (!this.cacheEnabled) return;
-        
+
         const albumId = this.albumId === null ? 'all' : this.albumId;
         const cacheData = {
             items: this.photos,
             nextPageToken: this.nextPageToken,
             cacheTime: Date.now()
         };
-        
+
         localStorage.setItem(`photos-${albumId}`, JSON.stringify(cacheData));
     },
 
@@ -140,26 +133,14 @@ const app = {
         const albumSelect = document.getElementById("album-select");
         this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
         this.loadCachedPhotos();
-        
-        // 檢查是否有照片ładacz
+
+        // 檢查是否有照片
         if (this.photos.length === 0) {
             this.fetchPhotos();
         }
     },
 
     fetchPhotos: function(retriesLeft = 3) {
-        if (this.cacheEnabled && this.isCached(this.albumId)) {
-            try {
-                this.photos = JSON.parse(localStorage.getItem(`photos-${this.albumId}`)).items || [];
-                this.nextPageToken = JSON.parse(localStorage.getItem(`photos-${this.albumId}`)).nextPageToken || null;
-                this.renderPhotos();
-                return;
-            } catch (error) {
-                console.error('Error loading cached photos:', error);
-                this.cacheEnabled = false;
-            }
-        }
-
         const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
         const body = {
             pageSize: 50,
@@ -173,7 +154,7 @@ const app = {
         const start = Date.now();
         const loadingIndicator = document.getElementById('global-loading');
         loadingIndicator.style.display = 'block';
-        
+
         fetch(url, {
             method: "POST",
             headers: { 
@@ -222,7 +203,7 @@ const app = {
         const photoContainer = document.getElementById("photo-container");
         const thumbnailList = document.querySelector('.thumbnail-list');
         const loadingIndicator = document.getElementById('global-loading');
-        
+
         photoContainer.innerHTML = '';
         thumbnailList.innerHTML = '';
 
@@ -238,22 +219,21 @@ const app = {
             img.alt = "Photo" + (index + 1);
             img.classList.add("photo");
             img.onclick = () => this.openLightbox(index);
-            
-            // 添加loading效果
+
             const wrapper = document.createElement("div");
             wrapper.className = "thumbnail";
             wrapper.innerHTML = `
                 <img src="${photo.baseUrl}=w60-h40&v=3" alt="Thumbnail${index + 1}" class="thumbnail">
                 <div class="loading" style="display: none;">載入中...</div>
             `;
-            
+
             const thumbnailImg = wrapper.querySelector('.thumbnail');
             const thumbnailLoading = wrapper.querySelector('.loading');
-            
+
             thumbnailImg.onload = () => {
                 thumbnailLoading.style.display = 'none';
             };
-            
+
             thumbnailImg.onerror = (e) => {
                 console.error('Thumbnail failed to load:', e);
                 thumbnailLoading.style.display = 'none';
@@ -261,18 +241,18 @@ const app = {
             };
             
             thumbnailList.appendChild(wrapper);
-            
+
             img.onload = () => {
                 if (this.isSlideshowPlaying) {
                     this.resumeSlideshow();
                 }
             };
-            
+
             img.onerror = (e) => {
                 console.error('Photo failed to load:', e);
                 img.remove();
             };
-            
+
             photoContainer.appendChild(img);
         });
     },
@@ -281,16 +261,16 @@ const app = {
         const lightbox = document.getElementById("lightbox");
         const lightboxImage = document.getElementById("lightbox-image");
         const loadingIndicator = document.getElementById('lightbox-loading');
-        
+
         lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
         lightbox.style.display = "flex";
         setTimeout(() => lightbox.style.opacity = 1, 10);
         loadingIndicator.style.display = 'block';
-        
+
         this.currentPhotoIndex = index;
         document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
         document.getElementById("next-photo").onclick = () => this.changePhoto(1);
-        
+
         clearInterval(this.slideshowInterval);
         this.setupLightboxClick();
     },
@@ -299,7 +279,7 @@ const app = {
         const lightboxImage = document.getElementById("lightbox-image");
         const lightbox = document.getElementById("lightbox");
         let clickTimeout;
-        
+
         lightboxImage.onreadystatechange = () => {
             if (lightboxImage.readyState === 'complete') {
                 lightboxImage.style.cursor = "pointer";
@@ -324,7 +304,6 @@ const app = {
                 this.pauseSlideshow();
             };
 
-            // 捕捉滑動結束事件
             const hammer = new Hammer.GestureManager();
             const swipe = new Hammer.Swipe();
             hammer.add(swipe);
@@ -504,12 +483,13 @@ const app = {
             try {
                 const albums = JSON.parse(localStorage.getItem('albums'));
                 const photos = JSON.parse(localStorage.getItem('photos'));
-                
+
+                // 验证缓存数据的有效性
                 if (albums && Array.isArray(albums)) {
                     this.albums = albums;
                 }
                 if (photos && Array.isArray(photos)) {
-                    this.photos = photos;
+                    this.photos = photos; 
                 }
             } catch (error) {
                 console.error('Error parsing cached data:', error);
@@ -530,16 +510,16 @@ const app = {
         }
         if (retriesLeft > 0) {
             setTimeout(() => {
-                app.fetchPhotos(retriesLeft - 1);
+                this.fetchPhotos(retriesLeft - 1);
             }, 1000);
         } else {
             console.error('無法重新試圖，已超過最大重試次數');
         }
     },
 
-    refreshAccessToken: function() {
+    refreshToken: function() {
         if (!this.refresh_token) return;
-        const url = `https://www.googleapis.com/oauth2/v4/token?client_id=${app.CLIENT_ID}&client_secret=your_client_secret&refresh_token=${this.refresh_token}&grant_type=refresh_token`;
+        const url = `https://www.googleapis.com/oauth2/v4/token?client_id=${this.CLIENT_ID}&client_secret=your_client_secret&refresh_token=${this.refresh_token}&grant_type=refresh_token`;
         
         fetch(url, {
             method: 'POST'
@@ -553,7 +533,6 @@ const app = {
         .then(data => {
             sessionStorage.setItem('access_token', data.access_token);
             this.accessToken = data.access_token;
-            app.initToken_refresh();
             console.log('Token refreshed successfully');
         })
         .catch(error => {
@@ -572,29 +551,9 @@ const app = {
 
         if (token && refresh_token) {
             setTimeout(() => {
-                app.refreshToken();
+                this.refreshToken();
             }, 3600000); // 到期前1小時
         }
-    },
-
-    refreshToken: function() {
-        const url = `https://www.googleapis.com/oauth2/v4/token?client_id=${app.CLIENT_ID}&client_secret=your_client_secret&refresh_token=${sessionStorage.getItem('refresh_token')}&grant_type=refresh_token`;
-        
-        fetch(url, {
-            method: 'POST'
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('Failed to refresh token');
-            return response.json();
-        })
-        .then(data => {
-            sessionStorage.setItem('access_token', data.access_token);
-            app.accessToken = data.access_token;
-            app.initToken_refresh();
-        })
-        .catch(error => {
-            console.error('Token refresh failed:', error);
-        });
     }
 };
 
