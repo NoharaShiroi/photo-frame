@@ -24,11 +24,11 @@ const app = {
             window.history.replaceState({}, document.title, window.location.pathname);
         }
         if (this.accessToken) {
-            document.getElementById("auth-container").style.display = "none";
-            document.getElementById("app-container").style.display = "flex";
-            this.fetchAlbums();
-            this.loadPhotos();
-        } else {
+        document.getElementById("auth-container").style.display = "none";
+        document.getElementById("app-container").style.display = "flex";
+        this.fetchAlbums();
+        this.loadPhotos();
+         } else {
             document.getElementById("auth-container").style.display = "flex";
             document.getElementById("app-container").style.display = "none";
         }
@@ -39,91 +39,103 @@ const app = {
     },
 
     fetchAlbums: function() {
-        if (!this.accessToken) return;
-        const url = "https://photoslibrary.googleapis.com/v1/albums?pageSize=50";
+    if (!this.accessToken) return;
+    const url = "https://photoslibrary.googleapis.com/v1/albums?pageSize=50";
 
-        fetch(url, {
-            method: "GET",
-            headers: { "Authorization": "Bearer " + this.accessToken }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Network response was not ok: " + response.statusText);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.albums) {
-                this.albums = data.albums;
-                this.renderAlbumList();
-            } else {
-                console.error("No albums found in the response.");
-            }
-        })
-        .catch(error => {
-            console.error("Error fetching albums:", error);
-        });
-    },
-
+    fetch(url, {
+        method: "GET",
+        headers: { 
+            "Authorization": "Bearer " + this.accessToken 
+        }
+    })
+    .then(response => {
+        console.log('fetchAlbums response:', response); // 新增日誌
+        if (!response.ok) {
+            throw new Error("Network response was not ok: " + response.statusText);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('fetchAlbums data:', data); // 新增日誌
+        if (data.albums) {
+            this.albums = data.albums;
+            this.renderAlbumList();
+        } else {
+            console.error("No albums found in the response.");
+        }
+    })
+    .catch(error => {
+        console.error("Error fetching albums:", error);
+        // 檢查是否有權限問題
+        if (error.message.includes('unauthorized')) {
+            console.error('權限不足，請重新授權');
+        }
+    });
+}
     renderAlbumList: function() {
-        const albumSelect = document.getElementById("album-select");
-        albumSelect.innerHTML = '<option value="all">所有相片</option>';
-        this.albums.forEach(album => {
-            const option = document.createElement("option");
-            option.value = album.id;
-            option.textContent = album.title;
-            albumSelect.appendChild(option);
-        });
-    },
+    const albumSelect = document.getElementById("album-select");
+    albumSelect.innerHTML = '<option value="all">所有相片</option>';
+    this.albums.forEach(album => {
+        const option = document.createElement("option");
+        option.value = album.id;
+        option.textContent = album.title;
+        albumSelect.appendChild(option);
+    });
+}
+
 
     loadPhotos: function() {
         const albumSelect = document.getElementById("album-select");
-        this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
-        this.loadCachedPhotos();
-    },
+    this albumId = albumSelect.value === "all" ? null : albumSelect.value;
+    this.loadCachedPhotos();
+}
 
     fetchPhotos: function() {
-        if (this.cacheEnabled && this.isCached(this.albumId)) {
-            this.photos = JSON.parse(localStorage.getItem(`photos-${this.albumId}`));
-            return;
+       fetchPhotos: function() {
+    if (this.cacheEnabled && this.isCached(this.albumId)) {
+        this.photos = JSON.parse(localStorage.getItem(`photos-${this.albumId}`));
+        return;
+    }
+
+    const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
+    const body = {
+        albumId: this.albumId,
+        pageSize: 50,
+        pageToken: this.nextPageToken || ''
+    };
+
+    fetch(url, {
+        method: "POST",
+        headers: { 
+            "Authorization": "Bearer " + this.accessToken, 
+            "Content-Type": "application/json" 
+        },
+        body: JSON.stringify(body)
+    })
+    .then(response => {
+        console.log('fetchPhotos response:', response);
+        if (!response.ok) {
+            throw new Error("Network response was not ok: " + response.statusText);
         }
+        return response.json();
+    })
+    .then(data => {
+        console.log('fetchPhotos data:', data);
+        if (data.mediaItems) {
+            this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()];
+            this.nextPageToken = data.nextPageToken;
+            this.cachePhotos();
+            this.renderPhotos();
+        } else {
+            console.error("No mediaItems found in the response.");
+        }
+    })
+    .catch(error => {
+        console.error("Error fetching photos:", error);
+        this.handleError(error, 3);
+    });
+}
 
-        const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-        const body = {
-            albumId: this.albumId,
-            pageSize: 50,
-            pageToken: this.nextPageToken || ''
-        };
-
-        fetch(url, {
-            method: "POST",
-            headers: { 
-                "Authorization": "Bearer " + this.accessToken, 
-                "Content-Type": "application/json" 
-            },
-            body: JSON.stringify(body)
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error("Network response was not ok: " + response.statusText);
-            }
-            return response.json();
-        })
-        .then(data => {
-            if (data.mediaItems) {
-                this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()];
-                this.nextPageToken = data.nextPageToken;
-                this.cachePhotos();
-                this.renderPhotos();
-            } else {
-                console.error("No mediaItems found in the response.");
-            }
-        })
-        .catch(error => {
-            console.error("Error fetching photos:", error);
-            this.handleError(error, 3); // 修正：傳遞retriesLeft
-        });
-    },
 
     loadCachedPhotos: function() {
         if (this.cacheEnabled) {
