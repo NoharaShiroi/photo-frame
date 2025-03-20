@@ -148,10 +148,13 @@ fetchPhotos: function() {
 
     const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
     const body = {
-        albumId: this.albumId,
         pageSize: 50,
         pageToken: this.nextPageToken || ''
     };
+
+    if (this.albumId !== null) {
+        body.albumId = this.albumId;
+    }
 
     fetch(url, {
         method: "POST",
