@@ -235,9 +235,9 @@ const app = {
             };
 
             thumbnailImg.onerror = (e) => {
-                console.error('Thumbnail failed to load:', e);
-                thumbnailLoading.style.display = 'none';
-                wrapper.innerHTML = '<div class="error">圖片加載失敗</div>';
+            console.error(`Thumbnail failed to load from URL: ${thumbnailImg.src}`, e); // 加入图片 URL
+            thumbnailLoading.style.display = 'none';
+            wrapper.innerHTML = '<div class="error">圖片加載失敗</div>';
             };
             
             thumbnailList.appendChild(wrapper);
@@ -249,9 +249,9 @@ const app = {
             };
 
             img.onerror = (e) => {
-                console.error('Photo failed to load:', e);
-                img.remove();
-            };
+                console.error(`Photo failed to load from URL: ${img.src}`, e); // 加入图片 URL
+            img.remove();
+        };
 
             photoContainer.appendChild(img);
         });
