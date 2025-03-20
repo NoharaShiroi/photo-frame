@@ -3,6 +3,7 @@ const app = {
     REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
     accessToken: sessionStorage.getItem("access_token") || null,
+    refresh_token: sessionStorage.getItem("refresh_token") || null,
     albumId: null,
     photos: [],
     currentPhotoIndex: 0,
@@ -20,15 +21,19 @@ const app = {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         if (hashParams.has("access_token")) {
             this.accessToken = hashParams.get("access_token");
+            if (hashParams.has("refresh_token")) {
+                this.refresh_token = hashParams.get("refresh_token");
+                sessionStorage.setItem("refresh_token", this.refresh_token);
+            }
             sessionStorage.setItem("access_token", this.accessToken);
             window.history.replaceState({}, document.title, window.location.pathname);
         }
         if (this.accessToken) {
-        document.getElementById("auth-container").style.display = "none";
-        document.getElementById("app-container").style.display = "flex";
-        this.fetchAlbums();
-        this.loadPhotos();
-         } else {
+            document.getElementById("auth-container").style.display = "none";
+            document.getElementById("app-container").style.display = "flex";
+            this.fetchAlbums();
+            this.loadPhotos();
+        } else {
             document.getElementById("auth-container").style.display = "flex";
             document.getElementById("app-container").style.display = "none";
         }
@@ -39,209 +44,260 @@ const app = {
     },
 
     fetchAlbums: function() {
-    if (!this.accessToken) return;
-    const url = "https://photoslibrary.googleapis.com/v1/albums?pageSize=50";
+        if (!this.accessToken) return;
+        const url = "https://photoslibrary.googleapis.com/v1/albums?pageSize=50";
 
-    fetch(url, {
-        method: "GET",
-        headers: { 
-            "Authorization": "Bearer " + this.accessToken 
-        }
-    })
-    .then(response => {
-        console.log('fetchAlbums response:', response); // 新增日誌
-        if (!response.ok) {
-            throw new Error("Network response was not ok: " + response.statusText);
-        }
-        return response.json();
-    })
-    .then(data => {
-        console.log('fetchAlbums data:', data); // 新增日誌
-        if (data.albums) {
-            this.albums = data.albums;
-            this.renderAlbumList();
-        } else {
-            console.error("No albums found in the response.");
-        }
-    })
-    .catch(error => {
-        console.error("Error fetching albums:", error);
-        // 檢查是否有權限問題
-        if (error.message.includes('unauthorized')) {
-            console.error('權限不足，請重新授權');
-        }
-    });
-},
+        fetch(url, {
+            method: "GET",
+            headers: { 
+                "Authorization": "Bearer " + this.accessToken 
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Network response was not ok: " + response.statusText);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.albums) {
+                this.albums = data.albums;
+                this.renderAlbumList();
+            } else {
+                console.error("No albums found in the response.");
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching albums:", error);
+            if (error.message.includes('unauthorized')) {
+                console.error('權限不足，請重新授權');
+                this.accessToken = null;
+                this.refresh_token = null;
+                sessionStorage.removeItem("access_token");
+                sessionStorage.removeItem("refresh_token");
+                document.getElementById("auth-container").style.display = "flex";
+                document.getElementById("app-container").style.display = "none";
+            }
+        });
+    },
+
     renderAlbumList: function() {
-    const albumSelect = document.getElementById("album-select");
-    albumSelect.innerHTML = '<option value="all">所有相片</option>';
-    this.albums.forEach(album => {
-        const option = document.createElement("option");
-        option.value = album.id;
-        option.textContent = album.title;
-        albumSelect.appendChild(option);
-    });
-},
-loadCachedPhotos: function() {
-    if (!this.cacheEnabled) return;
-    
-    const albumId = this.albumId === null ? 'all' : this.albumId;
-    const cachedData = localStorage.getItem(`photos-${albumId}`);
-    
-    if (cachedData) {
-        try {
-            const photos = JSON.parse(cachedData);
-            this.photos = photos.items;
-            this.nextPageToken = photos.nextPageToken;
-            this.renderPhotos();
-        } catch (error) {
-            console.error('Error loading cached photos:', error);
-            this.cacheEnabled = false; // 如果解析失败，禁用缓存以防止后续问题
+        const albumSelect = document.getElementById("album-select");
+        albumSelect.innerHTML = '<option value="all">所有相片</option>';
+        this.albums.forEach(album => {
+            const option = document.createElement("option");
+            option.value = album.id;
+            option.textContent = album.title;
+            albumSelect.appendChild(option);
+        });
+    },
+
+    loadCachedPhotos: function() {
+        if (!this.cacheEnabled) return;
+        
+        const albumId = this.albumId === null ? 'all' : this.albumId;
+        const cachedData = localStorage.getItem(`photos-${albumId}`);
+        
+        if (cachedData) {
+            try {
+                const data = JSON.parse(cachedData);
+                this.photos = data.items || [];
+                this.nextPageToken = data.nextPageToken || null;
+                this.cacheEnabled = true;
+            } catch (error) {
+                console.error('Error loading cached photos:', error);
+                this.cacheEnabled = false;
+            }
         }
-    }
-},
+    },
 
+    isCached: function(albumId) {
+        if (!this.cacheEnabled) return false;
+        
+        const cachedData = localStorage.getItem(`photos-${albumId}`);
+        if (!cachedData) return false;
+        
+        const cacheTime = JSON.parse(cachedData).cacheTime;
+        const currentTime = Date.now();
+        
+        return currentTime - cacheTime <= this.cacheExpiration;
+    },
 
-isCached: function(albumId) {
-    if (!this.cacheEnabled) return false;
-    
-    // 检查缓存是否存在
-    const cachedData = localStorage.getItem(`photos-${albumId}`);
-    
-    if (!cachedData) return false;
-    
-    // 检查缓存时间
-    const cacheTime = JSON.parse(cachedData).cacheTime;
-    const currentTime = Date.now();
-    
-    if (currentTime - cacheTime <= this.cacheExpiration) {
-        return true;
-    }
-    
-    return false;
-},
-
-cachePhotos: function() {
-    if (!this.cacheEnabled) return;
-    
-    const albumId = this.albumId === null ? 'all' : this.albumId;
-    const cacheData = {
-        items: this.photos,
-        nextPageToken: this.nextPageToken,
-        cacheTime: Date.now()
-    };
-    
-    localStorage.setItem(`photos-${albumId}`, JSON.stringify(cacheData));
-},
+    cachePhotos: function() {
+        if (!this.cacheEnabled) return;
+        
+        const albumId = this.albumId === null ? 'all' : this.albumId;
+        const cacheData = {
+            items: this.photos,
+            nextPageToken: this.nextPageToken,
+            cacheTime: Date.now()
+        };
+        
+        localStorage.setItem(`photos-${albumId}`, JSON.stringify(cacheData));
+    },
 
     loadPhotos: function() {
-    const albumSelect = document.getElementById("album-select");
-    this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
-    this.loadCachedPhotos();
-},
-
-fetchPhotos: function() {
-    if (this.cacheEnabled && this.isCached(this.albumId)) {
-        this.photos = JSON.parse(localStorage.getItem(`photos-${this.albumId}`));
-        return;
-    }
-
-    const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-    const body = {
-        pageSize: 50,
-        pageToken: this.nextPageToken || ''
-    };
-
-    if (this.albumId !== null) {
-        body.albumId = this.albumId;
-    }
-
-    fetch(url, {
-        method: "POST",
-        headers: { 
-            "Authorization": "Bearer " + this.accessToken, 
-            "Content-Type": "application/json" 
-        },
-        body: JSON.stringify(body)
-    })
-    .then(response => {
-        console.log('fetchPhotos response:', response);
-        if (!response.ok) {
-            throw new Error("Network response was not ok: " + response.statusText);
+        const albumSelect = document.getElementById("album-select");
+        this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
+        this.loadCachedPhotos();
+        
+        // 檢查是否有照片ładacz
+        if (this.photos.length === 0) {
+            this.fetchPhotos();
         }
-        return response.json();
-    })
-    .then(data => {
-        console.log('fetchPhotos data:', data);
-        if (data.mediaItems) {
-            this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()];
-            this.nextPageToken = data.nextPageToken;
-            this.cachePhotos();
-            this.renderPhotos();
-        } else {
-            console.error("No mediaItems found in the response.");
+    },
+
+    fetchPhotos: function(retriesLeft = 3) {
+        if (this.cacheEnabled && this.isCached(this.albumId)) {
+            try {
+                this.photos = JSON.parse(localStorage.getItem(`photos-${this.albumId}`)).items || [];
+                this.nextPageToken = JSON.parse(localStorage.getItem(`photos-${this.albumId}`)).nextPageToken || null;
+                this.renderPhotos();
+                return;
+            } catch (error) {
+                console.error('Error loading cached photos:', error);
+                this.cacheEnabled = false;
+            }
         }
-    })
-    .catch(error => {
-        console.error("Error fetching photos:", error);
-        this.handleError(error, 3);
-    });
-},
+
+        const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
+        const body = {
+            pageSize: 50,
+            pageToken: this.nextPageToken || ''
+        };
+
+        if (this.albumId !== null) {
+            body.albumId = this.albumId;
+        }
+
+        const start = Date.now();
+        const loadingIndicator = document.getElementById('global-loading');
+        loadingIndicator.style.display = 'block';
+        
+        fetch(url, {
+            method: "POST",
+            headers: { 
+                "Authorization": "Bearer " + this.accessToken, 
+                "Content-Type": "application/json" 
+            },
+            body: JSON.stringify(body)
+        })
+        .then(response => {
+            loadingIndicator.style.display = 'none';
+            const elapsed = Date.now() - start;
+            console.log(`fetchPhotos response time: ${elapsed}ms`);
+            if (!response.ok) {
+                throw new Error("Network response was not ok: " + response.statusText);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('fetchPhotos data:', data);
+            if (data.mediaItems) {
+                this.photos = this.photos.concat(data.mediaItems.map(item => ({
+                    id: item.id,
+                    baseUrl: item.baseUrl,
+                    filename: item.filename
+                })));
+                this.nextPageToken = data.nextPageToken;
+                this.cachePhotos();
+                this.renderPhotos();
+            } else {
+                console.error("No mediaItems found in the response.");
+            }
+        })
+        .catch(error => {
+            console.error("Error fetching photos:", error);
+            if (retriesLeft > 1) {
+                const waitTime = Math.min(10000, 1000 * retriesLeft);
+                console.log(`Retrying in ${waitTime}ms...`);
+                setTimeout(() => this.fetchPhotos(retriesLeft - 1), waitTime);
+            } else {
+                console.error('Failed to fetch photos after all retries.');
+            }
+        });
+    },
 
     renderPhotos: function() {
         const photoContainer = document.getElementById("photo-container");
-        if (!photoContainer) {
-            console.error('Photo container not found.');
-            return; 
-        }
-
-        photoContainer.innerHTML = '';  
+        const thumbnailList = document.querySelector('.thumbnail-list');
+        const loadingIndicator = document.getElementById('global-loading');
+        
+        photoContainer.innerHTML = '';
+        thumbnailList.innerHTML = '';
 
         if (this.photos.length === 0) {
-            photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
-        } else {
-            this.photos.forEach((photo, index) => {
-                const img = document.createElement("img");
-                img.src = `${photo.baseUrl}=w600-h400&v=3`;
-                img.alt = "Photo";
-                img.classList.add("photo");
-                img.onclick = () => this.openLightbox(index);
-                img.onload = () => {
-                    if (this.isSlideshowPlaying) {
-                        this.resumeSlideshow();
-                    }
-                };
-                photoContainer.appendChild(img);
-
-                const thumbnail = document.createElement("div");
-                thumbnail.className = "thumbnail";
-                thumbnail.innerHTML = `<img src="${photo.baseUrl}=w60-h40&v=3" alt="Thumbnail">`;
-                thumbnail.onclick = () => this.openLightbox(index);
-                document.querySelector('.thumbnail-list').appendChild(thumbnail);
-            });
+            photoContainer.innerHTML = "<p>此相簿目前沒有照片</p>";
+            thumbnailList.innerHTML = "<p>無Thumbnail可顯示</p>";
+            return;
         }
 
-        photoContainer.style.display = "grid";
-        document.getElementById("app-container").style.display = "flex"; 
+        this.photos.forEach((photo, index) => {
+            const img = document.createElement("img");
+            img.src = `${photo.baseUrl}=w600-h400&v=3`;
+            img.alt = "Photo" + (index + 1);
+            img.classList.add("photo");
+            img.onclick = () => this.openLightbox(index);
+            
+            // 添加loading效果
+            const wrapper = document.createElement("div");
+            wrapper.className = "thumbnail";
+            wrapper.innerHTML = `
+                <img src="${photo.baseUrl}=w60-h40&v=3" alt="Thumbnail${index + 1}" class="thumbnail">
+                <div class="loading" style="display: none;">載入中...</div>
+            `;
+            
+            const thumbnailImg = wrapper.querySelector('.thumbnail');
+            const thumbnailLoading = wrapper.querySelector('.loading');
+            
+            thumbnailImg.onload = () => {
+                thumbnailLoading.style.display = 'none';
+            };
+            
+            thumbnailImg.onerror = (e) => {
+                console.error('Thumbnail failed to load:', e);
+                thumbnailLoading.style.display = 'none';
+                wrapper.innerHTML = '<div class="error">圖片加載失敗</div>';
+            };
+            
+            thumbnailList.appendChild(wrapper);
+            
+            img.onload = () => {
+                if (this.isSlideshowPlaying) {
+                    this.resumeSlideshow();
+                }
+            };
+            
+            img.onerror = (e) => {
+                console.error('Photo failed to load:', e);
+                img.remove();
+            };
+            
+            photoContainer.appendChild(img);
+        });
     },
 
     openLightbox: function(index) {
-        this.currentPhotoIndex = index;
         const lightbox = document.getElementById("lightbox");
         const lightboxImage = document.getElementById("lightbox-image");
+        const loadingIndicator = document.getElementById('lightbox-loading');
+        
         lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
-        lightbox.style.display = "flex"; 
+        lightbox.style.display = "flex";
         setTimeout(() => lightbox.style.opacity = 1, 10);
-
+        loadingIndicator.style.display = 'block';
+        
+        this.currentPhotoIndex = index;
         document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
         document.getElementById("next-photo").onclick = () => this.changePhoto(1);
-
-        clearInterval(this.slideshowInterval); 
+        
+        clearInterval(this.slideshowInterval);
         this.setupLightboxClick();
     },
 
     setupLightboxClick: function() {
         const lightboxImage = document.getElementById("lightbox-image");
+        const lightbox = document.getElementById("lightbox");
         let clickTimeout;
         
         lightboxImage.onreadystatechange = () => {
@@ -251,39 +307,60 @@ fetchPhotos: function() {
         };
 
         lightboxImage.onclick = (event) => {
-            event.stopPropagation(); 
-            clearTimeout(clickTimeout); 
-
+            event.stopPropagation();
+            clearTimeout(clickTimeout);
+            
             clickTimeout = setTimeout(() => {
                 if (this.isSlideshowPlaying) {
-                    this.pauseSlideshow(); 
+                    this.pauseSlideshow();
                 } else {
-                    this.resumeSlideshow(); 
+                    this.resumeSlideshow();
                 }
-            }, 250); 
+            }, 250);
 
             lightboxImage.ondblclick = () => {
-                clearTimeout(clickTimeout); 
-                this.closeLightbox(); 
-                this.pauseSlideshow(); // 退出幻灯片模式
+                clearTimeout(clickTimeout);
+                this.closeLightbox();
+                this.pauseSlideshow();
             };
+
+            // 捕捉滑動結束事件
+            const hammer = new Hammer.GestureManager();
+            const swipe = new Hammer.Swipe();
+            hammer.add(swipe);
+            
+            hammer.on('swipeleft', () => {
+                this.changePhoto(1);
+                this.isSlideshowPlaying = false;
+                clearInterval(this.slideshowInterval);
+                this.startSlideshow();
+            });
+            
+            hammer.on('swiperight', () => {
+                this.changePhoto(-1);
+                this.isSlideshowPlaying = false;
+                clearInterval(this.slideshowInterval);
+                this.startSlideshow();
+            });
         };
     },
 
     closeLightbox: function() {
         const lightbox = document.getElementById("lightbox");
         lightbox.style.opacity = 0;
-        setTimeout(() => lightbox.style.display = "none", 300);
+        setTimeout(() => {
+            lightbox.style.display = "none";
+        }, 300);
     },
 
     changePhoto: function(direction) {
         this.currentPhotoIndex += direction;
         if (this.currentPhotoIndex < 0) {
-            this.currentPhotoIndex = this.photos.length - 1; 
+            this.currentPhotoIndex = this.photos.length - 1;
         } else if (this.currentPhotoIndex >= this.photos.length) {
-            this.currentPhotoIndex = 0; 
+            this.currentPhotoIndex = 0;
         }
-        this.showCurrentPhoto(); 
+        this.showCurrentPhoto();
     },
 
     showCurrentPhoto: function() {
@@ -295,23 +372,26 @@ fetchPhotos: function() {
         if (this.photos.length > 0) {
             const speedInput = document.getElementById("slideshow-speed");
             let playOrder = document.getElementById("play-order").value;
-            this.slideshowSpeed = speedInput.value * 1000; 
-            this.autoChangePhoto(playOrder); 
-            this.isSlideshowPlaying = true; 
+            this.slideshowSpeed = speedInput.value * 1000;
+            this.autoChangePhoto(playOrder);
+            this.isSlideshowPlaying = true;
             document.body.classList.add('slideshow-active');
+            document.querySelectorAll('.nav-button').forEach(button => button.style.display = 'flex');
         }
     },
 
     pauseSlideshow: function() {
-        clearInterval(this.slideshowInterval); 
-        this.isSlideshowPlaying = false; 
+        clearInterval(this.slideshowInterval);
+        this.isSlideshowPlaying = false;
         document.body.classList.remove('slideshow-active');
+        document.querySelectorAll('.nav-button').forEach(button => button.style.display = 'none');
     },
 
     resumeSlideshow: function() {
         const playOrder = document.getElementById("play-order").value;
-        this.autoChangePhoto(playOrder); 
-        this.isSlideshowPlaying = true; 
+        this.isSlideshowPlaying = true;
+        this.autoChangePhoto(playOrder);
+        document.querySelectorAll('.nav-button').forEach(button => button.style.display = 'none');
     },
 
     autoChangePhoto: function(playOrder) {
@@ -333,17 +413,16 @@ fetchPhotos: function() {
         if (startTime && endTime) {
             this.sleepStartTime = startTime;
             this.sleepEndTime = endTime;
-
             const result = this.isTimeWithinRange(new Date());
             if (result) {
-                alert('休眠时间已設定');
+                alert('休眠時間設定成功');
+                this.checkSleepMode();
+                setInterval(() => this.checkSleepMode(), 60000); // 每分鐘檢查一次
             } else {
-                alert('休眠時間設定不符合，請檢查');
+                alert('設定的休眠時間不交叉，請檢查');
             }
-            this.checkSleepMode();
-            setInterval(() => this.checkSleepMode(), 60000); // 每分鐘檢查一次
         } else {
-            alert('請設定完整休眠時間');
+            alert('請設定完整的休眠時間');
         }
     },
 
@@ -351,8 +430,11 @@ fetchPhotos: function() {
         const now = new Date();
         let result = this.isTimeWithinRange(now);
 
-        if (result && now >= new Date(now.getFullYear(), now.getMonth(), now.getDate(), 
-            this.sleepStartTime.split(':')[0], this.sleepStartTime.split(':')[1])) {
+        if (result && 
+            new Date(now.getFullYear(), now.getMonth(), 
+                     now.getDate(), 
+                     this.sleepStartTime.split(':')[0], 
+                     this.sleepStartTime.split(':')[1]) <= now) {
             this.activateSleepMode();
         } else {
             this.deactivateSleepMode();
@@ -360,24 +442,23 @@ fetchPhotos: function() {
     },
 
     isTimeWithinRange: function(date) {
-        const startHour = parseInt(this.sleepStartTime.split(':')[0], 10);
-        const startMinute = parseInt(this.sleepStartTime.split(':')[1], 10);
-        const endHour = parseInt(this.sleepEndTime.split(':')[0], 10);
-        const endMinute = parseInt(this.sleepEndTime.split(':')[1], 10);
+        const startSplit = this.sleepStartTime.split(':');
+        const endSplit = this.sleepEndTime.split(':');
+        
+        const startHour = parseInt(startSplit[0], 10);
+        const startMinute = parseInt(startSplit[1], 10);
+        const endHour = parseInt(endSplit[0], 10);
+        const endMinute = parseInt(endSplit[1], 10);
 
-        const timeStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 
-            startHour, startMinute);
-        const timeEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 
-            endHour, endMinute);
+        const timeStart = new Date(date.getFullYear(), date.getMonth(), date.getDate(), startHour, startMinute);
+        let timeEnd = new Date(date.getFullYear(), date.getMonth(), date.getDate(), endHour, endMinute);
 
         if (startHour > endHour || (startHour === endHour && startMinute > endMinute)) {
-            const tomorrow = new Date(date);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            timeEnd.setDate(tomorrow.getDate());
+            timeEnd.setDate(timeEnd.getDate() + 1);
         }
 
-        const now = new Date();
-        return now >= timeStart && now < timeEnd;
+        const currentTime = date.getTime();
+        return currentTime >= timeStart.getTime() && currentTime < timeEnd.getTime();
     },
 
     activateSleepMode: function() {
@@ -387,6 +468,10 @@ fetchPhotos: function() {
             document.getElementById("photo-container").style.display = "none";
             document.body.style.filter = "brightness(20%)";
             document.body.classList.add('sleep-mode');
+            const { fullscreenElement } = document;
+            if (!fullscreenElement) {
+                document.body.requestFullscreen();
+            }
             this.toggleFullscreen(true);
         }
     },
@@ -397,13 +482,16 @@ fetchPhotos: function() {
             document.body.style.filter = "brightness(100%)";
             document.getElementById("photo-container").style.display = "grid";
             document.body.classList.remove('sleep-mode');
+            document.exitFullscreen();
             this.toggleFullscreen(false);
         }
     },
 
     toggleFullscreen: function(enabled) {
         if (enabled) {
-            document.body.requestFullscreen();
+            if (!document.fullscreenElement) {
+                document.body.requestFullscreen();
+            }
         } else {
             if (document.fullscreenElement === document.body) {
                 document.exitFullscreen();
@@ -411,43 +499,70 @@ fetchPhotos: function() {
         }
     },
 
-    // 攝影模式切換
-    togglePhotoMode: function() {
-        const photoContainer = document.getElementById("photo-container");
-        const albumSelection = document.getElementById("album-selection-container");
-        photoContainer.style.display = photoContainer.style.display === 'grid' ? 'none' : 'grid';
-        albumSelection.style.display = albumSelection.style.display === 'block' ? 'none' : 'block';
-    },
-
-    // 快取處理
     initCache: function() {
         if (this.cacheEnabled) {
-            // 初始化albums數據
-            this.albums = JSON.parse(localStorage.getItem('albums')) || [];
-            // 初始化photos數據
-            this.photos = JSON.parse(localStorage.getItem('photos')) || [];
-            
-            // 檢查數據 validity
-            if (!this.albums || !Array.isArray(this.albums)) {
-                console.error("Cached albums data is invalid or not found. Clearing cache...");
+            try {
+                const albums = JSON.parse(localStorage.getItem('albums'));
+                const photos = JSON.parse(localStorage.getItem('photos'));
+                
+                if (albums && Array.isArray(albums)) {
+                    this.albums = albums;
+                }
+                if (photos && Array.isArray(photos)) {
+                    this.photos = photos;
+                }
+            } catch (error) {
+                console.error('Error parsing cached data:', error);
                 localStorage.removeItem('albums');
                 localStorage.removeItem('photos');
             }
-            if (!this.photos || !Array.isArray(this.photos)) {
-                console.error("Cached photos data is invalid or not found. Clearing cache...");
-                localStorage.removeItem('photos');
-            }
         }
     },
 
-    // 處理錯誤
     handleError: function(error, retriesLeft = 3) {
         console.error("Error:", error);
-        if (retriesLeft > 1) {
+        if (error.message.includes('unauthorized') || error.message.includes('invalid_grant')) {
+            console.error('授權已過期，需重新授權');
+            this.accessToken = null;
+            this.refresh_token = null;
+            sessionStorage.removeItem('access_token');
+            sessionStorage.removeItem('refresh_token');
+        }
+        if (retriesLeft > 0) {
             setTimeout(() => {
                 app.fetchPhotos(retriesLeft - 1);
             }, 1000);
+        } else {
+            console.error('無法重新試圖，已超過最大重試次數');
         }
+    },
+
+    refreshAccessToken: function() {
+        if (!this.refresh_token) return;
+        const url = `https://www.googleapis.com/oauth2/v4/token?client_id=${app.CLIENT_ID}&client_secret=your_client_secret&refresh_token=${this.refresh_token}&grant_type=refresh_token`;
+        
+        fetch(url, {
+            method: 'POST'
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to refresh token');
+            }
+            return response.json();
+        })
+        .then(data => {
+            sessionStorage.setItem('access_token', data.access_token);
+            this.accessToken = data.access_token;
+            app.initToken_refresh();
+            console.log('Token refreshed successfully');
+        })
+        .catch(error => {
+            console.error('Token refresh failed:', error);
+            this.accessToken = null;
+            this.refresh_token = null;
+            sessionStorage.removeItem('access_token');
+            sessionStorage.removeItem('refresh_token');
+        });
     },
 
     // 自動刷新 OAuth Token
