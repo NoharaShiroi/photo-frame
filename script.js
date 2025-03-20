@@ -126,7 +126,11 @@ const app = {
             cacheTime: Date.now()
         };
 
-        localStorage.setItem(`photos-${albumId}`, JSON.stringify(cacheData));
+        localStorage.setItem(`photos-${albumId}`, JSON.stringify({
+    items: this.photos,
+    nextPageToken: this.nextPageToken,
+    cacheTime: Date.now()
+}));
     },
 
     loadPhotos: function() {
