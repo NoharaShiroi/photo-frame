@@ -117,8 +117,8 @@ const app = {
         })
         .then(data => {
             if (data.mediaItems) {
-                this.photos = [...new Map(this.photos.concat(data.mediaItems).map(item => [item.id, item])).values()];
-                this.nextPageToken = data.nextPageToken;
+                this.photos = [...new Map(this.photos.concat(data.mediaItems).map(item => [item.id, item])).values()]; // 结合已有照片与新照片去重
+                this.nextPageToken = data.nextPageToken; // 保存下一页的 token
                 this.renderPhotos();
                 localStorage.setItem(this.albumId || 'all', JSON.stringify({ data: this.photos, expiresAt: Date.now() + 60 * 60 * 1000 })); // 1小時有效期
             }
@@ -144,7 +144,7 @@ const app = {
         })
         .then(data => {
             if (data.mediaItems) {
-                this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()];
+                this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()]; // 确保唯一性
                 this.renderPhotos();
                 localStorage.setItem(this.albumId, JSON.stringify({ data: this.photos, expiresAt: Date.now() + 60 * 60 * 1000 })); // 1小時有效期
             }
@@ -172,6 +172,8 @@ const app = {
         photoContainer.style.display = "grid";
         document.getElementById("app-container").style.display = "flex"; 
         document.getElementById("photo-container").style.display = "grid"; 
+
+        // 设置 Intersection Observer 以便实现加载更多功能
         this.setupLazyLoading();
     },
 
@@ -183,8 +185,8 @@ const app = {
         lightbox.style.display = "flex"; 
         setTimeout(() => lightbox.style.opacity = 1, 10);
 
-        // 隐藏所有按钮
-        this.toggleButtonsVisibility(false);
+        // 打开时显示所有控制按钮
+        this.toggleButtonsVisibility(true);
 
         document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
         document.getElementById("next-photo").onclick = () => this.changePhoto(1);
@@ -209,7 +211,7 @@ const app = {
         setTimeout(() => {
             lightbox.style.display = "none";
             this.resetSlideshow(); // 关闭时重置幻灯片
-            this.toggleButtonsVisibility(true); // 显示所有按钮
+            this.toggleButtonsVisibility(false); // 隐藏所有按钮
         }, 300);
     },
 
