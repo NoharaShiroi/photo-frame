@@ -321,17 +321,19 @@ const app = {
     },
 
     setupLazyLoading: function() {
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting && this.nextPageToken) {
-                    this.loadPhotos();
-                }
-            });
-        }, {
+        const options = {
             root: null,
             rootMargin: '0px',
             threshold: 0.1
-        });
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && this.nextPageToken) {
+                    this.loadPhotos(); // Trigger loading more photos
+                }
+            });
+        }, options);
 
         const photoContainer = document.getElementById("photo-container");
         observer.observe(photoContainer);
@@ -340,7 +342,6 @@ const app = {
 
 document.addEventListener("DOMContentLoaded", () => {
     app.init();
-    app.initLazyLoading();
     document.addEventListener("mousemove", app.resetIdleTimer.bind(app));
     document.addEventListener("touchstart", app.resetIdleTimer.bind(app));
 });
