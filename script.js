@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', function() {
     const CLIENT_ID = '1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com';
-    const API_KEY = process.env.GOOGLE_API_KEY;
+    const API_KEY = window.API_KEY;
     const DISCOVERY_DOC = 'https://photoslibrary.googleapis.com/$discovery/rest?version=v1';
     const SCOPES = 'https://www.googleapis.com/auth/photoslibrary.readonly';
     const authButton = document.getElementById('authorize-button');
@@ -136,4 +136,13 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     window.handleClientLoad = handleClientLoad;
+
+    // 讀取動態 API Key
+    fetch('./apiKey.js')
+        .then(response => response.text())
+        .then(data => {
+            eval(data); // 讀取並執行 apiKey.js 的內容，注入 API_KEY
+            handleClientLoad();
+        })
+        .catch(err => console.error('無法載入 API Key:', err));
 });
