@@ -12,14 +12,12 @@ const app = {
     isSlideshowPlaying: false,
     idleTime: 0,
 
-    // 初始化函数
     init: function() {
         this.getAccessToken();
         this.setupEventListeners();
         setInterval(this.idleCheck.bind(this), 1000);
     },
 
-    // 获取访问令牌
     getAccessToken: function() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         if (hashParams.has("access_token")) {
@@ -51,7 +49,10 @@ const app = {
             method: "GET",
             headers: { "Authorization": "Bearer " + this.accessToken }
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) throw new Error("Network response was not ok.");
+            return response.json();
+        })
         .then(data => {
             if (data.albums) {
                 this.renderAlbumList(data.albums);
@@ -74,9 +75,20 @@ const app = {
     loadPhotos: function() {
         const albumSelect = document.getElementById("album-select");
         this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
-        
+
         this.photos = [];
         this.nextPageToken = null;
+
+        const cachedPhotos = localStorage.getItem(this.albumId || 'all');
+        if (cachedPhotos) {
+            const { data, expiresAt } = JSON.parse(cachedPhotos);
+            if (Date.now() < expiresAt) {
+                this.photos = data;
+                this.renderPhotos();
+            } else {
+                localStorage.removeItem(this.albumId || 'all'); // 清理过期快取
+            }
+        }
 
         if (this.albumId) {
             this.fetchPhotos();
@@ -87,7 +99,6 @@ const app = {
 
     fetchAllPhotos: function() {
         const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
-
         const body = {
             pageSize: 50,
             pageToken: this.nextPageToken || ''
@@ -98,12 +109,16 @@ const app = {
             headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
             body: JSON.stringify(body)
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) throw new Error("Network response was not ok.");
+            return response.json();
+        })
         .then(data => {
             if (data.mediaItems) {
                 this.photos = [...new Map(this.photos.concat(data.mediaItems).map(item => [item.id, item])).values()];
                 this.nextPageToken = data.nextPageToken;
                 this.renderPhotos();
+                localStorage.setItem(this.albumId || 'all', JSON.stringify({ data: this.photos, expiresAt: Date.now() + 60 * 60 * 1000 })); // 1小時有效期
             }
         })
         .catch(error => console.error("Error fetching photos:", error));
@@ -121,11 +136,15 @@ const app = {
             headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
             body: JSON.stringify(body)
         })
-        .then(response => response.json())
+        .then(response => {
+            if (!response.ok) throw new Error("Network response was not ok.");
+            return response.json();
+        })
         .then(data => {
             if (data.mediaItems) {
                 this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()];
                 this.renderPhotos();
+                localStorage.setItem(this.albumId, JSON.stringify({ data: this.photos, expiresAt: Date.now() + 60 * 60 * 1000 })); // 1小時有效期
             }
         })
         .catch(error => console.error("Error fetching photos:", error));
@@ -182,7 +201,6 @@ const app = {
         lightbox.style.opacity = 0;
         setTimeout(() => {
             lightbox.style.display = "none";
-            document.body.style.overflow = "auto"; // 恢复滚动
         }, 300);
     },
 
@@ -205,16 +223,6 @@ const app = {
         }
     },
 
-    pauseSlideshow: function() {
-        clearInterval(this.slideshowInterval);
-        this.isSlideshowPlaying = false; 
-    },
-
-    resumeSlideshow: function() {
-        this.autoChangePhoto(); 
-        this.isSlideshowPlaying = true; 
-    },
-
     autoChangePhoto: function() {
         clearInterval(this.slideshowInterval);
         this.slideshowInterval = setInterval(() => {
@@ -227,12 +235,6 @@ const app = {
         document.getElementById("authorize-btn").onclick = this.authorizeUser.bind(this);
         document.getElementById("start-slideshow-btn").onclick = this.startSlideshow.bind(this);
         document.getElementById("back-to-album-btn").onclick = this.showAlbumSelection.bind(this);
-
-        document.getElementById("lightbox").addEventListener("click", e => {
-            if (e.target === document.getElementById("lightbox")) {
-                this.closeLightbox();
-            }
-        });
     },
 
     showAlbumSelection: function() {
@@ -257,4 +259,29 @@ document.addEventListener("DOMContentLoaded", () => {
     app.init();
     document.addEventListener("mousemove", app.resetIdleTimer.bind(app));
     document.addEventListener("touchstart", app.resetIdleTimer.bind(app));
+
+    // Intersection Observer for lazy loading images
+    const lazyLoadPhotos = () => {
+        const photos = document.querySelectorAll('.photo');
+        const options = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+        
+        const observer = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && app.nextPageToken) {
+                    app.loadPhotos(); // load more photos
+                    observer.unobserve(entry.target); // Stop observing the current entry
+                }
+            });
+        }, options);
+        
+        photos.forEach(photo => {
+            observer.observe(photo);
+        });
+    };
+
+    lazyLoadPhotos();
 });
