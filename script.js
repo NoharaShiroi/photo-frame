@@ -42,6 +42,26 @@ const app = {
         const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${this.CLIENT_ID}&redirect_uri=${encodeURIComponent(this.REDIRECT_URI)}&response_type=token&scope=${this.SCOPES}&prompt=consent`;
         window.location.href = authUrl;
     },
+loadPhotos: function() {
+    const albumSelect = document.getElementById("album-select");
+    this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
+
+    const cachedPhotos = localStorage.getItem(this.albumId || 'all');
+    if (cachedPhotos) {
+        const { data, expiresAt } = JSON.parse(cachedPhotos);
+        if (Date.now() < expiresAt) {
+            this.photos = data;
+            this.renderPhotos();
+            return;
+        }
+    }
+
+    if (this.albumId) {
+        this.fetchPhotos();
+    } else {
+        this.fetchAllPhotos();
+    }
+},
 
     fetchAlbums: function() {
         if (!this.accessToken) return;
@@ -110,9 +130,9 @@ const app = {
     fetchPhotos: function() {
         const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
         const body = {
-            albumId: this.albumId,
-            pageSize: 50
-        };
+    albumId: this.albumId,
+    pageSize: 50
+};
 
         fetch(url, {
             method: "POST",
@@ -149,7 +169,7 @@ const app = {
         } else {
             this.photos.forEach((photo, index) => {
                 const img = document.createElement("img");
-                img.src = photo.baseUrl + '?w600-h400'; // 修復URL拼接錯誤
+                img.src = photo.baseUrl + '?w600-h400'; 
                 img.alt = "Photo";
                 img.classList.add("photo");
                 img.onclick = () => this.openLightbox(index);
