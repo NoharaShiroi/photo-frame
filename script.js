@@ -146,7 +146,7 @@ const app = {
             if (data.mediaItems) {
                 this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()];
                 this.renderPhotos();
-                localStorage.setItem(this albumId, JSON.stringify({ data: this.photos, expiresAt: Date.now() + 60 * 60 * 1000 }));
+                localStorage.setItem(this.albumId, JSON.stringify({ data: this.photos, expiresAt: Date.now() + 60 * 60 * 1000 }));
             }
         })
         .catch(error => console.error("Error fetching photos:", error));
