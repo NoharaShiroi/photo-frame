@@ -1,113 +1,139 @@
+document.addEventListener('DOMContentLoaded', function() {
+    const CLIENT_ID = '1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com';
+    const API_KEY = process.env.GOOGLE_API_KEY;
+    const DISCOVERY_DOC = 'https://photoslibrary.googleapis.com/$discovery/rest?version=v1';
+    const SCOPES = 'https://www.googleapis.com/auth/photoslibrary.readonly';
+    const authButton = document.getElementById('authorize-button');
+    const signoutButton = document.getElementById('signout-button');
+    const content = document.getElementById('content');
+    const thumbnailContainer = document.getElementById('thumbnail-container');
+    const fullscreenOverlay = document.getElementById('fullscreen-overlay');
+    const fullscreenImage = document.getElementById('fullscreen-image');
+    const albumIdInput = document.getElementById('album-id');
+    const shuffleCheckbox = document.getElementById('shuffle');
 
+    let nextPageToken = '';
+    let photos = [];
+    let isShuffled = false;
+    let intervalId;
 
-    let authToken;
-const CLIENT_ID = '1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com';
-const API_KEY = 'YOUR_API_KEY';
-const DISCOVERY_DOCS = [
-    'https://photoslibrary.googleapis.com/$discovery/rest?version=v1'
-];
-const SCOPES = 'https://www.googleapis.com/auth/photoslibrary.readonly';
+    authButton.onclick = handleAuthClick;
+    signoutButton.onclick = handleSignoutClick;
+    shuffleCheckbox.onchange = toggleShuffle;
 
-const albumIdInput = document.getElementById('album-id');
-const authButton = document.getElementById('authorize-button');
-const signoutButton = document.getElementById('signout-button');
-const photoContainer = document.getElementById('photo-container');
-const slideshowContainer = document.getElementById('lightbox');
-const closeButton = document.getElementById('close-lightbox');
-const randomOrderCheckbox = document.getElementById('random-order');
-const screenOverlay = document.getElementById('screenOverlay');
-
-let photos = [];
-let currentIndex = 0;
-let slideshowInterval;
-
-function handleClientLoad() {
-    gapi.load('client:auth2', initClient);
-}
-
-function initClient() {
-    gapi.client.init({
-        apiKey: API_KEY,
-        clientId: CLIENT_ID,
-        discoveryDocs: DISCOVERY_DOCS,
-        scope: SCOPES
-    }).then(() => {
-        gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
-        updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
-        authButton.onclick = handleAuthClick;
-        signoutButton.onclick = handleSignoutClick;
-    });
-}
-
-function updateSigninStatus(isSignedIn) {
-    if (isSignedIn) {
-        authButton.style.display = 'none';
-        signoutButton.style.display = 'block';
-        loadAlbumPhotos();
-    } else {
-        authButton.style.display = 'block';
-        signoutButton.style.display = 'none';
+    function handleClientLoad() {
+        gapi.load('client:auth2', initClient);
     }
-}
 
-function handleAuthClick() {
-    gapi.auth2.getAuthInstance().signIn();
-}
-
-function handleSignoutClick() {
-    gapi.auth2.getAuthInstance().signOut();
-}
-
-async function loadAlbumPhotos(pageToken = '') {
-    const albumId = albumIdInput.value;
-    let endpoint = 'https://photoslibrary.googleapis.com/v1/mediaItems?pageSize=25';
-    if (albumId) endpoint = `https://photoslibrary.googleapis.com/v1/albums/${albumId}/mediaItems?pageSize=25`;
-    if (pageToken) endpoint += `&pageToken=${pageToken}`;
-
-    const response = await gapi.client.request({
-        path: endpoint
-    });
-
-    const newPhotos = response.result.mediaItems || [];
-    photos = photos.concat(newPhotos);
-    displayPhotos(newPhotos);
-
-    if (response.result.nextPageToken) {
-        loadAlbumPhotos(response.result.nextPageToken);
+    function initClient() {
+        gapi.client.init({
+            apiKey: API_KEY,
+            clientId: CLIENT_ID,
+            discoveryDocs: [DISCOVERY_DOC],
+            scope: SCOPES
+        }).then(() => {
+            const authInstance = gapi.auth2.getAuthInstance();
+            authInstance.isSignedIn.listen(updateSigninStatus);
+            updateSigninStatus(authInstance.isSignedIn.get());
+        }).catch(console.error);
     }
-}
 
-function displayPhotos(photoArray) {
-    photoArray.forEach(photo => {
-        const img = document.createElement('img');
-        img.src = photo.baseUrl + '=w200-h200';
-        img.onclick = () => startSlideshow(photos.indexOf(photo));
-        photoContainer.appendChild(img);
-    });
-}
+    function updateSigninStatus(isSignedIn) {
+        if (isSignedIn) {
+            authButton.style.display = 'none';
+            signoutButton.style.display = 'block';
+            content.style.display = 'block';
+            loadPhotos();
+        } else {
+            authButton.style.display = 'block';
+            signoutButton.style.display = 'none';
+            content.style.display = 'none';
+            thumbnailContainer.innerHTML = '';
+            nextPageToken = '';
+            photos = [];
+        }
+    }
 
-function startSlideshow(index) {
-    currentIndex = index;
-    screenOverlay.style.display = 'block';
-    updateSlideshowImage();
-    slideshowInterval = setInterval(nextSlide, 3000);
-}
+    function handleAuthClick() {
+        gapi.auth2.getAuthInstance().signIn();
+    }
 
-function updateSlideshowImage() {
-    slideshowContainer.innerHTML = '';
-    const img = document.createElement('img');
-    img.src = photos[currentIndex].baseUrl + '=w2000-h2000';
-    slideshowContainer.appendChild(img);
-}
+    function handleSignoutClick() {
+        gapi.auth2.getAuthInstance().signOut();
+    }
 
-function nextSlide() {
-    currentIndex = (currentIndex + 1) % photos.length;
-    updateSlideshowImage();
-}
+    async function loadPhotos() {
+        const albumId = albumIdInput.value.trim();
+        let endpoint = 'https://photoslibrary.googleapis.com/v1/mediaItems';
+        if (albumId) {
+            endpoint = `https://photoslibrary.googleapis.com/v1/albums/${albumId}/mediaItems`;
+        }
 
-closeButton.onclick = () => {
-    screenOverlay.style.display = 'none';
-    clearInterval(slideshowInterval);
-};
+        try {
+            const response = await gapi.client.request({
+                path: endpoint,
+                params: { pageSize: 20, pageToken: nextPageToken }
+            });
+            nextPageToken = response.result.nextPageToken;
+            displayThumbnails(response.result.mediaItems);
+        } catch (error) {
+            console.error('Error loading photos:', error);
+        }
+    }
 
-window.onload = handleClientLoad;
+    function displayThumbnails(mediaItems) {
+        mediaItems.forEach(item => {
+            if (item.mimeType.startsWith('image/')) {
+                photos.push(item.baseUrl);
+                const img = document.createElement('img');
+                img.src = `${item.baseUrl}=w200-h200`;
+                img.className = 'thumbnail';
+                img.onclick = () => enterFullscreen(item.baseUrl);
+                thumbnailContainer.appendChild(img);
+            }
+        });
+    }
+
+    window.onscroll = () => {
+        if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 100 && nextPageToken) {
+            loadPhotos();
+        }
+    };
+
+    function enterFullscreen(imageUrl) {
+        fullscreenOverlay.style.display = 'block';
+        fullscreenImage.src = imageUrl;
+        startSlideshow();
+    }
+
+    function startSlideshow() {
+        if (intervalId) clearInterval(intervalId);
+        let currentIndex = 0;
+        if (isShuffled) {
+            photos = shuffleArray([...photos]);
+        }
+        intervalId = setInterval(() => {
+            fullscreenImage.src = photos[currentIndex];
+            currentIndex = (currentIndex + 1) % photos.length;
+        }, 3000);
+    }
+
+    function toggleShuffle() {
+        isShuffled = shuffleCheckbox.checked;
+    }
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+    }
+
+    fullscreenOverlay.onclick = () => {
+        fullscreenOverlay.style.display = 'none';
+        clearInterval(intervalId);
+    };
+
+    window.handleClientLoad = handleClientLoad;
+});
