@@ -1,62 +1,79 @@
-body {
-    font-family: Arial, sans-serif;
+/*🔹 基礎樣式設定 */
+body, html {
     margin: 0;
     padding: 0;
-    background-color: #f5f5f5;
-    text-align: center;
-    overflow: hidden; /* Prevent overflow */
+    width: 100%;
+    height: 100%;
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+    overflow: hidden;
 }
 
-/* 容器設置 */
+#auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #ffffff;
+    flex-direction: column;
+}
+
+button {
+    background-color: #4285F4;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin: 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #3367d6;
+}
+
 #app-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 10px;
+    padding: 20px;
 }
 
-/* 相簿選擇區 */
 #album-selection-container {
     margin-bottom: 20px;
+    text-align: center;
 }
 
-/* 幻燈片控制區 */
 .slideshow-controls {
     margin-top: 10px;
-    display: flex;
-    align-items: center;
 }
 
-#slideshow-speed {
-    width: 50px;
-    margin-left: 5px;
-}
-
-/* 縮圖顯示區 */
 #photo-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 5px;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 10px;
+    max-height: 70vh;
+    overflow-y: auto;
     padding: 10px;
-    justify-content: center;
-    max-width: 90vw;
+    background-color: #e0e0e0;
+    border-radius: 8px;
 }
 
-/* 縮圖 */
-.photo {
+#photo-container img {
     width: 100%;
-    aspect-ratio: 1/1; 
+    height: auto;
     object-fit: cover;
-    border-radius: 5px;
+    border-radius: 4px;
     cursor: pointer;
-    transition: transform 0.2s ease-in-out;
+    transition: transform 0.3s;
 }
 
-.photo:hover {
+#photo-container img:hover {
     transform: scale(1.05);
 }
 
-/* 放大圖片 (lightbox) 相關樣式 */
 #lightbox {
     position: fixed;
     top: 0;
@@ -64,79 +81,51 @@ body {
     width: 100vw;
     height: 100vh;
     background-color: rgba(0, 0, 0, 0.8);
-    display: none; 
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
+    display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
 }
 
 #lightbox img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain; /* Maintain aspect ratio */
-    box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.7);
+    max-width: 90%;
+    max-height: 80%;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.6);
 }
 
-/* 定位按钮 */
-.lightbox-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 40px;
-    margin-top: 10px;
+#close-lightbox {
     position: absolute;
-    bottom: 10px;
-    left: 50%;
-    transform: translateX(-50%);
+    top: 20px;
+    right: 40px;
+    font-size: 2.5rem;
+    color: white;
+    cursor: pointer;
+}
+
+.lightbox-buttons {
+    position: absolute;
+    bottom: 20px;
+    display: flex;
+    gap: 10px;
 }
 
 .nav-button {
-    background-color: rgba(255, 192, 203, 0.7); 
+    background-color: rgba(255, 255, 255, 0.8);
     border: none;
-    border-radius: 5px;
-    padding: 10px 20px;
+    padding: 8px 16px;
+    border-radius: 4px;
     cursor: pointer;
-    transition: background-color 0.3s, transform 0.2s;
+    font-size: 1.2rem;
 }
 
-/* 悬停效果 */
-.nav-button:hover {
-    background-color: rgba(255, 192, 203, 1);
-    transform: scale(1.05);
-}
-
-/* 返回選擇相簿按鈕 */
-#back-to-album-btn {
-    position: fixed;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1001;
-    padding: 10px;
-    font-size: 16px;
-    background-color: #4CAF50;
-    color: white;
-    border-radius: 5px;
-    border: none;
-    cursor: pointer;
-}
-
-/* 屏幕覆盖 */
 #screenOverlay {
+    display: none;
     position: fixed;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: black;
-    display: none;
-    z-index: 9999;
-}
-
-/* 響應式設計 */
-@media (max-width: 768px) {
-    #photo-container {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    }
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    z-index: 999;
 }
