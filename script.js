@@ -11,6 +11,8 @@ const app = {
     slideshowSpeed: 5000,
     isSlideshowPlaying: false,
     idleTime: 0,
+    playMode: 'sequential', // 記錄播放模式
+    playedIndices: [], // 用於隨機播放時，記錄已播放的圖片
 
     init: function() {
         this.getAccessToken();
@@ -181,6 +183,9 @@ const app = {
         lightbox.style.display = "flex"; 
         setTimeout(() => lightbox.style.opacity = 1, 10);
 
+        // 隐藏所有按钮
+        this.toggleButtonsVisibility(false);
+
         document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
         document.getElementById("next-photo").onclick = () => this.changePhoto(1);
         document.getElementById("fullscreen-toggle-btn").onclick = this.toggleFullscreen.bind(this);
@@ -203,6 +208,8 @@ const app = {
         lightbox.style.opacity = 0;
         setTimeout(() => {
             lightbox.style.display = "none";
+            this.resetSlideshow(); // 关闭时重置幻灯片
+            this.toggleButtonsVisibility(true); // 显示所有按钮
         }, 300);
     },
 
@@ -220,23 +227,59 @@ const app = {
         if (this.photos.length > 0) {
             const speedInput = document.getElementById("slideshow-speed");
             this.slideshowSpeed = speedInput.value * 1000; 
+            this.playMode = document.getElementById("play-mode").value;
+            this.playedIndices = []; // 重置已播放的索引列表
             this.autoChangePhoto(); 
             this.isSlideshowPlaying = true; 
         }
     },
 
+    resetSlideshow: function() {
+        clearInterval(this.slideshowInterval);
+        this.isSlideshowPlaying = false;
+        this.currentPhotoIndex = 0; // 重置索引
+    },
+
     autoChangePhoto: function() {
         clearInterval(this.slideshowInterval);
         this.slideshowInterval = setInterval(() => {
-            this.currentPhotoIndex = (this.currentPhotoIndex + 1) % this.photos.length;
+            if (this.playMode === 'random') {
+                this.randomPlay();
+            } else {
+                this.currentPhotoIndex = (this.currentPhotoIndex + 1) % this.photos.length;
+            }
             this.showCurrentPhoto();
         }, this.slideshowSpeed);
+    },
+
+    randomPlay: function() {
+        if (this.playedIndices.length === this.photos.length) {
+            // 已经播放过所有相片，则重置已播放索引列表
+            this.playedIndices = [];
+        }
+
+        let nextIndex;
+        do {
+            nextIndex = Math.floor(Math.random() * this.photos.length);
+        } while (this.playedIndices.includes(nextIndex));
+        
+        this.playedIndices.push(nextIndex);
+        this.currentPhotoIndex = nextIndex;
     },
 
     setupEventListeners: function() {
         document.getElementById("authorize-btn").onclick = this.authorizeUser.bind(this);
         document.getElementById("start-slideshow-btn").onclick = this.startSlideshow.bind(this);
         document.getElementById("back-to-album-btn").onclick = this.showAlbumSelection.bind(this);
+    },
+
+    toggleButtonsVisibility: function(visible) {
+        const buttons = document.querySelectorAll('.nav-button');
+        buttons.forEach(button => {
+            button.style.display = visible ? 'inline-block' : 'none';
+        });
+        document.getElementById("start-slideshow-btn").style.display = visible ? 'inline-block' : 'none';
+        document.getElementById("fullscreen-toggle-btn").style.display = visible ? 'inline-block' : 'none';
     },
 
     showAlbumSelection: function() {
@@ -248,12 +291,6 @@ const app = {
         this.idleTime++;
         if (this.idleTime > 100) {
             document.getElementById("screenOverlay").style.display = "block";
-        }
-        // Automatically enter guided access if detected
-        // This is a simplified representation; actual implementation may vary depending on device detection
-        if (this.idleTime > 300) { 
-            console.warn("Entering guided access mode...");
-            // Implement guided access logic here if needed
         }
     },
 
