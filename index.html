@@ -12,20 +12,20 @@
 </head>
 <body>
 
-    <!-- 🔹 授權登入 -->
+    <!-- 授權登入 -->
     <div id="auth-container">
         <h1>Google 相簿 數位相框</h1>
         <button id="authorize-btn">使用 Google 帳戶登入</button>
     </div>
 
-    <!-- 🔹 相簿選擇與播放設置 -->
+    <!-- 相簿選擇與播放設置 -->
     <div id="app-container" style="display: none;">
         <button id="back-to-album-btn" style="display: none;">選擇其他相簿</button>
         <div id="album-selection-container">
             <h2>選擇相簿</h2>
             <select id="album-select" onchange="app.loadPhotos()">
                 <option value="all">所有相片</option>
-                <!-- 動態生成的相簿選項 -->
+                <!-- 动态生成的相簿选项 -->
             </select>
             <div class="slideshow-controls">
                 <label for="slideshow-speed">輪播速度 (秒): </label>
@@ -35,16 +35,14 @@
                     <option value="sequential">順序播放</option>
                     <option value="random">隨機播放</option>
                 </select>
-                <label for="night-mode">夜晚模式: </label>
-                <input type="checkbox" id="night-mode">
             </div>
         </div>
 
-        <!-- 🔹 相片顯示區 -->
+        <!-- 相片顯示區 -->
         <div id="photo-container" style="display: none;"></div>
     </div>
 
-    <!-- 🔹 放大圖片 (Lightbox) -->
+    <!-- 放大圖片 (Lightbox) -->
     <div id="lightbox" style="display:none;">
         <span id="close-lightbox" style="cursor: pointer;">&times;</span>
         <img id="lightbox-image" src="" alt="Lightbox Image">
@@ -57,6 +55,5 @@
     </div>
 
     <div id="screenOverlay"></div>
-
 </body>
 </html>
