@@ -173,7 +173,6 @@ const app = {
         document.getElementById("app-container").style.display = "flex"; 
         document.getElementById("photo-container").style.display = "grid"; 
 
-        // 设置 Intersection Observer 以便实现加载更多功能
         this.setupLazyLoading();
     },
 
@@ -201,6 +200,8 @@ const app = {
         lightbox.onclick = (e) => {
             if (e.target === lightbox || e.target.id === "close-lightbox") {
                 this.closeLightbox();
+            } else {
+                this.toggleSlideshow(); // 点击 lightbox 区域暂停/继续幻灯片
             }
         };
     },
@@ -213,6 +214,14 @@ const app = {
             this.resetSlideshow(); // 关闭时重置幻灯片
             this.toggleButtonsVisibility(false); // 隐藏所有按钮
         }, 300);
+    },
+
+    toggleSlideshow: function() {
+        if (this.isSlideshowPlaying) {
+            this.resetSlideshow();
+        } else {
+            this.startSlideshow();
+        }
     },
 
     changePhoto: function(direction) {
@@ -233,6 +242,7 @@ const app = {
             this.playedIndices = []; // 重置已播放的索引列表
             this.autoChangePhoto(); 
             this.isSlideshowPlaying = true; 
+            this.toggleButtonsVisibility(false); // 开始时隐藏按钮
         }
     },
 
@@ -240,6 +250,7 @@ const app = {
         clearInterval(this.slideshowInterval);
         this.isSlideshowPlaying = false;
         this.currentPhotoIndex = 0; // 重置索引
+        this.toggleButtonsVisibility(true); // 暂停时显示按钮
     },
 
     autoChangePhoto: function() {
@@ -323,7 +334,6 @@ const app = {
             entries.forEach(entry => {
                 if (entry.isIntersecting && this.nextPageToken) {
                     this.loadPhotos(); // Trigger loading more photos
-                    observer.unobserve(entry.target); // Stop observing
                 }
             });
         }, options);
