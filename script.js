@@ -184,7 +184,6 @@ const app = {
         lightbox.style.display = "flex"; 
         setTimeout(() => lightbox.style.opacity = 1, 10);
 
-        // 打开时显示所有控制按钮
         this.toggleButtonsVisibility(true);
 
         document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
@@ -198,10 +197,11 @@ const app = {
     setupLightboxClick: function() {
         const lightbox = document.getElementById("lightbox");
         lightbox.onclick = (e) => {
+            // 判断是否点击控制按钮区域而不是图片区域
             if (e.target === lightbox || e.target.id === "close-lightbox") {
                 this.closeLightbox();
-            } else {
-                this.toggleSlideshow(); // 点击 lightbox 区域暂停/继续幻灯片
+            } else if (e.target.tagName !== "BUTTON") {
+                this.toggleSlideshow(); // 点击灯箱区域暂停/继续幻灯片
             }
         };
     },
@@ -249,7 +249,6 @@ const app = {
     resetSlideshow: function() {
         clearInterval(this.slideshowInterval);
         this.isSlideshowPlaying = false;
-        this.currentPhotoIndex = 0; // 重置索引
         this.toggleButtonsVisibility(true); // 暂停时显示按钮
     },
 
@@ -338,10 +337,8 @@ const app = {
             });
         }, options);
 
-        const photos = document.querySelectorAll('.photo');
-        photos.forEach(photo => {
-            observer.observe(photo);
-        });
+        const photoContainer = document.getElementById("photo-container");
+        observer.observe(photoContainer); // 监测照片容器
     }
 };
 
