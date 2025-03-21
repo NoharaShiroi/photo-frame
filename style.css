@@ -1,101 +1,112 @@
-/* 基本CSS樣式 */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+    text-align: center;
+    overflow: hidden; /* Prevent overflow */
+}
+
+/* 容器設置 */
+#app-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px;
+}
+
+/* 相簿選擇區 */
+#album-selection-container {
+    margin-bottom: 20px;
+}
+
+/* 幻燈片控制區 */
+.slideshow-controls {
+    margin-top: 10px;
+    display: flex;
+    align-items: center;
+}
+
+#slideshow-speed {
+    width: 50px;
+    margin-left: 5px;
+}
+
+/* 縮圖顯示區 */
+#photo-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 5px;
+    padding: 10px;
+    justify-content: center;
+    max-width: 90vw;
+}
+
+/* 縮圖 */
 .photo {
     width: 100%;
-    height: auto;
+    aspect-ratio: 1/1; 
+    object-fit: cover;
+    border-radius: 5px;
     cursor: pointer;
-    transition: transform 0.3s ease;
+    transition: transform 0.2s ease-in-out;
 }
 
-.photo.is-enlarging {
-    transform: scale(1.1);
+.photo:hover {
+    transform: scale(1.05);
 }
 
-.lightbox {
+/* 放大圖片 (lightbox) 相關樣式 */
+#lightbox {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
     background-color: rgba(0, 0, 0, 0.8);
-    display: none;
+    display: none; 
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
     justify-content: center;
     align-items: center;
     z-index: 1000;
 }
 
-.lightbox-image {
-    max-width: 90%;
-    max-height: 90vh;
-    object-fit: contain;
+#lightbox img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain; /* Maintain aspect ratio */
+    box-shadow: 0px 0px 15px rgba(255, 255, 255, 0.7);
 }
 
+/* 定位按钮 */
 .lightbox-buttons {
-    position: fixed;
-    bottom: 20px;
     display: flex;
-    gap: 10px;
-    color: white;
-    padding: 10px;
-    background-color: rgba(0, 0, 0, 0.7);
-    border-radius: 5px;
+    justify-content: center;
+    gap: 40px;
+    margin-top: 10px;
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
 }
 
 .nav-button {
-    display: none;
-    padding: 5px 10px;
+    background-color: rgba(255, 192, 203, 0.7); 
     border: none;
-    background-color: rgba(255, 255, 255, 0.1);
-    color: white;
-    cursor: pointer;
-    transition: display 0.3s ease-in-out; /* 合并 */
-}
-
-.slideshow-active .nav-button {
-    display: flex; /* Ensure buttons show during slideshow */
-}
-
-.sleep-mode {
-    filter: brightness(20%);
-}
-
-.thumbnail {
-    width: 80px;
-    height: 80px;
-    margin: 5px;
     border-radius: 5px;
+    padding: 10px 20px;
     cursor: pointer;
-    overflow: hidden; /* 确保内部分图片不溢出 */
+    transition: background-color 0.3s, transform 0.2s;
 }
 
-.thumbnail img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+/* 悬停效果 */
+.nav-button:hover {
+    background-color: rgba(255, 192, 203, 1);
+    transform: scale(1.05);
 }
 
-.loading {
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 24px;
-    color: white;
-    text-align: center;
-    z-index: 1001; /* 增加 z-index */
-}
-
-/* 縮圖列表樣式 */
-.thumbnail-list {
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding: 10px;
-    gap: 5px;
-    margin: 10px 0;
-    display: flex; /* 确保使用 flexbox 布局 */
-}
-
-/* 懸浮按鈕樣式 */
+/* 返回選擇相簿按鈕 */
 #back-to-album-btn {
     position: fixed;
     top: 10px;
@@ -109,61 +120,23 @@
     border-radius: 5px;
     border: none;
     cursor: pointer;
-    transition: all 0.2s ease;
 }
 
-#back-to-album-btn:hover {
-    background-color: #45a049; /* 色彩悬浮效果 */
-}
-
-/* 螢幕亮度過渡效果 */
-body {
-    transition: filter 0.3s ease;
-}
-
-/* 超連結懸浮效果 */
-.thumbnail img,
-.photo {
-    transition: transform 0.2s ease-in-out;
-}
-
-.thumbnail img:hover,
-.photo:hover {
-    transform: scale(1.05);
-}
-
-/* 幻燈片模式樣式 */
-.fullscreen {
+/* 屏幕覆盖 */
+#screenOverlay {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    background: #000;
-    z-index: 1000;
+    width: 100vw;
+    height: 100vh;
+    background: black;
+    display: none;
+    z-index: 9999;
 }
 
-.fullscreen .lightbox-buttons {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.7);
-    padding: 10px;
-    border-radius: 3px;
-    display: flex;
-    gap: 10px;
-}
-
-.fullscreen .lightbox-buttons button {
-    color: white;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 5px 10px;
-    border-radius: 3px;
-}
-
-.fullscreen .lightbox-buttons button:hover {
-    background: rgba(255, 255, 255, 0.1);
+/* 響應式設計 */
+@media (max-width: 768px) {
+    #photo-container {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    }
 }
