@@ -170,6 +170,7 @@ const app = {
         photoContainer.style.display = "grid";
         document.getElementById("app-container").style.display = "flex"; 
         document.getElementById("photo-container").style.display = "grid"; 
+        this.setupLazyLoading();
     },
 
     openLightbox: function(index) {
@@ -182,6 +183,7 @@ const app = {
 
         document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
         document.getElementById("next-photo").onclick = () => this.changePhoto(1);
+        document.getElementById("fullscreen-toggle-btn").onclick = this.toggleFullscreen.bind(this);
         
         clearInterval(this.slideshowInterval);
         this.setupLightboxClick();
@@ -247,11 +249,50 @@ const app = {
         if (this.idleTime > 100) {
             document.getElementById("screenOverlay").style.display = "block";
         }
+        // Automatically enter guided access if detected
+        // This is a simplified representation; actual implementation may vary depending on device detection
+        if (this.idleTime > 300) { 
+            console.warn("Entering guided access mode...");
+            // Implement guided access logic here if needed
+        }
     },
 
     resetIdleTimer: function() {
         this.idleTime = 0;
         document.getElementById("screenOverlay").style.display = "none";
+    },
+
+    toggleFullscreen: function() {
+        const lightbox = document.getElementById("lightbox");
+        if (!document.fullscreenElement) {
+            lightbox.requestFullscreen().catch(err => {
+                console.error(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    },
+
+    setupLazyLoading: function() {
+        const options = {
+            root: null,
+            rootMargin: '0px',
+            threshold: 0.1
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && this.nextPageToken) {
+                    this.loadPhotos(); // Trigger loading more photos
+                    observer.unobserve(entry.target); // Stop observing
+                }
+            });
+        }, options);
+
+        const photos = document.querySelectorAll('.photo');
+        photos.forEach(photo => {
+            observer.observe(photo);
+        });
     }
 };
 
@@ -259,29 +300,4 @@ document.addEventListener("DOMContentLoaded", () => {
     app.init();
     document.addEventListener("mousemove", app.resetIdleTimer.bind(app));
     document.addEventListener("touchstart", app.resetIdleTimer.bind(app));
-
-    // Intersection Observer for lazy loading images
-    const lazyLoadPhotos = () => {
-        const photos = document.querySelectorAll('.photo');
-        const options = {
-            root: null,
-            rootMargin: '0px',
-            threshold: 0.1
-        };
-        
-        const observer = new IntersectionObserver((entries, observer) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting && app.nextPageToken) {
-                    app.loadPhotos(); // load more photos
-                    observer.unobserve(entry.target); // Stop observing the current entry
-                }
-            });
-        }, options);
-        
-        photos.forEach(photo => {
-            observer.observe(photo);
-        });
-    };
-
-    lazyLoadPhotos();
 });
