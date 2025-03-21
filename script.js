@@ -321,8 +321,19 @@ const app = {
     },
 
     setupLazyLoading: function() {
+        const photoContainer = document.getElementById("photo-container");
+        
+        // 設置滾動事件監聽器來觸發加載更多圖片
+        photoContainer.addEventListener('scroll', (e) => {
+            if (this.nextPageToken && 
+                photoContainer.scrollHeight - photoContainer.scrollTop <= photoContainer.clientHeight + 100) {
+                this.loadPhotos();
+            }
+        });
+
+        // 設置IntersectionObserver來監控可見區
         const options = {
-            root: null,
+            root: photoContainer,
             rootMargin: '0px',
             threshold: 0.1
         };
@@ -330,14 +341,71 @@ const app = {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting && this.nextPageToken) {
-                    this.loadPhotos(); // Trigger loading more photos
+                    this.loadPhotos();
                 }
             });
         }, options);
 
-        const photoContainer = document.getElementById("photo-container");
+        // 將監控器應用到圖片容器
         observer.observe(photoContainer);
-    }
+    },
+
+    loadPhotos: function() {
+        if (!this.accessToken || !this.nextPageToken) return;
+
+        const url = `https://photoslibrary.googleapis.com/v1/mediaItems:search`;
+        const body = {
+            albumId: this.albumId,
+            pageSize: 50,
+            pageToken: this.nextPageToken
+        };
+
+        fetch(url, {
+            method: "POST",
+            headers: { 
+                "Authorization": "Bearer " + this.accessToken,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
+        })
+        .then(response => {
+            if (!response.ok) throw new Error("Network response was not ok.");
+            return response.json();
+        })
+        .then(data => {
+            if (data.mediaItems) {
+                this.photos = [...new Map([...this.photos, ...data.mediaItems].map(item => [item.id, item])).values()];
+                this.nextPageToken = data.nextPageToken;
+                this.renderPhotos();
+                // 更新本地存儲的照片數據
+                localStorage.setItem(this.albumId || 'all', JSON.stringify({ 
+                    data: [...new Set(this.photos.map(p => p.id))].map(id => this.photos.find(p => p.id === id)), 
+                    expiresAt: Date.now() + 60 * 60 * 1000 
+                }));
+            }
+        })
+        .catch(error => console.error("Error fetching photos:", error));
+    },
+
+    renderPhotos: function() {
+        const photoContainer = document.getElementById("photo-container");
+        photoContainer.innerHTML = '';
+
+        if (this.photos.length === 0) {
+            photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
+        } else {
+            this.photos.forEach((photo, index) => {
+                const img = document.createElement("img");
+                img.src = `${photo.baseUrl}=w600-h400`;
+                img.alt = "Photo";
+                img.classList.add("photo");
+                img.onclick = () => this.openLightbox(index);
+                photoContainer.appendChild(img);
+            });
+        }
+    },
+
+    // （其他已有的方法，包括openLightbox, closeLightbox等）
 };
 
 document.addEventListener("DOMContentLoaded", () => {
