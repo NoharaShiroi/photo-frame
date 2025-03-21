@@ -83,7 +83,10 @@ const app = {
 
         fetch(url, {
             method: "POST",
-            headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
+            headers: { 
+                "Authorization": "Bearer " + this.accessToken,
+                "Content-Type": "application/json"
+            },
             body: JSON.stringify(body)
         })
         .then(response => {
@@ -95,7 +98,10 @@ const app = {
                 this.photos = [...new Map(this.photos.concat(data.mediaItems).map(item => [item.id, item])).values()];
                 this.nextPageToken = data.nextPageToken;
                 this.renderPhotos();
-                localStorage.setItem(this.albumId || 'all', JSON.stringify({ data: this.photos, expiresAt: Date.now() + 60 * 60 * 1000 }));
+                localStorage.setItem(this.albumId || 'all', JSON.stringify({ 
+                    data: this.photos, 
+                    expiresAt: Date.now() + 60 * 60 * 1000 
+                }));
             }
         })
         .catch(error => console.error("Error fetching photos:", error));
@@ -104,13 +110,16 @@ const app = {
     fetchPhotos: function() {
         const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
         const body = {
-            albumId: this(albumId),
+            albumId: this.albumId,
             pageSize: 50
         };
 
         fetch(url, {
             method: "POST",
-            headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
+            headers: { 
+                "Authorization": "Bearer " + this.accessToken,
+                "Content-Type": "application/json"
+            },
             body: JSON.stringify(body)
         })
         .then(response => {
@@ -120,23 +129,27 @@ const app = {
         .then(data => {
             if (data.mediaItems) {
                 this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()];
+                this.nextPageToken = data.nextPageToken;
                 this.renderPhotos();
-                localStorage.setItem(this.albumId, JSON.stringify({ data: this.photos, expiresAt: Date.now() + 60 * 60 * 1000 }));
+                localStorage.setItem(this.albumId, JSON.stringify({ 
+                    data: this.photos, 
+                    expiresAt: Date.now() + 60 * 60 * 1000 
+                }));
             }
         })
         .catch(error => console.error("Error fetching photos:", error));
     },
 
-renderPhotos: function() {
+    renderPhotos: function() {
         const photoContainer = document.getElementById("photo-container");
         photoContainer.innerHTML = '';
-        
+
         if (this.photos.length === 0) {
             photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
         } else {
             this.photos.forEach((photo, index) => {
                 const img = document.createElement("img");
-                img.src = photo.baseUrl + '=w600-h400'; // 正確拼接
+                img.src = photo.baseUrl + '?w600-h400'; // 修復URL拼接錯誤
                 img.alt = "Photo";
                 img.classList.add("photo");
                 img.onclick = () => this.openLightbox(index);
@@ -149,8 +162,8 @@ renderPhotos: function() {
         this.currentPhotoIndex = index;
         const lightbox = document.getElementById("lightbox");
         const lightboxImage = document.getElementById("lightbox-image");
-        lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
-        lightbox.style.display = "flex"; 
+        lightboxImage.src = `${this.photos[index].baseUrl}?w1200-h800`; // 修復URL拼接錯誤
+        lightbox.style.display = "flex";
         setTimeout(() => lightbox.style.opacity = 1, 10);
 
         this.toggleButtonsVisibility(true);
@@ -158,7 +171,7 @@ renderPhotos: function() {
         document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
         document.getElementById("next-photo").onclick = () => this.changePhoto(1);
         document.getElementById("fullscreen-toggle-btn").onclick = this.toggleFullscreen.bind(this);
-        
+
         clearInterval(this.slideshowInterval);
         this.setupLightboxClick();
     },
