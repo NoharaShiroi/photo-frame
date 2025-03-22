@@ -24,7 +24,22 @@ const app = {
         this.checkAuth();
         this.setupIdleMonitor();
     },
-
+   // 修改授权方法
+    handleAuthFlow() {
+        const authEndpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
+        const params = {
+            client_id: this.CLIENT_ID,
+            redirect_uri: this.REDIRECT_URI,
+            response_type: 'token',
+            scope: this.SCOPES,
+            include_granted_scopes: 'true',
+            state: 'pass-through-value',
+            prompt: 'consent'
+        };
+        
+        const url = authEndpoint + '?' + new URLSearchParams(params);
+        window.location.href = url;
+    },
     checkAuth() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         if (hashParams.has("access_token")) {
@@ -32,12 +47,11 @@ const app = {
             sessionStorage.setItem("access_token", this.states.accessToken);
             window.history.replaceState({}, "", window.location.pathname);
             this.showApp();
-        } else if (this.states.accessToken) {
-            this.showApp();
-        } else {
-            document.getElementById("auth-container").style.display = "flex";
+            return true;
         }
-    },
+        return false;
+    }
+};
 
     showApp() {
         document.getElementById("auth-container").style.display = "none";
@@ -50,7 +64,16 @@ const app = {
             const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${this.CLIENT_ID}&redirect_uri=${encodeURIComponent(this.REDIRECT_URI)}&response_type=token&scope=${this.SCOPES}`;
             window.location.href = authUrl;
         });
-
+document.getElementById("authorize-btn").addEventListener("click", (e) => {
+    e.preventDefault();
+    try {
+        this.handleAuthFlow();
+    } catch (error) {
+        console.error("授权流程错误:", error);
+        alert("无法启动授权流程，请检查控制台日志");
+    }
+});
+        
         document.getElementById("album-select").addEventListener("change", (e) => {
             this.states.albumId = e.target.value;
             this.resetPhotoData();
