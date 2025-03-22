@@ -6,9 +6,8 @@
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>Google 相簿數位相框</title>
-    <link rel="stylesheet" href="style.css">
+     <link rel="stylesheet" href="style.css">
     <script src="https://apis.google.com/js/api.js"></script>
-    <script src="script.js" defer></script>
 </head>
 <body>
     <!-- 授權登入 -->
@@ -18,7 +17,7 @@
     </div>
 
     <!-- 相簿選擇與播放設置 -->
-    <div id="app-container" style="display: none;">
+   <div id="app-container" style="display: none;">
         <div id="album-selection-container">
             <h2>選擇相簿</h2>
             <select id="album-select">
@@ -34,8 +33,15 @@
                 </select>
             </div>
         </div>
-
-        <!-- 相片顯示區 -->
+<!-- 新增滚动容器包裹相片区域 -->
+        <div id="scroll-container">
+            <div id="photo-container" style="display: none;"></div>
+            <div id="loading-indicator" style="display: none;">
+                <div class="loader"></div>
+                <p>加載更多照片中...</p>
+            </div>
+        </div>
+          <!-- 相片顯示區 -->
         <div id="photo-container" style="display: none;"></div>
         <div id="loading-indicator" style="display: none;">
             <div class="loader"></div>
