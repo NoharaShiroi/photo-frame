@@ -1,10 +1,10 @@
 const app = {
-    // 配置参数
+    // 配置參數
     CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
     REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
     
-    // 状态管理
+    // 狀態管理
     states: {
         accessToken: null,
         albumId: "all",
@@ -13,7 +13,8 @@ const app = {
         nextPageToken: null,
         isFetching: false,
         slideshowInterval: null,
-        observer: null
+        observer: null,
+        hasMorePhotos: true // 新增：標記是否還有更多照片
     },
 
     // 初始化
@@ -24,7 +25,7 @@ const app = {
         this.setupIdleMonitor();
     },
 
-    // 授权检查
+    // 授權檢查
     checkAuth() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         if (hashParams.has("access_token")) {
@@ -39,22 +40,22 @@ const app = {
         }
     },
 
-    // 显示主界面
+    // 顯示主界面
     showApp() {
         document.getElementById("auth-container").style.display = "none";
         document.getElementById("app-container").style.display = "block";
         this.fetchAlbums();
     },
 
-    // 事件监听
+    // 事件監聽
     setupEventListeners() {
-        // 授权按钮
+        // 授權按鈕
         document.getElementById("authorize-btn").addEventListener("click", () => {
             const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${this.CLIENT_ID}&redirect_uri=${encodeURIComponent(this.REDIRECT_URI)}&response_type=token&scope=${this.SCOPES}`;
             window.location.href = authUrl;
         });
 
-        // 相簿选择
+        // 相簿選擇
         document.getElementById("album-select").addEventListener("change", (e) => {
             this.states.albumId = e.target.value;
             this.resetPhotoData();
@@ -69,7 +70,7 @@ const app = {
         document.getElementById("fullscreen-toggle-btn").addEventListener("click", () => this.toggleFullscreen());
     },
 
-    // 获取相簿列表
+    // 獲取相簿列表
     async fetchAlbums() {
         try {
             const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
@@ -83,7 +84,7 @@ const app = {
         }
     },
 
-    // 渲染相簿选单
+    // 渲染相簿選單
     renderAlbumSelect(albums) {
         const select = document.getElementById("album-select");
         select.innerHTML = '<option value="all">所有相片</option>';
@@ -95,22 +96,22 @@ const app = {
         });
     },
 
-    // 加载照片
+    // 載入照片
     async loadPhotos() {
-        if (this.states.isFetching) return;
+        if (this.states.isFetching || !this.states.hasMorePhotos) return;
         this.states.isFetching = true;
         document.getElementById("loading-indicator").style.display = "block";
 
         try {
             const body = {
-                pageSize: 100,
+                pageSize: 100,  // 每次加載 100 張照片
                 pageToken: this.states.nextPageToken || undefined
             };
 
             if (this.states.albumId !== "all") {
                 body.albumId = this.states.albumId;
             } else {
-                body.filters = { includeArchivedMedia: true };
+                body.filters = { includeArchivedMedia: true }; // 包含所有媒體
             }
 
             const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
@@ -125,16 +126,20 @@ const app = {
             const data = await response.json();
             if (!response.ok) throw new Error(data.error.message);
 
+            // 合併照片並去重
             const newPhotos = data.mediaItems.filter(
                 item => !this.states.photos.some(p => p.id === item.id)
             );
             this.states.photos = [...this.states.photos, ...newPhotos];
             this.states.nextPageToken = data.nextPageToken || null;
-            
+
+            // 檢查是否還有更多照片
+            this.states.hasMorePhotos = !!this.states.nextPageToken;
+
             this.renderPhotos();
         } catch (error) {
-            console.error("照片加载失败:", error);
-            this.handleAuthError();
+            console.error("照片加載失敗:", error);
+            this.showMessage("加載失敗，請稍後重試");
         } finally {
             this.states.isFetching = false;
             document.getElementById("loading-indicator").style.display = "none";
@@ -155,23 +160,24 @@ const app = {
                  onclick="app.openLightbox('${photo.id}')">
         `).join("");
 
-        if (this.states.photos.length === 0) {
-            container.innerHTML = `<p class="empty-state">此相簿目前沒有照片</p>`;
+        // 如果沒有更多照片，顯示提示
+        if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
+            container.insertAdjacentHTML("beforeend", `<p class="empty-state">已無更多相片</p>`);
         }
 
         this.setupLazyLoad();
         this.setupScrollObserver();
     },
 
-    // 延迟加载
+    // 延遲加載
     setupLazyLoad() {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     const img = entry.target;
-                    img.src = img.dataset.src + "-no";
+                    img.src = img.dataset.src + "-no"; // 先加載低分辨率
                     setTimeout(() => {
-                        img.src = img.dataset.src;
+                        img.src = img.dataset.src; // 加載高清版本
                     }, 300);
                     observer.unobserve(img);
                 }
@@ -186,7 +192,7 @@ const app = {
         });
     },
 
-    // 增强滚动监听
+    // 增強滾動監聽
     setupScrollObserver() {
         if (this.states.observer) this.states.observer.disconnect();
         
@@ -195,7 +201,8 @@ const app = {
                 entries.forEach(entry => {
                     if (entry.isIntersecting && 
                         this.states.nextPageToken && 
-                        !this.states.isFetching
+                        !this.states.isFetching &&
+                        this.states.hasMorePhotos
                     ) {
                         this.loadPhotos();
                     }
@@ -212,6 +219,15 @@ const app = {
         if (lastPhoto) {
             this.states.observer.observe(lastPhoto);
         }
+    },
+
+    // 顯示提示訊息
+    showMessage(message) {
+        const container = document.getElementById("photo-container");
+        const messageElement = document.createElement("p");
+        messageElement.className = "empty-state";
+        messageElement.textContent = message;
+        container.appendChild(messageElement);
     },
 
     // Lightbox控制
@@ -238,7 +254,7 @@ const app = {
             `${this.states.photos[this.states.currentIndex].baseUrl}=w1920-h1080`;
     },
 
-    // 幻灯片控制
+    // 幻燈片控制
     toggleSlideshow() {
         if (this.states.slideshowInterval) {
             this.stopSlideshow();
@@ -255,7 +271,7 @@ const app = {
         this.states.slideshowInterval = null;
     },
 
-    // 全屏控制
+    // 全螢幕控制
     toggleFullscreen() {
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen();
@@ -264,7 +280,7 @@ const app = {
         }
     },
 
-    // 闲置监控
+    // 閒置監控
     setupIdleMonitor() {
         let idleTime = 0;
         const resetTimer = () => {
@@ -284,14 +300,15 @@ const app = {
         document.addEventListener("keydown", resetTimer);
     },
 
-    // 重置数据
+    // 重置資料
     resetPhotoData() {
         this.states.photos = [];
         this.states.nextPageToken = null;
+        this.states.hasMorePhotos = true; // 重置為可加載狀態
         document.getElementById("photo-container").innerHTML = "";
     },
 
-    // 错误处理
+    // 錯誤處理
     handleAuthError() {
         const retry = confirm("授權已過期，是否重新登入？");
         if (retry) {
@@ -304,7 +321,7 @@ const app = {
     }
 };
 
-// API请求重试逻辑
+// API請求重試邏輯
 app.fetchWithRetry = async function(url, options, retries = 3) {
     for (let i = 0; i < retries; i++) {
         try {
