@@ -33,15 +33,16 @@
             </div>
         </div>
 
-        <div id="photo-container"></div>
+        <div id="photo-container" style="display: none;"></div>
         <div id="loading-indicator">
             <div class="loader"></div>
         </div>
     </div>
 
     <div id="lightbox">
-        <span id="close-lightbox">&times;</span>
-        <img id="lightbox-image" alt="Lightbox Image">
+    <span id="close-lightbox">&times;</span> <!-- 确保ID一致 -->
+    <img id="lightbox-image" alt="Lightbox Image"> <!-- 移除空src属性 -->
+</div>
         <div class="lightbox-buttons">
             <button id="prev-photo" class="nav-button">&#10094;</button>
             <button id="next-photo" class="nav-button">&#10095;</button>
