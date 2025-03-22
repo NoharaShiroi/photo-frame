@@ -96,84 +96,128 @@ const app = {
     },
 
     // 載入照片
-    async loadPhotos() {
-        if (this.states.isFetching) return;
-        this.states.isFetching = true;
-        document.getElementById("loading-indicator").style.display = "block";
+async loadPhotos() {
+    if (this.states.isFetching) return;
+    this.states.isFetching = true;
+    document.getElementById("loading-indicator").style.display = "block";
 
-        try {
-            const body = {
-                pageSize: 50,
-                pageToken: this.states.nextPageToken,
-                albumId: this.states.albumId === "all" ? undefined : this.states.albumId
-            };
+    try {
+        // 修正API请求参数
+        const body = {
+            pageSize: 100,  // 增加每次加载数量
+            pageToken: this.states.nextPageToken || undefined
+        };
 
-            const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${this.states.accessToken}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(body)
-            });
-
-            const data = await response.json();
-            this.states.photos = [...this.states.photos, ...(data.mediaItems || [])];
-            this.states.nextPageToken = data.nextPageToken || null;
-            this.renderPhotos();
-        } catch (error) {
-            this.handleAuthError();
-        } finally {
-            this.states.isFetching = false;
-            document.getElementById("loading-indicator").style.display = "none";
-            this.setupScrollObserver();
+        // 处理"所有照片"的特殊情况
+        if (this.states.albumId !== "all") {
+            body.albumId = this.states.albumId;
+        } else {
+            body.filters = { includeArchivedMedia: true }; // 包含所有媒体
         }
-    },
+
+        const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${this.states.accessToken}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
+        });
+
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error.message);
+
+        // 合并照片并去重
+        const newPhotos = data.mediaItems.filter(
+            item => !this.states.photos.some(p => p.id === item.id)
+        );
+        this.states.photos = [...this.states.photos, ...newPhotos];
+        this.states.nextPageToken = data.nextPageToken || null;
+        
+        this.renderPhotos();
+    } catch (error) {
+        console.error("照片加载失败:", error);
+        this.handleAuthError();
+    } finally {
+        this.states.isFetching = false;
+        document.getElementById("loading-indicator").style.display = "none";
+        this.setupScrollObserver(); // 重新绑定观察器
+    }
+},
 
     // 渲染照片
     renderPhotos() {
-        const container = document.getElementById("photo-container");
-        container.style.display = "grid";
-        container.innerHTML = this.states.photos.map(photo => `
-            <img class="photo" 
-                 src="${photo.baseUrl}=w300-h300" 
-                 data-src="${photo.baseUrl}=w600-h400"
-                 alt="相片" 
-                 data-id="${photo.id}"
-                 onclick="app.openLightbox('${photo.id}')">
-        `).join("");
+    const container = document.getElementById("photo-container");
+    container.style.display = "grid"; // 确保容器可见
+    container.innerHTML = this.states.photos.map(photo => `
+        <img class="photo" 
+             src="${photo.baseUrl}=w300-h300" 
+             data-src="${photo.baseUrl}=w800-h600"
+             alt="相片" 
+             data-id="${photo.id}"
+             onclick="app.openLightbox('${photo.id}')">
+    `).join("");
 
-        this.setupLazyLoad();
-    },
+    // 添加空状态提示
+    if (this.states.photos.length === 0) {
+        container.innerHTML = `<p class="empty-state">此相簿目前沒有照片</p>`;
+    }
+
+    this.setupLazyLoad();
+    this.setupScrollObserver();
+},
 
     // 延遲載入
-    setupLazyLoad() {
-        const observer = new IntersectionObserver((entries) => {
+setupLazyLoad() {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const img = entry.target;
+                // 渐进式加载策略
+                img.src = img.dataset.src + "-no"; // 先加载低分辨率
+                setTimeout(() => {
+                    img.src = img.dataset.src; // 加载高清版本
+                }, 300);
+                observer.unobserve(img);
+            }
+        });
+    }, { 
+        rootMargin: "200px 0px",
+        threshold: 0.01 
+    });
+
+    document.querySelectorAll(".photo").forEach(img => {
+        if (!img.src.includes("baseUrl")) observer.observe(img);
+    });
+},
+
+// 增强滚动监听
+setupScrollObserver() {
+    if (this.states.observer) this.states.observer.disconnect();
+    
+    this.states.observer = new IntersectionObserver(
+        (entries) => {
             entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const img = entry.target;
-                    img.src = img.dataset.src;
-                    observer.unobserve(img);
+                if (entry.isIntersecting && 
+                    this.states.nextPageToken && 
+                    !this.states.isFetching
+                ) {
+                    this.loadPhotos();
                 }
             });
-        }, { rootMargin: "100px" });
+        },
+        {
+            root: null,
+            rootMargin: "200px",  // 提前200px触发加载
+            threshold: 0.01
+        }
+    );
 
-        document.querySelectorAll(".photo:not([data-loaded])").forEach(img => observer.observe(img));
-    },
-
-    // 滾動監聽
-    setupScrollObserver() {
-        if (this.states.observer) this.states.observer.disconnect();
-        
-        this.states.observer = new IntersectionObserver(([entry]) => {
-            if (entry?.isIntersecting && this.states.nextPageToken && !this.states.isFetching) {
-                this.loadPhotos();
-            }
-        }, { threshold: 0.1 });
-
-        const lastPhoto = document.querySelector(".photo:last-child");
-        if (lastPhoto) this.states.observer.observe(lastPhoto);
-    },
+    const lastPhoto = document.querySelector(".photo:last-child");
+    if (lastPhoto) {
+        this.states.observer.observe(lastPhoto);
+    }
+},
 
     // Lightbox控制
     openLightbox(photoId) {
@@ -254,9 +298,27 @@ const app = {
 
     // 錯誤處理
     handleAuthError() {
+    const retry = confirm("授權已過期，是否重新登入？");
+    if (retry) {
         sessionStorage.removeItem("access_token");
         window.location.reload();
+    } else {
+        document.getElementById("auth-container").style.display = "flex";
+        document.getElementById("app-container").style.display = "none";
     }
+   // API请求添加重试逻辑
+async fetchWithRetry(url, options, retries = 3) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const response = await fetch(url, options);
+            if (response.ok) return response;
+            throw new Error(`HTTP error! status: ${response.status}`);
+        } catch (error) {
+            if (i === retries - 1) throw error;
+            await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+        }
+    }
+}     
 };
 
 // 初始化
