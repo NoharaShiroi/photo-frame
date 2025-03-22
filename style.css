@@ -95,7 +95,8 @@ select {
     text-align: center;
     color: #666;
     font-size: 1.2rem;
-    padding: 40px;
+    padding: 20px;
+    margin-top: 20px;
 }
 
 .photo:hover {
