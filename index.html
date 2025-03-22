@@ -5,17 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="referrer" content="no-referrer-when-downgrade">
-<meta http-equiv="Content-Security-Policy" 
-      content="default-src 'self' https://*.googleapis.com https://*.google.com;
-               script-src 'self' https://*.googleapis.com https://*.google.com 'unsafe-inline';
-               style-src 'self' 'unsafe-inline';
-               img-src 'self' data: https://*.googleusercontent.com;
-               connect-src 'self' https://*.googleapis.com https://photoslibrary.googleapis.com;
-               frame-src https://accounts.google.com;">
+    <meta name="referrer" content="no-referrer-when-downgrade">
+    <meta http-equiv="Content-Security-Policy" 
+          content="default-src 'self' https://*.googleapis.com https://*.google.com;
+                   script-src 'self' https://*.googleapis.com https://*.google.com 'unsafe-inline';
+                   style-src 'self' 'unsafe-inline';
+                   img-src 'self' data: https://*.googleusercontent.com;
+                   connect-src 'self' https://*.googleapis.com https://photoslibrary.googleapis.com;
+                   frame-src https://accounts.google.com;">
     <title>Google 相簿數位相框</title>
-     <link rel="stylesheet" href="style.css">
-    <script src="https://apis.google.com/js/api.js"></script>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <!-- 授權登入 -->
@@ -24,8 +23,8 @@
         <button id="authorize-btn">使用 Google 帳戶登入</button>
     </div>
 
-    <!-- 相簿選擇與播放設置 -->
-   <div id="app-container" style="display: none;">
+    <!-- 主應用界面 -->
+    <div id="app-container">
         <div id="album-selection-container">
             <h2>選擇相簿</h2>
             <select id="album-select">
@@ -41,22 +40,18 @@
                 </select>
             </div>
         </div>
-<!-- 新增滚动容器包裹相片区域 -->
+
+        <!-- 滚动容器 -->
         <div id="scroll-container">
-            <div id="photo-container" style="display: none;"></div>
-            <div id="loading-indicator" style="display: none;">
+            <div id="photo-container"></div>
+            <div id="loading-indicator">
                 <div class="loader"></div>
                 <p>加載更多照片中...</p>
             </div>
         </div>
-          <!-- 相片顯示區 -->
-        <div id="photo-container" style="display: none;"></div>
-        <div id="loading-indicator" style="display: none;">
-            <div class="loader"></div>
-        </div>
     </div>
 
-    <!-- 放大圖片 (Lightbox) -->
+    <!-- Lightbox -->
     <div id="lightbox">
         <span id="close-lightbox">&times;</span>
         <img id="lightbox-image" alt="Lightbox Image">
@@ -70,5 +65,7 @@
 
     <!-- 閒置遮罩 -->
     <div id="screenOverlay"></div>
+    
+    <script src="script.js"></script>
 </body>
 </html>
