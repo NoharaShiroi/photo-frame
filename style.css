@@ -97,7 +97,6 @@ select {
     padding: 40px;
 }
 
-}
 .photo:hover {
     transform: scale(1.03);
     box-shadow: 0 8px 25px rgba(0,0,0,0.3);
@@ -171,10 +170,8 @@ select {
 @media (max-width: 768px) {
     #photo-container {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 10px;
-        padding: 10px;
     }
-
+}
     .lightbox-buttons {
         bottom: 20px;
         gap: 10px;
