@@ -31,7 +31,7 @@ const app = {
             document.getElementById("auth-container").style.display = "none";
             document.getElementById("app-container").style.display = "flex";
             this.fetchAlbums();
-            this.loadPhotos();
+            this.load_photos(); // 調用修正後的 loadPhotos 方法
         } else {
             document.getElementById("auth-container").style.display = "flex";
             document.getElementById("app-container").style.display = "none";
@@ -42,26 +42,6 @@ const app = {
         const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${this.CLIENT_ID}&redirect_uri=${encodeURIComponent(this.REDIRECT_URI)}&response_type=token&scope=${this.SCOPES}&prompt=consent`;
         window.location.href = authUrl;
     },
-loadPhotos: function() {
-    const albumSelect = document.getElementById("album-select");
-    this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
-
-    const cachedPhotos = localStorage.getItem(this.albumId || 'all');
-    if (cachedPhotos) {
-        const { data, expiresAt } = JSON.parse(cachedPhotos);
-        if (Date.now() < expiresAt) {
-            this.photos = data;
-            this.renderPhotos();
-            return;
-        }
-    }
-
-    if (this.albumId) {
-        this.fetchPhotos();
-    } else {
-        this.fetchAllPhotos();
-    }
-},
 
     fetchAlbums: function() {
         if (!this.accessToken) return;
@@ -79,8 +59,12 @@ loadPhotos: function() {
             if (data.albums) {
                 this.renderAlbumList(data.albums);
             }
+            console.log('รับข้อมูลอัลบั้มสำเร็จ。จำนวนอัลบั้ม:', data.albums ? data.albums.length : 0);
         })
-        .catch(error => console.error("Error fetching albums:", error));
+        .catch(error => {
+            console.error("Error fetching albums:", error);
+            throw error;
+        });
     },
 
     renderAlbumList: function(albums) {
@@ -122,17 +106,21 @@ loadPhotos: function() {
                     data: this.photos, 
                     expiresAt: Date.now() + 60 * 60 * 1000 
                 }));
+                console.log('.Fetchสำเร็จ。จำนวนภาพ:', this.photos.length);
             }
         })
-        .catch(error => console.error("Error fetching photos:", error));
+        .catch(error => {
+            console.error("Error fetching photos:", error);
+            throw error;
+        });
     },
 
     fetchPhotos: function() {
         const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
         const body = {
-    albumId: this.albumId,
-    pageSize: 50
-};
+            albumId: this.albumId,
+            pageSize: 50
+        };
 
         fetch(url, {
             method: "POST",
@@ -155,9 +143,40 @@ loadPhotos: function() {
                     data: this.photos, 
                     expiresAt: Date.now() + 60 * 60 * 1000 
                 }));
+                console.log('.Fetchสำเร็จสำหรับアルバム「' + (this.albumId ? this.getAlbumName() : 'all') + '」。จำนวนภาพ:', this.photos.length);
             }
         })
-        .catch(error => console.error("Error fetching photos:", error));
+        .catch(error => {
+            console.error("Error fetching photos:", error);
+            throw error;
+        });
+    },
+
+    load_photos: function() { // 修正後的 loadPhotos 方法
+        console.log('เริ่มโหลดภาพ...');
+        const albumSelect = document.getElementById("album-select");
+        this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
+
+        const cachedPhotos = localStorage.getItem(this.albumId || 'all');
+        if (cachedPhotos) {
+            console.log('ตรวจสอบข้อมูลที่จัดเก็บ...');
+            const { data, expiresAt } = JSON.parse(cachedPhotos);
+            if (Date.now() < expiresAt) {
+                this.photos = data;
+                this.renderPhotos();
+                console.log('ใช้ข้อมูลที่จัดเก็บสำเร็จ。');
+                return;
+            }
+            console.log('ข้อมูลที่จัดเก็บหมดอายุ。ทำการโหลดใหม่...');
+        }
+
+        if (this.albumId) {
+            console.log('กำลังโหลดภาพจากอัลบั้ม ID:', this.albumId);
+            this.fetchPhotos();
+        } else {
+            console.log('กำลังโหลดภาพทั้งหมด...');
+            this.fetchAllPhotos();
+        }
     },
 
     renderPhotos: function() {
@@ -166,14 +185,17 @@ loadPhotos: function() {
 
         if (this.photos.length === 0) {
             photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
+            console.log('レンダリングしています。จำนวนภาพ: 0');
         } else {
+            console.log('レンダリングしています。จำนวนภาพ:', this.photos.length);
             this.photos.forEach((photo, index) => {
                 const img = document.createElement("img");
-                img.src = photo.baseUrl + '?w600-h400'; 
+                img.src = photo.baseUrl + '?w600-h400'; // 正確なURLの組み立て
                 img.alt = "Photo";
                 img.classList.add("photo");
                 img.onclick = () => this.openLightbox(index);
                 photoContainer.appendChild(img);
+                console.log('新增圖片:', photo.baseUrl + '?w600-h400');
             });
         }
     },
@@ -182,8 +204,8 @@ loadPhotos: function() {
         this.currentPhotoIndex = index;
         const lightbox = document.getElementById("lightbox");
         const lightboxImage = document.getElementById("lightbox-image");
-        lightboxImage.src = `${this.photos[index].baseUrl}?w1200-h800`; // 修復URL拼接錯誤
-        lightbox.style.display = "flex";
+        lightboxImage.src = this.photos[index].baseUrl + '?w1200-h800';
+        lightbox.style.display = "flex"; 
         setTimeout(() => lightbox.style.opacity = 1, 10);
 
         this.toggleButtonsVisibility(true);
@@ -232,7 +254,7 @@ loadPhotos: function() {
 
     showCurrentPhoto: function() {
         const lightboxImage = document.getElementById("lightbox-image");
-        lightboxImage.src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
+        lightboxImage.src = this.photos[this.currentPhotoIndex].baseUrl + '?w1200-h800';
     },
 
     startSlideshow: function() {
@@ -325,15 +347,13 @@ loadPhotos: function() {
     setupLazyLoading: function() {
         const photoContainer = document.getElementById("photo-container");
         
-        // 設置滾動事件監聽器來觸發加載更多圖片
         photoContainer.addEventListener('scroll', (e) => {
             if (this.nextPageToken && 
                 photoContainer.scrollHeight - photoContainer.scrollTop <= photoContainer.clientHeight + 100) {
-                this.loadPhotos();
+                this.load_photos();
             }
         });
 
-        // 設置IntersectionObserver來監控可見區
         const options = {
             root: photoContainer,
             rootMargin: '0px',
@@ -343,16 +363,14 @@ loadPhotos: function() {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting && this.nextPageToken) {
-                    this.loadPhotos();
+                    this.load_photos();
                 }
             });
         }, options);
 
-        // 將監控器應用到圖片容器
         observer.observe(photoContainer);
     },
-
-   };
+};
 
 document.addEventListener("DOMContentLoaded", () => {
     app.init();
