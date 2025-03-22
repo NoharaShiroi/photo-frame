@@ -85,12 +85,14 @@ select {
     min-height: calc(100% - 40px);
 }
 
-/* 优化加载提示样式 */
 #loading-indicator {
     position: relative;
     height: 100px;
     transform: none;
     background: transparent;
+    display: none;
+    text-align: center;
+    color: #fff;
 }
 
 .photo {
@@ -181,7 +183,6 @@ select {
     100% { transform: rotate(360deg); }
 }
 
-/* 响应式设计 */
 @media (max-width: 768px) {
     #photo-container {
         grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
