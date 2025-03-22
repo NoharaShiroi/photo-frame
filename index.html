@@ -11,7 +11,6 @@
     <script src="script.js" defer></script>
 </head>
 <body>
-
     <!-- 授權登入 -->
     <div id="auth-container">
         <h1>Google 相簿 數位相框</h1>
@@ -23,9 +22,8 @@
         <button id="back-to-album-btn" style="display: none;">選擇其他相簿</button>
         <div id="album-selection-container">
             <h2>選擇相簿</h2>
-            <select id="album-select" onchange="app.loadPhotos()">
+            <select id="album-select">
                 <option value="all">所有相片</option>
-                <!-- 动态生成的相簿选项 -->
             </select>
             <div class="slideshow-controls">
                 <label for="slideshow-speed">輪播速度 (秒): </label>
@@ -40,11 +38,14 @@
 
         <!-- 相片顯示區 -->
         <div id="photo-container" style="display: none;"></div>
+        <div id="loading-indicator" style="display: none;">
+            <div class="loader"></div>
+        </div>
     </div>
 
     <!-- 放大圖片 (Lightbox) -->
     <div id="lightbox" style="display:none;">
-        <span id="close-lightbox" style="cursor: pointer;">&times;</span>
+        <span id="close-lightbox">&times;</span>
         <img id="lightbox-image" src="" alt="Lightbox Image">
         <div class="lightbox-buttons">
             <button id="prev-photo" class="nav-button">&#10094;</button>
