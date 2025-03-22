@@ -324,4 +324,3 @@ app.fetchWithRetry = async function(url, options, retries = 3) {
 
 // 初始化
 document.addEventListener("DOMContentLoaded", () => app.init());
-}
