@@ -306,8 +306,10 @@ setupScrollObserver() {
         document.getElementById("auth-container").style.display = "flex";
         document.getElementById("app-container").style.display = "none";
     }
+},
+ };   
    // API请求添加重试逻辑
-async fetchWithRetry(url, options, retries = 3) {
+app.fetchWithRetry = async function(url, options, retries = 3) {
     for (let i = 0; i < retries; i++) {
         try {
             const response = await fetch(url, options);
@@ -318,8 +320,8 @@ async fetchWithRetry(url, options, retries = 3) {
             await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
         }
     }
-}     
 };
 
 // 初始化
 document.addEventListener("DOMContentLoaded", () => app.init());
+}
