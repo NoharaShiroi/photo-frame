@@ -31,7 +31,7 @@ const app = {
             document.getElementById("auth-container").style.display = "none";
             document.getElementById("app-container").style.display = "flex";
             this.fetchAlbums();
-            this.load_photos(); // 調用修正後的 loadPhotos 方法
+            this.loadPhotos();
         } else {
             document.getElementById("auth-container").style.display = "flex";
             document.getElementById("app-container").style.display = "none";
@@ -59,12 +59,8 @@ const app = {
             if (data.albums) {
                 this.renderAlbumList(data.albums);
             }
-            console.log('รับข้อมูลอัลบั้มสำเร็จ。จำนวนอัลบั้ม:', data.albums ? data.albums.length : 0);
         })
-        .catch(error => {
-            console.error("Error fetching albums:", error);
-            throw error;
-        });
+        .catch(error => console.error("Error fetching albums:", error));
     },
 
     renderAlbumList: function(albums) {
@@ -78,6 +74,31 @@ const app = {
         });
     },
 
+    loadPhotos: function() {
+        const albumSelect = document.getElementById("album-select");
+        this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
+
+        this.photos = [];
+        this.nextPageToken = null;
+
+        const cachedPhotos = localStorage.getItem(this.albumId || 'all');
+        if (cachedPhotos) {
+            const { data, expiresAt } = JSON.parse(cachedPhotos);
+            if (Date.now() < expiresAt) {
+                this.photos = data;
+                this.renderPhotos();
+            } else {
+                localStorage.removeItem(this.albumId || 'all');
+            }
+        }
+
+        if (this.albumId) {
+            this.fetchPhotos();
+        } else {
+            this.fetchAllPhotos();
+        }
+    },
+
     fetchAllPhotos: function() {
         const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
         const body = {
@@ -87,10 +108,7 @@ const app = {
 
         fetch(url, {
             method: "POST",
-            headers: { 
-                "Authorization": "Bearer " + this.accessToken,
-                "Content-Type": "application/json"
-            },
+            headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
             body: JSON.stringify(body)
         })
         .then(response => {
@@ -102,32 +120,22 @@ const app = {
                 this.photos = [...new Map(this.photos.concat(data.mediaItems).map(item => [item.id, item])).values()];
                 this.nextPageToken = data.nextPageToken;
                 this.renderPhotos();
-                localStorage.setItem(this.albumId || 'all', JSON.stringify({ 
-                    data: this.photos, 
-                    expiresAt: Date.now() + 60 * 60 * 1000 
-                }));
-                console.log('.Fetchสำเร็จ。จำนวนภาพ:', this.photos.length);
+                localStorage.setItem(this.albumId || 'all', JSON.stringify({ data: this.photos, expiresAt: Date.now() + 60 * 60 * 1000 }));
             }
         })
-        .catch(error => {
-            console.error("Error fetching photos:", error);
-            throw error;
-        });
+        .catch(error => console.error("Error fetching photos:", error));
     },
 
     fetchPhotos: function() {
         const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
         const body = {
-            albumId: this.albumId,
+            albumId: this(albumId),
             pageSize: 50
         };
 
         fetch(url, {
             method: "POST",
-            headers: { 
-                "Authorization": "Bearer " + this.accessToken,
-                "Content-Type": "application/json"
-            },
+            headers: { "Authorization": "Bearer " + this.accessToken, "Content-Type": "application/json" },
             body: JSON.stringify(body)
         })
         .then(response => {
@@ -137,46 +145,11 @@ const app = {
         .then(data => {
             if (data.mediaItems) {
                 this.photos = [...new Map(data.mediaItems.map(item => [item.id, item])).values()];
-                this.nextPageToken = data.nextPageToken;
                 this.renderPhotos();
-                localStorage.setItem(this.albumId, JSON.stringify({ 
-                    data: this.photos, 
-                    expiresAt: Date.now() + 60 * 60 * 1000 
-                }));
-                console.log('.Fetchสำเร็จสำหรับアルバム「' + (this.albumId ? this.getAlbumName() : 'all') + '」。จำนวนภาพ:', this.photos.length);
+                localStorage.setItem(this.albumId, JSON.stringify({ data: this.photos, expiresAt: Date.now() + 60 * 60 * 1000 }));
             }
         })
-        .catch(error => {
-            console.error("Error fetching photos:", error);
-            throw error;
-        });
-    },
-
-    load_photos: function() { // 修正後的 loadPhotos 方法
-        console.log('เริ่มโหลดภาพ...');
-        const albumSelect = document.getElementById("album-select");
-        this.albumId = albumSelect.value === "all" ? null : albumSelect.value;
-
-        const cachedPhotos = localStorage.getItem(this.albumId || 'all');
-        if (cachedPhotos) {
-            console.log('ตรวจสอบข้อมูลที่จัดเก็บ...');
-            const { data, expiresAt } = JSON.parse(cachedPhotos);
-            if (Date.now() < expiresAt) {
-                this.photos = data;
-                this.renderPhotos();
-                console.log('ใช้ข้อมูลที่จัดเก็บสำเร็จ。');
-                return;
-            }
-            console.log('ข้อมูลที่จัดเก็บหมดอายุ。ทำการโหลดใหม่...');
-        }
-
-        if (this.albumId) {
-            console.log('กำลังโหลดภาพจากอัลบั้ม ID:', this.albumId);
-            this.fetchPhotos();
-        } else {
-            console.log('กำลังโหลดภาพทั้งหมด...');
-            this.fetchAllPhotos();
-        }
+        .catch(error => console.error("Error fetching photos:", error));
     },
 
     renderPhotos: function() {
@@ -185,26 +158,29 @@ const app = {
 
         if (this.photos.length === 0) {
             photoContainer.innerHTML = "<p>此相簿沒有照片</p>";
-            console.log('レンダリングしています。จำนวนภาพ: 0');
         } else {
-            console.log('レンダリングしています。จำนวนภาพ:', this.photos.length);
             this.photos.forEach((photo, index) => {
                 const img = document.createElement("img");
-                img.src = photo.baseUrl + '?w600-h400'; // 正確なURLの組み立て
+                img.src = `${photo.baseUrl}=w600-h400`;
                 img.alt = "Photo";
                 img.classList.add("photo");
                 img.onclick = () => this.openLightbox(index);
                 photoContainer.appendChild(img);
-                console.log('新增圖片:', photo.baseUrl + '?w600-h400');
             });
         }
+
+        photoContainer.style.display = "grid";
+        document.getElementById("app-container").style.display = "flex"; 
+        document.getElementById("photo-container").style.display = "grid"; 
+
+        this.setupLazyLoading();
     },
 
     openLightbox: function(index) {
         this.currentPhotoIndex = index;
         const lightbox = document.getElementById("lightbox");
         const lightboxImage = document.getElementById("lightbox-image");
-        lightboxImage.src = this.photos[index].baseUrl + '?w1200-h800';
+        lightboxImage.src = `${this.photos[index].baseUrl}=w1200-h800`;
         lightbox.style.display = "flex"; 
         setTimeout(() => lightbox.style.opacity = 1, 10);
 
@@ -213,7 +189,7 @@ const app = {
         document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
         document.getElementById("next-photo").onclick = () => this.changePhoto(1);
         document.getElementById("fullscreen-toggle-btn").onclick = this.toggleFullscreen.bind(this);
-
+        
         clearInterval(this.slideshowInterval);
         this.setupLightboxClick();
     },
@@ -254,7 +230,7 @@ const app = {
 
     showCurrentPhoto: function() {
         const lightboxImage = document.getElementById("lightbox-image");
-        lightboxImage.src = this.photos[this.currentPhotoIndex].baseUrl + '?w1200-h800';
+        lightboxImage.src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1200-h800`;
     },
 
     startSlideshow: function() {
@@ -345,17 +321,8 @@ const app = {
     },
 
     setupLazyLoading: function() {
-        const photoContainer = document.getElementById("photo-container");
-        
-        photoContainer.addEventListener('scroll', (e) => {
-            if (this.nextPageToken && 
-                photoContainer.scrollHeight - photoContainer.scrollTop <= photoContainer.clientHeight + 100) {
-                this.load_photos();
-            }
-        });
-
         const options = {
-            root: photoContainer,
+            root: null,
             rootMargin: '0px',
             threshold: 0.1
         };
@@ -363,13 +330,14 @@ const app = {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting && this.nextPageToken) {
-                    this.load_photos();
+                    this.loadPhotos(); // Trigger loading more photos
                 }
             });
         }, options);
 
+        const photoContainer = document.getElementById("photo-container");
         observer.observe(photoContainer);
-    },
+    }
 };
 
 document.addEventListener("DOMContentLoaded", () => {
