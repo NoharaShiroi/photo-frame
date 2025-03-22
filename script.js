@@ -1,4 +1,3 @@
-// script.js
 const app = {
     CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
     REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
@@ -21,10 +20,12 @@ const app = {
     init() {
         this.states.accessToken = sessionStorage.getItem("access_token");
         this.setupEventListeners();
-        this.checkAuth();
+        if (!this.checkAuth()) {
+            document.getElementById("auth-container").style.display = "flex";
+        }
         this.setupIdleMonitor();
     },
-   // 修改授权方法
+
     handleAuthFlow() {
         const authEndpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
         const params = {
@@ -36,10 +37,9 @@ const app = {
             state: 'pass-through-value',
             prompt: 'consent'
         };
-        
-        const url = authEndpoint + '?' + new URLSearchParams(params);
-        window.location.href = url;
+        window.location.href = authEndpoint + '?' + new URLSearchParams(params);
     },
+
     checkAuth() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         if (hashParams.has("access_token")) {
@@ -50,8 +50,7 @@ const app = {
             return true;
         }
         return false;
-    }
-};
+    },
 
     showApp() {
         document.getElementById("auth-container").style.display = "none";
@@ -60,20 +59,12 @@ const app = {
     },
 
     setupEventListeners() {
-        document.getElementById("authorize-btn").addEventListener("click", () => {
-            const authUrl = `https://accounts.google.com/o/oauth2/auth?client_id=${this.CLIENT_ID}&redirect_uri=${encodeURIComponent(this.REDIRECT_URI)}&response_type=token&scope=${this.SCOPES}`;
-            window.location.href = authUrl;
+        const authBtn = document.getElementById("authorize-btn");
+        authBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            this.handleAuthFlow();
         });
-document.getElementById("authorize-btn").addEventListener("click", (e) => {
-    e.preventDefault();
-    try {
-        this.handleAuthFlow();
-    } catch (error) {
-        console.error("授权流程错误:", error);
-        alert("无法启动授权流程，请检查控制台日志");
-    }
-});
-        
+
         document.getElementById("album-select").addEventListener("change", (e) => {
             this.states.albumId = e.target.value;
             this.resetPhotoData();
@@ -90,8 +81,8 @@ document.getElementById("authorize-btn").addEventListener("click", (e) => {
         // 播放模式切换
         document.getElementById("play-mode").addEventListener("change", (e) => {
             if (this.states.slideshowInterval) {
-                this.toggleSlideshow(); // 先停止现有播放
-                this.toggleSlideshow(); // 用新设置重新开始
+                this.toggleSlideshow();
+                this.toggleSlideshow();
             }
         });
 
@@ -113,6 +104,7 @@ document.getElementById("authorize-btn").addEventListener("click", (e) => {
             const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
                 headers: { "Authorization": `Bearer ${this.states.accessToken}` }
             });
+            if (!response.ok) throw new Error('無法取得相簿');
             const data = await response.json();
             this.renderAlbumSelect(data.albums || []);
             this.loadPhotos();
@@ -160,8 +152,8 @@ document.getElementById("authorize-btn").addEventListener("click", (e) => {
                 body: JSON.stringify(body)
             });
 
+            if (!response.ok) throw new Error('照片加載失敗');
             const data = await response.json();
-            if (!response.ok) throw new Error(data.error.message);
 
             if (requestId !== this.states.currentRequestId) return;
 
@@ -327,7 +319,7 @@ document.getElementById("authorize-btn").addEventListener("click", (e) => {
         
         const idleInterval = setInterval(() => {
             idleTime++;
-            if (idleTime > 300 && !this.states.lightboxActive) { // 5分鐘閒置
+            if (idleTime > 300 && !this.states.lightboxActive) {
                 document.getElementById("screenOverlay").style.display = "block";
             }
         }, 1000);
