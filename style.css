@@ -38,53 +38,91 @@ body {
 /* 主界面 */
 #app-container {
     display: none;
-    padding: 20px;
+    padding: 10px;
     max-width: 1200px;
     margin: 0 auto;
 }
 
+/* 相簿选择和播放控制区域 */
 #album-selection-container {
-    margin-bottom: 30px;
-    padding: 20px;
+    margin-bottom: 15px;
+    padding: 10px;
     background: rgba(255,255,255,0.1);
-    border-radius: 10px;
+    border-radius: 8px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
 }
 
-select {
-    padding: 10px 15px;
-    font-size: 1rem;
+select, input[type="number"] {
+    padding: 8px 12px;
+    font-size: 0.9rem;
     background: rgba(255,255,255,0.9);
     border: none;
     border-radius: 8px;
     width: 100%;
-    max-width: 400px;
+    max-width: 200px;
 }
 
 .slideshow-controls {
-    margin-top: 20px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    padding: 15px;
-    background: rgba(0,0,0,0.2);
-    border-radius: 8px;
+    margin-top: 10px;
+    gap: 8px;
+    padding: 10px;
+    font-size: 0.9rem;
 }
 
+/* 滚动容器 */
 #scroll-container {
-    height: calc(100vh - 200px);
+    height: calc(100vh - 150px);
     overflow-y: auto;
-    padding: 20px 0;
-    margin: 0 -20px;
+    padding: 10px 0;
+    margin: 0 -10px;
 }
 
+/* 自定义滚动条 */
+#scroll-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+#scroll-container::-webkit-scrollbar-track {
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+}
+
+#scroll-container::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.3);
+    border-radius: 4px;
+}
+
+#scroll-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.5);
+}
+
+/* 缩略图区域 */
 #photo-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 15px;
-    padding: 0 20px;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 8px;
+    padding: 0 10px;
     min-height: calc(100% - 40px);
 }
 
+.photo {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: transform 0.3s, box-shadow 0.3s;
+    background: #333;
+}
+
+.photo:hover {
+    transform: scale(1.03);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+}
+
+/* 加载提示 */
 #loading-indicator {
     position: relative;
     height: 100px;
@@ -95,16 +133,6 @@ select {
     color: #fff;
 }
 
-.photo {
-    width: 100%;
-    aspect-ratio: 1;
-    object-fit: cover;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: transform 0.3s, box-shadow 0.3s;
-    background: #333;
-}
-
 .empty-state {
     grid-column: 1 / -1;
     text-align: center;
@@ -112,11 +140,6 @@ select {
     font-size: 1.2rem;
     padding: 20px;
     margin-top: 20px;
-}
-
-.photo:hover {
-    transform: scale(1.03);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
 }
 
 /* Lightbox */
@@ -183,9 +206,19 @@ select {
     100% { transform: rotate(360deg); }
 }
 
+/* 响应式设计 */
 @media (max-width: 768px) {
     #photo-container {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 6px;
+    }
+
+    #album-selection-container {
+        grid-template-columns: 1fr;
+    }
+
+    select, input[type="number"] {
+        max-width: 100%;
     }
 
     .lightbox-buttons {
