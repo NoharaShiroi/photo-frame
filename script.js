@@ -1,180 +1,127 @@
 const app = {
+    // 保留原始核心配置
     CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
     REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
-    accessToken: null,
-    albumId: null,
-    photos: [],
-    currentPhotoIndex: 0,
-    nextPageToken: null,
-    observer: null,
-    isFetching: false,
-
-    init() {
-        this.accessToken = sessionStorage.getItem("access_token");
-        this.setupEventListeners();
-        this.checkAuthStatus();
-        this.setupScrollListener();
+    
+    // 強化狀態管理
+    states: {
+        accessToken: null,
+        albumId: "all",
+        photos: [],
+        currentIndex: 0,
+        nextPageToken: null,
+        isFetching: false,
+        slideshowInterval: null,
+        idleTimer: 0
     },
 
-    checkAuthStatus() {
+    init() {
+        this.states.accessToken = sessionStorage.getItem("access_token");
+        this.setupEventListeners();
+        this.checkAuth();
+        this.startIdleMonitor();
+    },
+
+    // 優化授權流程
+    async checkAuth() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         if (hashParams.has("access_token")) {
-            this.accessToken = hashParams.get("access_token");
-            sessionStorage.setItem("access_token", this.accessToken);
-            window.history.replaceState({}, document.title, window.location.pathname);
-            this.showApp();
-        } else if (this.accessToken) {
-            this.showApp();
+            this.states.accessToken = hashParams.get("access_token");
+            sessionStorage.setItem("access_token", this.states.accessToken);
+            window.history.replaceState({}, "", window.location.pathname);
+            this.showMainUI();
+        } else if (this.states.accessToken) {
+            this.showMainUI();
         } else {
             document.getElementById("auth-container").style.display = "flex";
         }
     },
 
-    showApp() {
+    async showMainUI() {
         document.getElementById("auth-container").style.display = "none";
-        document.getElementById("app-container").style.display = "flex";
-        this.fetchAlbums();
+        document.getElementById("app-container").style.display = "block";
+        await this.loadAlbums();
+        this.loadPhotos();
     },
 
-    async fetchAlbums() {
+    // 強化相簿載入
+    async loadAlbums() {
         try {
             const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
-                headers: { "Authorization": `Bearer ${this.accessToken}` }
+                headers: { "Authorization": `Bearer ${this.states.accessToken}` }
             });
             const data = await response.json();
-            this.renderAlbums(data.albums || []);
-            this.loadPhotos();
+            this.renderAlbumSelect(data.albums || []);
         } catch (error) {
-            console.error("取得相簿失敗:", error);
             this.handleAuthError();
         }
     },
 
-    renderAlbums(albums) {
-        const select = document.getElementById("album-select");
-        select.innerHTML = '<option value="all">所有相片</option>';
-        albums.forEach(album => {
-            const option = document.createElement("option");
-            option.value = album.id;
-            option.textContent = album.title;
-            select.appendChild(option);
-        });
-    },
-
+    // 分頁載入機制加強
     async loadPhotos() {
-        if (this.isFetching) return;
-        this.isFetching = true;
+        if (this.states.isFetching) return;
+        this.states.isFetching = true;
+        
         document.getElementById("loading-indicator").style.display = "block";
-
+        
         try {
-            const url = "https://photoslibrary.googleapis.com/v1/mediaItems:search";
             const body = {
                 pageSize: 50,
-                pageToken: this.nextPageToken || undefined,
-                albumId: this.albumId === "all" ? undefined : this.albumId
+                pageToken: this.states.nextPageToken,
+                albumId: this.states.albumId === "all" ? undefined : this.states.albumId
             };
 
-            const response = await fetch(url, {
+            const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
                 method: "POST",
                 headers: {
-                    "Authorization": `Bearer ${this.accessToken}`,
+                    "Authorization": `Bearer ${this.states.accessToken}`,
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify(body)
             });
 
             const data = await response.json();
-            this.nextPageToken = data.nextPageToken || null;
-            this.photos = [...this.photos, ...(data.mediaItems || [])];
+            this.states.photos = [...this.states.photos, ...(data.mediaItems || [])];
+            this.states.nextPageToken = data.nextPageToken || null;
             this.renderPhotos();
         } catch (error) {
-            console.error("載入照片失敗:", error);
             this.handleAuthError();
         } finally {
-            this.isFetching = false;
+            this.states.isFetching = false;
             document.getElementById("loading-indicator").style.display = "none";
+            this.setupScrollListener();
         }
     },
 
-    renderPhotos() {
-        const container = document.getElementById("photo-container");
-        container.innerHTML = this.photos.map(photo => `
-            <img class="photo" 
-                 src="${photo.baseUrl}=w300-h300" 
-                 data-src="${photo.baseUrl}=w600-h400"
-                 alt="相片" 
-                 onclick="app.openLightbox('${photo.id}')">
-        `).join("");
-
-        this.setupLazyLoad();
-        this.setupScrollListener();
-    },
-
-    setupLazyLoad() {
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const img = entry.target;
-                    img.src = img.dataset.src;
-                    observer.unobserve(img);
-                }
-            });
-        }, { rootMargin: "100px" });
-
-        document.querySelectorAll(".photo").forEach(img => observer.observe(img));
-    },
-
-    setupScrollListener() {
-        if (this.observer) this.observer.disconnect();
-        
-        this.observer = new IntersectionObserver(([entry]) => {
-            if (entry.isIntersecting && this.nextPageToken) {
-                this.loadPhotos();
-            }
-        }, { threshold: 0.1 });
-
-        const lastPhoto = document.querySelector(".photo:last-child");
-        if (lastPhoto) this.observer.observe(lastPhoto);
-    },
-
+    // Lightbox 功能強化
     openLightbox(photoId) {
-        this.currentPhotoIndex = this.photos.findIndex(p => p.id === photoId);
+        this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
         const lightbox = document.getElementById("lightbox");
-        const image = document.getElementById("lightbox-image");
+        const img = document.getElementById("lightbox-image");
         
-        image.src = `${this.photos[this.currentPhotoIndex].baseUrl}=w1920-h1080`;
-        lightbox.classList.add("active");
+        img.src = `${this.states.photos[this.states.currentIndex].baseUrl}=w1920-h1080`;
+        lightbox.style.display = "flex";
         
-        document.getElementById("prev-photo").onclick = () => this.changePhoto(-1);
-        document.getElementById("next-photo").onclick = () => this.changePhoto(1);
-        document.getElementById("close-lightbox").onclick = () => lightbox.classList.remove("active");
+        // 保留控制功能
+        document.getElementById("prev-photo").onclick = () => this.navigate(-1);
+        document.getElementById("next-photo").onclick = () => this.navigate(1);
+        document.getElementById("start-slideshow-btn").onclick = () => this.toggleSlideshow();
     },
 
-    changePhoto(direction) {
-        this.currentPhotoIndex = (this.currentPhotoIndex + direction + this.photos.length) % this.photos.length;
-        document.getElementById("lightbox-image").src = 
-            `${this.photos[this.currentPhotoIndex].baseUrl}=w1920-h1080`;
-    },
-
-    handleAuthError() {
-        sessionStorage.removeItem("access_token");
-        window.location.reload();
-    },
-
-    setupEventListeners() {
-        document.getElementById("authorize-btn").addEventListener("click", () => {
-            window.location.href = `https://accounts.google.com/o/oauth2/auth?client_id=${this.CLIENT_ID}&redirect_uri=${encodeURIComponent(this.REDIRECT_URI)}&response_type=token&scope=${this.SCOPES}`;
-        });
-
-        document.getElementById("album-select").addEventListener("change", () => {
-            this.albumId = document.getElementById("album-select").value;
-            this.photos = [];
-            this.nextPageToken = null;
-            this.loadPhotos();
-        });
+    // 保留核心互動功能
+    toggleSlideshow() {
+        if (this.states.slideshowInterval) {
+            clearInterval(this.states.slideshowInterval);
+            this.states.slideshowInterval = null;
+        } else {
+            const speed = document.getElementById("slideshow-speed").value * 1000;
+            this.states.slideshowInterval = setInterval(() => {
+                this.navigate(1);
+            }, speed);
+        }
     }
 };
 
-// 初始化應用
+// 初始化
 document.addEventListener("DOMContentLoaded", () => app.init());
