@@ -73,10 +73,11 @@ select {
 /* 照片網格 */
 #photo-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
     padding: 20px;
-    transition: all 0.3s;
+    min-height: 80vh; /* 确保容器高度 */
+ transition: all 0.3s;
 }
 
 .photo {
@@ -88,7 +89,15 @@ select {
     transition: transform 0.3s, box-shadow 0.3s;
     background: #333;
 }
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #666;
+    font-size: 1.2rem;
+    padding: 40px;
+}
 
+}
 .photo:hover {
     transform: scale(1.03);
     box-shadow: 0 8px 25px rgba(0,0,0,0.3);
