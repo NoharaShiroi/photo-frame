@@ -5,11 +5,9 @@ body {
     padding: 0;
     background-color: #f5f5f5;
     text-align: center;
-    overflow: hidden;
     position: relative;
 }
 
-/* 授權容器 */
 #auth-container {
     display: flex;
     flex-direction: column;
@@ -18,7 +16,6 @@ body {
     height: 100vh;
 }
 
-/* 主容器 */
 #app-container {
     display: flex;
     flex-direction: column;
@@ -26,7 +23,6 @@ body {
     padding: 10px;
 }
 
-/* 相簿選擇區 */
 #album-selection-container {
     margin-bottom: 20px;
     width: 100%;
@@ -41,7 +37,6 @@ select {
     max-width: 300px;
 }
 
-/* 幻燈片控制區 */
 .slideshow-controls {
     margin-top: 10px;
     display: flex;
@@ -51,12 +46,6 @@ select {
     flex-wrap: wrap;
 }
 
-#slideshow-speed {
-    width: 50px;
-    margin-left: 5px;
-}
-
-/* 相片網格 */
 #photo-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -64,7 +53,6 @@ select {
     padding: 10px;
     justify-content: center;
     max-width: 90vw;
-    position: relative;
 }
 
 .photo {
@@ -81,7 +69,6 @@ select {
     transform: scale(1.05);
 }
 
-/* Lightbox 樣式 */
 #lightbox {
     position: fixed;
     top: 0;
@@ -102,12 +89,6 @@ select {
     opacity: 1;
 }
 
-#lightbox-image {
-    max-width: 90%;
-    max-height: 80vh;
-    object-fit: contain;
-}
-
 .lightbox-buttons {
     position: absolute;
     bottom: 20px;
@@ -115,29 +96,8 @@ select {
     transform: translateX(-50%);
     display: flex;
     gap: 15px;
-    opacity: 1;
-    transition: opacity 0.3s;
 }
 
-.lightbox-buttons.hidden {
-    opacity: 0;
-    pointer-events: none;
-}
-
-.nav-button {
-    background: rgba(255, 255, 255, 0.8);
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.nav-button:hover {
-    background: white;
-}
-
-/* 載入動畫 */
 .loader {
     border: 4px solid #f3f3f3;
     border-top: 4px solid #3498db;
@@ -153,13 +113,8 @@ select {
     100% { transform: rotate(360deg); }
 }
 
-/* 響應式設計 */
 @media (max-width: 768px) {
     #photo-container {
         grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    }
-
-    #lightbox-image {
-        object-fit: contain;
     }
 }
