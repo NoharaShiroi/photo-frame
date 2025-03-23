@@ -33,8 +33,8 @@ const app = {
         this.setupIdleMonitor();
         this.loadSchedule();
         this.checkSchedule();
-    setInterval(() => this.checkSchedule(), 60000); // 60000 毫秒 = 1 分鐘
-    },
+        setInterval(() => this.checkSchedule(), 60000); // 60000 毫秒 = 1 分鐘
+     },
 
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
@@ -361,9 +361,15 @@ const app = {
             const isRandom = document.getElementById("play-mode").value === "random";
             
             const getNextIndex = () => {
-                if (isRandom) return Math.floor(Math.random() * this.states.photos.length);
-                return (this.states.currentIndex + 1) % this.states.photos.length;
-            };
+    if (isRandom) {
+        let nextIndex;
+        do {
+            nextIndex = Math.floor(Math.random() * this.states.photos.length);
+        } while (nextIndex === this.states.currentIndex);
+        return nextIndex;
+    }
+    return (this.states.currentIndex + 1) % this.states.photos.length;
+};
 
             this.states.slideshowInterval = setInterval(() => {
                 this.states.currentIndex = getNextIndex();
