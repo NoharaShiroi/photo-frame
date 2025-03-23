@@ -44,6 +44,9 @@
                     <option value="random">随机</option>
                 </select>
             </div>
+            <div>
+                <button id="schedule-settings-btn">設定暫停時段</button>
+            </div>
         </div>
 
         <!-- 滚动容器 -->
@@ -70,6 +73,31 @@
 
     <!-- 閒置遮罩 -->
     <div id="screenOverlay"></div>
+
+    <!-- 時間排程設定彈窗 -->
+    <div id="schedule-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>設定暫停時段</h2>
+            <div>
+                <label for="sleep-start">睡覺時間開始:</label>
+                <input type="time" id="sleep-start" value="22:00">
+            </div>
+            <div>
+                <label for="sleep-end">睡覺時間結束:</label>
+                <input type="time" id="sleep-end" value="07:00">
+            </div>
+            <div>
+                <label for="class-start">上課時間開始:</label>
+                <input type="time" id="class-start" value="08:00">
+            </div>
+            <div>
+                <label for="class-end">上課時間結束:</label>
+                <input type="time" id="class-end" value="17:00">
+            </div>
+            <button id="save-schedule">儲存設定</button>
+        </div>
+    </div>
     
     <script src="script.js"></script>
 </body>
