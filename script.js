@@ -33,6 +33,8 @@ const app = {
         this.setupIdleMonitor();
         this.loadSchedule();
         this.checkSchedule();
+    setInterval(() => this.checkSchedule(), 60000); // 60000 毫秒 = 1 分鐘
+
     },
 
     loadSchedule() {
