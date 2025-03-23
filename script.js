@@ -16,15 +16,56 @@ const app = {
         currentRequestId: 0,
         lightboxActive: false,
         isFullscreen: false
-    },
+        schedule: {
+            sleepStart: "22:00",
+            sleepEnd: "07:00",
+            classStart: "08:00",
+            classEnd: "17:00"
+         }
+     },
 
-    init() {
+     init() {
         this.states.accessToken = sessionStorage.getItem("access_token");
         this.setupEventListeners();
         if (!this.checkAuth()) {
             document.getElementById("auth-container").style.display = "flex";
         }
         this.setupIdleMonitor();
+        this.loadSchedule();
+        this.checkSchedule();
+    },
+
+    loadSchedule() {
+        const schedule = JSON.parse(localStorage.getItem("schedule"));
+        if (schedule) {
+            this.states.schedule = schedule;
+        }
+    },
+
+    saveSchedule() {
+        localStorage.setItem("schedule", JSON.stringify(this.states.schedule));
+    },
+
+    checkSchedule() {
+        const now = new Date();
+        const currentTime = now.getHours() * 60 + now.getMinutes();
+        const sleepStart = this.getTimeInMinutes(this.states.schedule.sleepStart);
+        const sleepEnd = this.getTimeInMinutes(this.states.schedule.sleepEnd);
+        const classStart = this.getTimeInMinutes(this.states.schedule.classStart);
+        const classEnd = this.getTimeInMinutes(this.states.schedule.classEnd);
+
+        if ((currentTime >= sleepStart && currentTime < sleepEnd) || 
+            (currentTime >= classStart && currentTime < classEnd)) {
+            this.stopSlideshow();
+            document.getElementById("screenOverlay").style.display = "block";
+        } else {
+            document.getElementById("screenOverlay").style.display = "none";
+        }
+    },
+
+    getTimeInMinutes(time) {
+        const [hours, minutes] = time.split(":").map(Number);
+        return hours * 60 + minutes;
     },
 
     handleAuthFlow() {
@@ -111,6 +152,25 @@ const app = {
         document.addEventListener("fullscreenchange", () => {
             this.states.isFullscreen = !!document.fullscreenElement;
             this.toggleButtonVisibility();
+        });
+
+        // 時間排程設定
+        document.getElementById("schedule-settings-btn").addEventListener("click", () => {
+            document.getElementById("schedule-modal").style.display = "block";
+        });
+
+        document.querySelector(".close-modal").addEventListener("click", () => {
+            document.getElementById("schedule-modal").style.display = "none";
+        });
+
+        document.getElementById("save-schedule").addEventListener("click", () => {
+            this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
+            this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
+            this.states.schedule.classStart = document.getElementById("class-start").value;
+            this.states.schedule.classEnd = document.getElementById("class-end").value;
+            this.saveSchedule();
+            document.getElementById("schedule-modal").style.display = "none";
+            this.checkSchedule();
         });
     },
 
