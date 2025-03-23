@@ -23,7 +23,7 @@ const app = {
             classEnd: "17:00"
          }
      },
-
+}
      init() {
         this.states.accessToken = sessionStorage.getItem("access_token");
         this.setupEventListeners();
