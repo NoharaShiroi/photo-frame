@@ -14,7 +14,8 @@ const app = {
         observer: null,
         hasMorePhotos: true,
         currentRequestId: 0,
-        lightboxActive: false
+        lightboxActive: false,
+        isFullscreen: false
     },
 
     init() {
@@ -97,6 +98,20 @@ const app = {
                 }
             }, 500);
         });
+
+        // 雙擊關閉 lightbox
+        document.getElementById("lightbox").addEventListener("dblclick", () => {
+            this.closeLightbox();
+            if (this.states.isFullscreen) {
+                this.toggleFullscreen();
+            }
+        });
+
+        // 全螢幕變化監聽
+        document.addEventListener("fullscreenchange", () => {
+            this.states.isFullscreen = !!document.fullscreenElement;
+            this.toggleButtonVisibility();
+        });
     },
 
     async fetchAlbums() {
@@ -178,24 +193,24 @@ const app = {
     },
 
     renderPhotos() {
-    const container = document.getElementById("photo-container");
-    container.style.display = "grid";
-    container.innerHTML = this.states.photos.map(photo => `
-        <img class="photo" 
-             src="${photo.baseUrl}=w150-h150"  // 修改为150x150尺寸
-             data-src="${photo.baseUrl}=w800-h600"
-             alt="相片" 
-             data-id="${photo.id}"
-             onclick="app.openLightbox('${photo.id}')">
-    `).join("");
+        const container = document.getElementById("photo-container");
+        container.style.display = "grid";
+        container.innerHTML = this.states.photos.map(photo => `
+            <img class="photo" 
+                 src="${photo.baseUrl}=w150-h150"  // 修改为150x150尺寸
+                 data-src="${photo.baseUrl}=w800-h600"
+                 alt="相片" 
+                 data-id="${photo.id}"
+                 onclick="app.openLightbox('${photo.id}')">
+        `).join("");
 
-    if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
-        container.insertAdjacentHTML("beforeend", `<p class="empty-state">已無更多相片</p>`);
-    }
+        if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
+            container.insertAdjacentHTML("beforeend", `<p class="empty-state">已無更多相片</p>`);
+        }
 
-    this.setupLazyLoad();
-    this.setupScrollObserver();
-},
+        this.setupLazyLoad();
+        this.setupScrollObserver();
+    },
 
     setupLazyLoad() {
         const observer = new IntersectionObserver((entries) => {
@@ -256,6 +271,7 @@ const app = {
         setTimeout(() => {
             lightbox.style.opacity = 1;
             this.states.lightboxActive = true;
+            this.toggleButtonVisibility();
         }, 10);
     },
 
@@ -265,6 +281,7 @@ const app = {
         setTimeout(() => {
             lightbox.style.display = "none";
             this.states.lightboxActive = false;
+            this.toggleButtonVisibility();
         }, 300);
         this.stopSlideshow();
     },
@@ -293,11 +310,13 @@ const app = {
                     `${this.states.photos[this.states.currentIndex].baseUrl}=w1920-h1080`;
             }, speed);
         }
+        this.toggleButtonVisibility();
     },
 
     stopSlideshow() {
         clearInterval(this.states.slideshowInterval);
         this.states.slideshowInterval = null;
+        this.toggleButtonVisibility();
     },
 
     toggleFullscreen() {
@@ -307,6 +326,16 @@ const app = {
             });
         } else {
             document.exitFullscreen();
+        }
+        this.toggleButtonVisibility();
+    },
+
+    toggleButtonVisibility() {
+        const buttons = document.querySelectorAll('.lightbox-buttons .nav-button');
+        if (this.states.slideshowInterval || this.states.isFullscreen) {
+            buttons.forEach(button => button.style.display = 'none');
+        } else {
+            buttons.forEach(button => button.style.display = 'block');
         }
     },
 
