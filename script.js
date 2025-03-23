@@ -15,15 +15,15 @@ const app = {
         hasMorePhotos: true,
         currentRequestId: 0,
         lightboxActive: false,
-        isFullscreen: false
+        isFullscreen: false,
         schedule: {
             sleepStart: "22:00",
             sleepEnd: "07:00",
             classStart: "08:00",
             classEnd: "17:00"
-         }
-     },
-}
+        }
+ },
+
      init() {
         this.states.accessToken = sessionStorage.getItem("access_token");
         this.setupEventListeners();
@@ -34,7 +34,6 @@ const app = {
         this.loadSchedule();
         this.checkSchedule();
     setInterval(() => this.checkSchedule(), 60000); // 60000 毫秒 = 1 分鐘
-
     },
 
     loadSchedule() {
