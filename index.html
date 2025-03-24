@@ -25,7 +25,6 @@
 
     <!-- 主應用界面 -->
     <div id="app-container">
-        <!-- 修改相簿选择和播放控制区域 -->
         <div id="album-selection-container">
             <div>
                 <label for="album-select">相簿:</label>
@@ -49,7 +48,6 @@
             </div>
         </div>
 
-        <!-- 滚动容器 -->
         <div id="scroll-container">
             <div id="photo-container"></div>
             <div id="loading-indicator">
@@ -61,7 +59,6 @@
 
     <!-- Lightbox -->
     <div id="lightbox">
-        <span id="close-lightbox">&times;</span>
         <img id="lightbox-image" alt="Lightbox Image">
         <div class="lightbox-buttons">
             <button id="prev-photo" class="nav-button">&#10094;</button>
@@ -95,7 +92,9 @@
                 <label for="class-end">上課時間結束:</label>
                 <input type="time" id="class-end" value="17:00">
             </div>
-            <button id="save-schedule">儲存設定</button>
+            <div>
+                <button id="save-schedule">儲存設定</button>
+            </div>
         </div>
     </div>
     
