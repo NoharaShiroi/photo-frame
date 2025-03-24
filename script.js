@@ -1,5 +1,5 @@
 const app = {
-    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
+    CLIENT_ID: "your_client_id_here",
     REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
     
@@ -22,9 +22,9 @@ const app = {
             classStart: "08:00",
             classEnd: "17:00"
         }
- },
+    },
 
-     init() {
+    init() {
         this.states.accessToken = sessionStorage.getItem("access_token");
         this.setupEventListeners();
         if (!this.checkAuth()) {
@@ -33,8 +33,8 @@ const app = {
         this.setupIdleMonitor();
         this.loadSchedule();
         this.checkSchedule();
-        setInterval(() => this.checkSchedule(), 60000); // 60000 毫秒 = 1 分鐘
-     },
+        setInterval(() => this.checkSchedule(), 60000);
+    },
 
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
@@ -102,8 +102,7 @@ const app = {
     },
 
     setupEventListeners() {
-        const authBtn = document.getElementById("authorize-btn");
-        authBtn.addEventListener("click", (e) => {
+        document.getElementById("authorize-btn").addEventListener("click", (e) => {
             e.preventDefault();
             this.handleAuthFlow();
         });
@@ -114,14 +113,11 @@ const app = {
             this.loadPhotos();
         });
 
-        // Lightbox 控制
-        document.getElementById("close-lightbox").addEventListener("click", () => this.closeLightbox());
         document.getElementById("prev-photo").addEventListener("click", () => this.navigate(-1));
         document.getElementById("next-photo").addEventListener("click", () => this.navigate(1));
         document.getElementById("start-slideshow-btn").addEventListener("click", () => this.toggleSlideshow());
         document.getElementById("fullscreen-toggle-btn").addEventListener("click", () => this.toggleFullscreen());
 
-        // 播放模式切换
         document.getElementById("play-mode").addEventListener("change", (e) => {
             if (this.states.slideshowInterval) {
                 this.toggleSlideshow();
@@ -129,7 +125,6 @@ const app = {
             }
         });
 
-        // 速度输入防抖处理
         let speedTimeout;
         document.getElementById("slideshow-speed").addEventListener("input", (e) => {
             clearTimeout(speedTimeout);
@@ -141,21 +136,13 @@ const app = {
             }, 500);
         });
 
-        // 雙擊關閉 lightbox
-        document.getElementById("lightbox").addEventListener("dblclick", () => {
-            this.closeLightbox();
-            if (this.states.isFullscreen) {
-                this.toggleFullscreen();
-            }
-        });
+        document.getElementById("lightbox").addEventListener("dblclick", () => this.closeLightbox());
 
-        // 全螢幕變化監聽
         document.addEventListener("fullscreenchange", () => {
             this.states.isFullscreen = !!document.fullscreenElement;
             this.toggleButtonVisibility();
         });
 
-        // 時間排程設定
         document.getElementById("schedule-settings-btn").addEventListener("click", () => {
             document.getElementById("schedule-modal").style.display = "block";
         });
@@ -202,7 +189,7 @@ const app = {
 
     async loadPhotos() {
         if (this.states.isFetching || !this.states.hasMorePhotos) return;
-        
+
         const requestId = ++this.states.currentRequestId;
         this.states.isFetching = true;
         document.getElementById("loading-indicator").style.display = "block";
@@ -235,7 +222,7 @@ const app = {
 
             const existingIds = new Set(this.states.photos.map(p => p.id));
             const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
-            
+
             this.states.photos = [...this.states.photos, ...newPhotos];
             this.states.nextPageToken = data.nextPageToken || null;
             this.states.hasMorePhotos = !!this.states.nextPageToken;
@@ -258,7 +245,7 @@ const app = {
         container.style.display = "grid";
         container.innerHTML = this.states.photos.map(photo => `
             <img class="photo" 
-                 src="${photo.baseUrl}=w150-h150"  // 修改为150x150尺寸
+                 src="${photo.baseUrl}=w150-h150"
                  data-src="${photo.baseUrl}=w800-h600"
                  alt="相片" 
                  data-id="${photo.id}"
@@ -334,6 +321,9 @@ const app = {
             this.states.lightboxActive = true;
             this.toggleButtonVisibility();
         }, 10);
+
+        // 处理Lightbox的尺寸自适应
+        this.adjustLightboxSize();
     },
 
     closeLightbox() {
@@ -361,15 +351,15 @@ const app = {
             const isRandom = document.getElementById("play-mode").value === "random";
             
             const getNextIndex = () => {
-    if (isRandom) {
-        let nextIndex;
-        do {
-            nextIndex = Math.floor(Math.random() * this.states.photos.length);
-        } while (nextIndex === this.states.currentIndex);
-        return nextIndex;
-    }
-    return (this.states.currentIndex + 1) % this.states.photos.length;
-};
+                if (isRandom) {
+                    let nextIndex;
+                    do {
+                        nextIndex = Math.floor(Math.random() * this.states.photos.length);
+                    } while (nextIndex === this.states.currentIndex);
+                    return nextIndex;
+                }
+                return (this.states.currentIndex + 1) % this.states.photos.length;
+            };
 
             this.states.slideshowInterval = setInterval(() => {
                 this.states.currentIndex = getNextIndex();
@@ -451,6 +441,16 @@ const app = {
         messageElement.className = "empty-state";
         messageElement.textContent = message;
         container.appendChild(messageElement);
+    },
+
+    adjustLightboxSize() {
+        const lightboxImage = document.getElementById("lightbox-image");
+        lightboxImage.onload = () => {
+            const { naturalWidth, naturalHeight } = lightboxImage;
+            const ratio = Math.min(window.innerWidth / naturalWidth, window.innerHeight / naturalHeight);
+            lightboxImage.style.width = `${naturalWidth * ratio}px`;
+            lightboxImage.style.height = `${naturalHeight * ratio}px`;
+        };
     }
 };
 
