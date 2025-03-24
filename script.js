@@ -143,8 +143,7 @@ const app = {
     },
 
     setupEventListeners() {
-        setupEventListeners() {
-    const authBtn = document.getElementById("authorize-btn");
+        const authBtn = document.getElementById("authorize-btn");
     authBtn.addEventListener("click", (e) => {
         e.preventDefault();
         this.handleAuthFlow();
