@@ -23,9 +23,9 @@
         <button id="authorize-btn">使用 Google 帳戶登入</button>
     </div>
 
-    <!-- 主應用界面 -->
+    <!-- 主,application界面 -->
     <div id="app-container">
-        <!-- 修改相簿选择和播放控制區域 -->
+        <!-- 相簿选择和播放控制区域 -->
         <div id="album-selection-container">
             <div>
                 <label for="album-select">相簿:</label>
@@ -45,11 +45,11 @@
                 </select>
             </div>
             <div>
-                <button id="schedule-settings-btn">設定暫停時段</button>
+                <button id="schedule-settings-btn" style="font-size: 1rem;">設定暫停時段</button>
             </div>
         </div>
 
-        <!-- 滚動容器 -->
+        <!-- 滚动容器 -->
         <div id="scroll-container">
             <div id="photo-container"></div>
             <div id="loading-indicator">
@@ -61,11 +61,10 @@
 
     <!-- Lightbox -->
     <div id="lightbox">
-        <span id="close-lightbox">&times;</span>
         <img id="lightbox-image" alt="Lightbox Image">
         <div class="lightbox-buttons">
-            <button id="prev-photo" class="nav-button">上一張</button>
-            <button id="next-photo" class="nav-button">下一張</button>
+            <button id="prev-photo" class="nav-button">&#10094;</button>
+            <button id="next-photo" class="nav-button">&#10095;</button>
             <button id="start-slideshow-btn" class="nav-button">幻燈片</button>
             <button id="fullscreen-toggle-btn" class="nav-button">全螢幕</button>
         </div>
@@ -95,16 +94,10 @@
                 <label for="class-end">上課時間結束:</label>
                 <input type="time" id="class-end" value="17:00">
             </div>
-            <div>
-                <label>
-                    <input type="checkbox" id="no-set" name="no-set">
-                    新增不設定
-                </label>
-            </div>
-            <button id="save-schedule">儲存設定</button>
+            <button id="save-schedule" style="margin-top: 10px;">儲存設定</button>
         </div>
     </div>
-    
+
     <script src="script.js"></script>
 </body>
 </html>
