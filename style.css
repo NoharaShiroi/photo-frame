@@ -8,7 +8,7 @@ body {
     overflow: hidden;
 }
 
-/* 授權頁面樣式 */
+/* 授权页面 */
 #auth-container {
     display: flex;
     flex-direction: column;
@@ -35,7 +35,7 @@ body {
     box-shadow: 0 6px 20px rgba(0,0,0,0.3);
 }
 
-/* 主界面樣式 */
+/* 主界面 */
 #app-container {
     display: none;
     padding: 10px;
@@ -43,7 +43,7 @@ body {
     margin: 0 auto;
 }
 
-/* 相簿選擇和播放控制區域 */
+/* 相簿选择和播放控制区域 */
 #album-selection-container {
     margin-bottom: 15px;
     padding: 10px;
@@ -54,39 +54,24 @@ body {
     gap: 10px;
 }
 
-.similar-btn {
-    padding: 10px 20px;
-    font-size: 1rem;
-    background: #3498db;
-    color: white;
+select, input[type="number"] {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+    background: rgba(255,255,255,0.9);
     border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.3s;
+    border-radius: 8px;
     width: 100%;
+    max-width: 200px;
 }
 
-.similar-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-.close-modal-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
+.slideshow-controls {
+    margin-top: 10px;
+    gap: 8px;
     padding: 10px;
-    background: #3498db;
-    border: none;
-    border-radius: 50%;
-    color: white;
-    cursor: pointer;
-    transition: transform 0.3s;
+    font-size: 0.9rem;
 }
 
-.close-modal-btn:hover {
-    transform: scale(1.1);
-}
-/* 滚动容器樣式 */
+/* 滚动容器 */
 #scroll-container {
     height: calc(100vh - 150px);
     overflow-y: auto;
@@ -94,7 +79,7 @@ body {
     margin: 0 -10px;
 }
 
-/* 自定義滾動條 */
+/* 自定义滚动条 */
 #scroll-container::-webkit-scrollbar {
     width: 8px;
 }
@@ -113,7 +98,7 @@ body {
     background: rgba(255,255,255,0.5);
 }
 
-/* 缩略圖區域 */
+/* 缩略图区域 */
 #photo-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -137,7 +122,7 @@ body {
     box-shadow: 0 8px 25px rgba(0,0,0,0.3);
 }
 
-/* 加載提示 */
+/* 加载提示 */
 #loading-indicator {
     position: relative;
     height: 100px;
@@ -157,7 +142,7 @@ body {
     margin-top: 20px;
 }
 
-/* Lightbox 樣式 */
+/* Lightbox */
 #lightbox {
     position: fixed;
     top: 0;
@@ -165,7 +150,7 @@ body {
     width: 100vw;
     height: 100vh;
     background: rgba(0,0,0,0.95);
-    display: flex;
+    display: none;
     justify-content: center;
     align-items: center;
     z-index: 1000;
@@ -205,7 +190,7 @@ body {
     transform: translateY(-2px);
 }
 
-/* 加載畫面 */
+/* 加载动画 */
 .loader {
     width: 50px;
     height: 50px;
@@ -221,7 +206,7 @@ body {
     100% { transform: rotate(360deg); }
 }
 
-/* 响應式設計 */
+/* 响应式设计 */
 @media (max-width: 768px) {
     #photo-container {
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -249,7 +234,7 @@ body {
     }
 }
 
-/* 閒置遮罩 */
+/* 闲置遮罩 */
 #screenOverlay {
     position: fixed;
     top: 0;
@@ -283,28 +268,39 @@ body {
     text-align: center;
 }
 
-.toggle-checkbox {
-    margin-right: 10px;
-    width: 20px;
-    height: 20px;
+.modal-content label {
+    display: block;
+    margin: 10px 0 5px;
 }
 
-.toggle-label {
-    display: inline-block;
-    padding: 0 5px;
+.modal-content input[type="time"] {
+    padding: 8px;
+    font-size: 1rem;
+    width: 100%;
+    margin-bottom: 10px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
 }
 
-.modal-btn {
-    margin-top: 15px;
+.modal-content button {
     padding: 10px 20px;
+    font-size: 1rem;
     background: #3498db;
-    color: white;
+    color: #fff;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: background 0.3s;
 }
 
-.modal-btn:hover {
+.modal-content button:hover {
     background: #2980b9;
+}
+
+.close-modal {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1.5rem;
+    cursor: pointer;
 }

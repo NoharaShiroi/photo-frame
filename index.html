@@ -25,7 +25,7 @@
 
     <!-- 主應用界面 -->
     <div id="app-container">
-        <!-- 修改相簿选择和播放控制區域 -->
+        <!-- 修改相簿选择和播放控制区域 -->
         <div id="album-selection-container">
             <div>
                 <label for="album-select">相簿:</label>
@@ -45,7 +45,7 @@
                 </select>
             </div>
             <div>
-                <button id="schedule-settings-btn" class="similar-btn">設定暫停時段</button>
+                <button id="schedule-settings-btn">設定暫停時段</button>
             </div>
         </div>
 
@@ -61,6 +61,7 @@
 
     <!-- Lightbox -->
     <div id="lightbox">
+        <span id="close-lightbox">&times;</span>
         <img id="lightbox-image" alt="Lightbox Image">
         <div class="lightbox-buttons">
             <button id="prev-photo" class="nav-button">&#10094;</button>
@@ -76,36 +77,27 @@
     <!-- 時間排程設定彈窗 -->
     <div id="schedule-modal" class="modal">
         <div class="modal-content">
-            <h2>設定暂停時段</h2>
+            <span class="close-modal">&times;</span>
+            <h2>設定暫停時段</h2>
             <div>
-                <label>
-                    <input type="checkbox" id="enable-sleep" class="toggle-checkbox">
-                    <span class="toggle-label">啟用睡覺時間</span>
-                </label>
-                <div id="sleep-container">
-                    <label for="sleep-start">睡覺時間開始:</label>
-                    <input type="time" id="sleep-start" value="22:00">
-                    <label for="sleep-end">睡覺時間結束:</label>
-                    <input type="time" id="sleep-end" value="07:00">
-                </div>
+                <label for="sleep-start">睡覺時間開始:</label>
+                <input type="time" id="sleep-start" value="22:00">
             </div>
             <div>
-                <label>
-                    <input type="checkbox" id="enable-class" class="toggle-checkbox">
-                    <span class="toggle-label">啟用上課時間</span>
-                </label>
-                <div id="class-container">
-                    <label for="class-start">上課時間開始:</label>
-                    <input type="time" id="class-start" value="08:00">
-                    <label for="class-end">上課時間結束:</label>
-                    <input type="time" id="class-end" value="17:00">
-                </div>
+                <label for="sleep-end">睡覺時間結束:</label>
+                <input type="time" id="sleep-end" value="07:00">
             </div>
-            <button id="save-schedule" class="modal-btn">儲存設定</button>
-            <button id="close-modal" class="close-modal-btn">×</button>
+            <div>
+                <label for="class-start">上課時間開始:</label>
+                <input type="time" id="class-start" value="08:00">
+            </div>
+            <div>
+                <label for="class-end">上課時間結束:</label>
+                <input type="time" id="class-end" value="17:00">
+            </div>
+            <button id="save-schedule">儲存設定</button>
         </div>
     </div>
-
     
     <script src="script.js"></script>
 </body>
