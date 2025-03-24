@@ -20,7 +20,9 @@ const app = {
             sleepStart: "22:00",
             sleepEnd: "07:00",
             classStart: "08:00",
-            classEnd: "17:00"
+            classEnd: "17:00",
+            enableSleep: true,
+            enableClass: true
         }
     },
 
@@ -31,32 +33,71 @@ const app = {
             document.getElementById("auth-container").style.display = "flex";
         }
         this.setupIdleMonitor();
+        this.loadPhotos();
         this.loadSchedule();
         this.checkSchedule();
-        setInterval(() => this.checkSchedule(), 60000);
+        setInterval(() => this.checkSchedule(), 60000); // 60秒重新檢查一次
     },
 
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
         if (schedule) {
             this.states.schedule = schedule;
+            this.updateScheduleUI();
         }
     },
 
+    updateScheduleUI() {
+        const sleepEnabled = this.states.schedule.enableSleep;
+        const classEnabled = this.states.schedule.enableClass;
+
+        document.getElementById("enable-sleep").checked = sleepEnabled;
+        document.getElementById("enable-class").checked = classEnabled;
+
+        document.getElementById("sleep-container").style.display = sleepEnabled ? "block" : "none";
+        document.getElementById("class-container").style.display = classEnabled ? "block" : "none";
+    },
+
     saveSchedule() {
-        localStorage.setItem("schedule", JSON.stringify(this.states.schedule));
+        const enableSleep = document.getElementById("enable-sleep").checked;
+        const enableClass = document.getElementById("enable-class").checked;
+        
+        const schedule = {
+            sleepStart: document.getElementById("sleep-start").value,
+            sleepEnd: document.getElementById("sleep-end").value,
+            classStart: document.getElementById("class-start").value,
+            classEnd: document.getElementById("class-end").value,
+            enableSleep,
+            enableClass: enableClass
+        };
+
+        localStorage.setItem("schedule", JSON.stringify(schedule));
+        this.states.schedule = schedule;
     },
 
     checkSchedule() {
         const now = new Date();
         const currentTime = now.getHours() * 60 + now.getMinutes();
-        const sleepStart = this.getTimeInMinutes(this.states.schedule.sleepStart);
-        const sleepEnd = this.getTimeInMinutes(this.states.schedule.sleepEnd);
-        const classStart = this.getTimeInMinutes(this.states.schedule.classStart);
-        const classEnd = this.getTimeInMinutes(this.states.schedule.classEnd);
+        
+        let isPaused = false;
 
-        if ((currentTime >= sleepStart && currentTime < sleepEnd) || 
-            (currentTime >= classStart && currentTime < classEnd)) {
+        if (this.states.schedule.enableSleep) {
+            const sleepStart = this.getTimeInMinutes(this.states.schedule.sleepStart);
+            const sleepEnd = this.getTimeInMinutes(this.states.schedule.sleepEnd);
+            if (currentTime >= sleepStart && currentTime < sleepEnd) {
+                isPaused = true;
+            }
+        }
+
+        if (!isPaused && this.states.schedule.enableClass) {
+            const classStart = this.getTimeInMinutes(this.states.schedule.classStart);
+            const classEnd = this.getTimeInMinutes(this.states.schedule.classEnd);
+            if (currentTime >= classStart && currentTime < classEnd) {
+                isPaused = true;
+            }
+        }
+
+        if (isPaused) {
             this.stopSlideshow();
             document.getElementById("screenOverlay").style.display = "block";
         } else {
@@ -102,7 +143,8 @@ const app = {
     },
 
     setupEventListeners() {
-        document.getElementById("authorize-btn").addEventListener("click", (e) => {
+        const authBtn = document.getElementById("authorize-btn");
+        authBtn.addEventListener("click", (e) => {
             e.preventDefault();
             this.handleAuthFlow();
         });
@@ -113,53 +155,45 @@ const app = {
             this.loadPhotos();
         });
 
-        document.getElementById("prev-photo").addEventListener("click", () => this.navigate(-1));
-        document.getElementById("next-photo").addEventListener("click", () => this.navigate(1));
-        document.getElementById("start-slideshow-btn").addEventListener("click", () => this.toggleSlideshow());
-        document.getElementById("fullscreen-toggle-btn").addEventListener("click", () => this.toggleFullscreen());
-
-        document.getElementById("play-mode").addEventListener("change", (e) => {
-            if (this.states.slideshowInterval) {
-                this.toggleSlideshow();
-                this.toggleSlideshow();
-            }
-        });
-
-        let speedTimeout;
-        document.getElementById("slideshow-speed").addEventListener("input", (e) => {
-            clearTimeout(speedTimeout);
-            speedTimeout = setTimeout(() => {
-                if (this.states.slideshowInterval) {
-                    this.toggleSlideshow();
-                    this.toggleSlideshow();
-                }
-            }, 500);
-        });
-
-        document.getElementById("lightbox").addEventListener("dblclick", () => this.closeLightbox());
-
-        document.addEventListener("fullscreenchange", () => {
-            this.states.isFullscreen = !!document.fullscreenElement;
-            this.toggleButtonVisibility();
-        });
-
         document.getElementById("schedule-settings-btn").addEventListener("click", () => {
-            document.getElementById("schedule-modal").style.display = "block";
+            this.openScheduleModal();
         });
 
         document.querySelector(".close-modal").addEventListener("click", () => {
-            document.getElementById("schedule-modal").style.display = "none";
+            this.closeScheduleModal();
         });
 
         document.getElementById("save-schedule").addEventListener("click", () => {
-            this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
-            this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
-            this.states.schedule.classStart = document.getElementById("class-start").value;
-            this.states.schedule.classEnd = document.getElementById("class-end").value;
             this.saveSchedule();
-            document.getElementById("schedule-modal").style.display = "none";
-            this.checkSchedule();
+            this.closeScheduleModal();
         });
+
+        document.getElementById("enable-sleep").addEventListener("change", () => {
+            document.getElementById("sleep-container").style.display = 
+                this.states.schedule.enableSleep ? "block" : "none";
+        });
+
+        document.getElementById("enable-class").addEventListener("change", () => {
+            document.getElementById("class-container").style.display =
+                this.states.schedule.enableClass ? "block" : "none";
+        });
+
+        // Lightbox 雙擊關閉
+        const lightbox = document.getElementById("lightbox");
+        lightbox.addEventListener("dblclick", () => {
+            this.closeLightbox();
+            if (this.states.isFullscreen) {
+                this.toggleFullscreen();
+            }
+        });
+    },
+
+    openScheduleModal() {
+        document.getElementById("schedule-modal").style.display = "block";
+    },
+
+    closeScheduleModal() {
+        document.getElementById("schedule-modal").style.display = "none";
     },
 
     async fetchAlbums() {
@@ -189,7 +223,7 @@ const app = {
 
     async loadPhotos() {
         if (this.states.isFetching || !this.states.hasMorePhotos) return;
-
+        
         const requestId = ++this.states.currentRequestId;
         this.states.isFetching = true;
         document.getElementById("loading-indicator").style.display = "block";
@@ -222,15 +256,15 @@ const app = {
 
             const existingIds = new Set(this.states.photos.map(p => p.id));
             const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
-
+            
             this.states.photos = [...this.states.photos, ...newPhotos];
             this.states.nextPageToken = data.nextPageToken || null;
             this.states.hasMorePhotos = !!this.states.nextPageToken;
 
             this.renderPhotos();
         } catch (error) {
-            console.error("照片加載失敗:", error);
-            this.showMessage("加載失敗，請檢查網路連線");
+            console.error("照片加栽失敗:", error);
+            this.showMessage("加栽失敗，請檢查網路連線");
         } finally {
             if (requestId === this.states.currentRequestId) {
                 this.states.isFetching = false;
@@ -245,7 +279,7 @@ const app = {
         container.style.display = "grid";
         container.innerHTML = this.states.photos.map(photo => `
             <img class="photo" 
-                 src="${photo.baseUrl}=w150-h150"
+                 src="${photo.baseUrl}=w150-h150" 
                  data-src="${photo.baseUrl}=w800-h600"
                  alt="相片" 
                  data-id="${photo.id}"
@@ -321,9 +355,6 @@ const app = {
             this.states.lightboxActive = true;
             this.toggleButtonVisibility();
         }, 10);
-
-        // 处理Lightbox的尺寸自适应
-        this.adjustLightboxSize();
     },
 
     closeLightbox() {
@@ -441,16 +472,6 @@ const app = {
         messageElement.className = "empty-state";
         messageElement.textContent = message;
         container.appendChild(messageElement);
-    },
-
-    adjustLightboxSize() {
-        const lightboxImage = document.getElementById("lightbox-image");
-        lightboxImage.onload = () => {
-            const { naturalWidth, naturalHeight } = lightboxImage;
-            const ratio = Math.min(window.innerWidth / naturalWidth, window.innerHeight / naturalHeight);
-            lightboxImage.style.width = `${naturalWidth * ratio}px`;
-            lightboxImage.style.height = `${naturalHeight * ratio}px`;
-        };
     }
 };
 
