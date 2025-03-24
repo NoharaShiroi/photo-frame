@@ -126,7 +126,6 @@ select, input[type="number"] {
 #loading-indicator {
     position: relative;
     height: 100px;
-    transform: none;
     background: transparent;
     display: none;
     text-align: center;
