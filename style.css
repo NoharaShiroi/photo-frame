@@ -8,6 +8,25 @@ body {
     overflow: hidden;
 }
 
+/* 按钮样式 */
+button {
+    font-size: 1rem;
+    padding: 12px 25px;
+    background: #3498db;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    cursor: pointer;
+    transition: all 0.3s;
+    backdrop-filter: blur(5px);
+}
+
+button:hover {
+    background: #2980b9;
+    transform: translateY(-2px);
+}
+
 /* 授权页面 */
 #auth-container {
     display: flex;
@@ -71,24 +90,6 @@ select, input[type="number"] {
     font-size: 0.9rem;
 }
 
-/* 按钮样式 */
-button {
-    font-size: 1rem;
-    padding: 12px 25px;
-    background: #3498db;
-    color: #ffffff;
-    border: none;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-button:hover {
-    background: #2980b9;
-    transform: translateY(-1px);
-}
-
 /* 滚动容器 */
 #scroll-container {
     height: calc(100vh - 150px);
@@ -116,12 +117,13 @@ button:hover {
     background: rgba(255,255,255,0.5);
 }
 
-/* 照片容器 */
+/* 缩略图区域 */
 #photo-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 10px;
+    gap: 8px;
     padding: 0 10px;
+    min-height: calc(100% - 40px);
 }
 
 .photo {
@@ -159,7 +161,7 @@ button:hover {
     margin-top: 20px;
 }
 
-/* Lightbox */
+/* Lightbox 优化 */
 #lightbox {
     position: fixed;
     top: 0;
@@ -173,15 +175,13 @@ button:hover {
     z-index: 1000;
     opacity: 0;
     transition: opacity 0.3s;
-    border-radius: 15px;
 }
 
 #lightbox-image {
     max-width: 90%;
     max-height: 80vh;
     border-radius: 15px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-    object-fit: contain;
+    box-shadow: 0 0 40px rgba(255,255,255,0.1);
 }
 
 .lightbox-buttons {
@@ -193,144 +193,29 @@ button:hover {
     gap: 20px;
 }
 
-/* 全螢幕切換按鈕 */
-button#fullscreen-toggle-btn {
-    position: fixed;
-    top: 40px;
-    right: 40px;
-    background: rgba(255,255,255,0.2);
+.nav-button {
+    padding: 12px 25px;
+    font-size: 1.1rem;
+    background: rgba(255,255,255,0.9);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
     backdrop-filter: blur(5px);
 }
 
-/* 輕按遮罩重新開啟lightbox */
-body {
-    touch-action: none;
+.nav-button:hover {
+    background: #fff;
+    transform: translateY(-2px);
 }
 
-/* 閒置遮罩 */
-#screenOverlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.6);
-    display: none;
-    z-index: 9999;
-}
-
-/* 時間排程設定彈窗 */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1001;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    justify-content: center;
-    align-items: center;
-}
-
-.modal-content {
-    background-color: #1a1a1a;
-    padding: 20px;
-    border-radius: 8px;
-    width: 400px;
-    text-align: center;
-}
-
-.modal-content label {
-    display: block;
-    margin: 10px 0 5px;
-}
-
-.modal-content input[type="time"] {
-    padding: 8px;
-    font-size: 1rem;
-    width: 100%;
-    margin-bottom: 10px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-}
-
-.modal-content button {
-    padding: 10px 20px;
-    font-size: 1rem;
-    background: #3498db;
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.modal-content button:hover {
-    background: #2980b9;
-    transform: translateY(-1px);
-}
-
-.close-modal {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 1.5rem;
-    cursor: pointer;
-    color: #fff;
-    transition: all 0.3s;
-}
-
-.close-modal:hover {
-    transform: rotate(45deg);
-}
-
-/* 加载动画 */
-.loader {
-    width: 50px;
-    height: 50px;
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid #3498db;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 50px auto;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* 响應式設計 */
+/* 全屏适应性 */
 @media (max-width: 768px) {
-    #photo-container {
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-        gap: 6px;
-    }
-
-    #album-selection-container {
-        grid-template-columns: 1fr;
-    }
-
-    select, input[type="number"] {
+    #lightbox-image {
         max-width: 100%;
-    }
-
-    .lightbox-buttons {
-        bottom: 20px;
-        gap: 10px;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
-    button {
-        padding: 8px 15px;
+        max-height: 100vh;
     }
 }
 
-/* 超大螢幕自適應 */
-@media (min-width: 1200px) {
-    #app-container {
-        max-width: 1200px;
-    }
-}
+/* 幻燈片模式適應性 */
+幻燈片模式下，圖片將根據畫面大小自動調整尺寸
