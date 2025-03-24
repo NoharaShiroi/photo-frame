@@ -20,7 +20,8 @@ const app = {
             sleepStart: "22:00",
             sleepEnd: "07:00",
             classStart: "08:00",
-            classEnd: "17:00"
+            classEnd: "17:00",
+            ignore: false
         }
     },
 
@@ -55,6 +56,8 @@ const app = {
         const classStart = this.getTimeInMinutes(this.states.schedule.classStart);
         const classEnd = this.getTimeInMinutes(this.states.schedule.classEnd);
 
+        if (this.states.schedule.ignore) return;
+
         if ((currentTime >= sleepStart && currentTime < sleepEnd) || 
             (currentTime >= classStart && currentTime < classEnd)) {
             this.stopSlideshow();
@@ -67,6 +70,97 @@ const app = {
     getTimeInMinutes(time) {
         const [hours, minutes] = time.split(":").map(Number);
         return hours * 60 + minutes;
+    },
+
+    setupEventListeners() {
+        document.getElementById("authorize-btn").addEventListener("click", (e) => {
+            e.preventDefault();
+            this.handleAuthFlow();
+        });
+
+        document.getElementById("album-select").addEventListener("change", (e) => {
+            this.states.albumId = e.target.value;
+            this.resetPhotoData();
+            this.loadPhotos();
+        });
+
+        document.getElementById("close-lightbox").addEventListener("click", () => this.closeLightbox());
+        document.getElementById("prev-photo").addEventListener("click", () => this.navigate(-1));
+        document.getElementById("next-photo").addEventListener("click", () => this.navigate(1));
+        document.getElementById("start-slideshow-btn").addEventListener("click", () => this.toggleSlideshow());
+        document.getElementById("fullscreen-toggle-btn").addEventListener("click", () => this.toggleFullscreen());
+
+        document.getElementById("schedule-settings-btn").addEventListener("click", () => {
+            document.getElementById("schedule-modal").style.display = "block";
+        });
+
+        document.querySelector(".close-modal").addEventListener("click", () => {
+            document.getElementById("schedule-modal").style.display = "none";
+        });
+
+        document.getElementById("save-schedule").addEventListener("click", () => {
+            this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
+            this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
+            this.states.schedule.classStart = document.getElementById("class-start").value;
+            this.states.schedule.classEnd = document.getElementById("class-end").value;
+            this.states.schedule.ignore = document.getElementById("no-set").checked;
+            this.saveSchedule();
+            document.getElementById("schedule-modal").style.display = "none";
+            this.checkSchedule();
+        });
+    },
+
+    toggleSlideshow() {
+        if (this.states.slideshowInterval) {
+            this.stopSlideshow();
+        } else {
+            const speed = document.getElementById("slideshow-speed").value * 1000;
+            const isRandom = document.getElementById("play-mode").value === "random";
+            
+            const getNextIndex = () => {
+                if (isRandom) {
+                    let nextIndex;
+                    do {
+                        nextIndex = Math.floor(Math.random() * this.states.photos.length);
+                    } while (nextIndex === this.states.currentIndex);
+                    return nextIndex;
+                }
+                return (this.states.currentIndex + 1) % this.states.photos.length;
+            };
+
+            this.states.slideshowInterval = setInterval(() => {
+                this.states.currentIndex = getNextIndex();
+                document.getElementById("lightbox-image").src = 
+                    `${this.states.photos[this.states.currentIndex].baseUrl}=w1920-h1080`;
+            }, speed);
+        }
+        this.toggleButtonVisibility();
+    },
+
+    stopSlideshow() {
+        clearInterval(this.states.slideshowInterval);
+        this.states.slideshowInterval = null;
+        this.toggleButtonVisibility();
+    },
+
+    resetPhotoData() {
+        this.states.currentRequestId++;
+        this.states.photos = [];
+        this.states.nextPageToken = null;
+        this.states.hasMorePhotos = true;
+        document.getElementById("photo-container").innerHTML = '';
+    },
+
+    closeLightbox() {
+        const lightbox = document.getElementById("lightbox");
+        lightbox.style.display = "none";
+        this.stopSlideshow();
+    },
+
+    navigate(direction) {
+        this.states.currentIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
+        document.getElementById("lightbox-image").src = 
+            `${this.states.photos[this.states.currentIndex].baseUrl}=w1920-h1080`;
     },
 
     handleAuthFlow() {
@@ -101,97 +195,6 @@ const app = {
         this.fetchAlbums();
     },
 
-setupEventListeners() {
-    // 登入按鈕
-    const authBtn = document.getElementById("authorize-btn");
-    if (authBtn) {
-        authBtn.addEventListener("click", (e) => {
-            e.preventDefault();
-            this.handleAuthFlow();
-        });
-    }
-
-    // 相簿選擇
-    const albumSelect = document.getElementById("album-select");
-    if (albumSelect) {
-        albumSelect.addEventListener("change", (e) => {
-            this.states.albumId = e.target.value;
-            this.resetPhotoData();
-            this.loadPhotos();
-        });
-    }
-
-    // 關閉lightbox
-    const closeLightboxBtn = document.getElementById("close-lightbox");
-    if (closeLightboxBtn) {
-        closeLightboxBtn.addEventListener("click", () => this.closeLightbox());
-    }
-
-    // 遷移照片
-    const prevPhotoBtn = document.getElementById("prev-photo");
-    if (prevPhotoBtn) {
-        prevPhotoBtn.addEventListener("click", () => this.navigate(-1));
-    }
-
-    const nextPhotoBtn = document.getElementById("next-photo");
-    if (nextPhotoBtn) {
-        nextPhotoBtn.addEventListener("click", () => this.navigate(1));
-    }
-
-    // 切幻燈片
-    const slideshowBtn = document.getElementById("start-slideshow-btn");
-    if (slideshowBtn) {
-        slideshowBtn.addEventListener("click", () => this.toggleSlideshow());
-    }
-
-    // 全螢幕切換
-    const fullscreenBtn = document.getElementById("fullscreen-toggle-btn");
-    if (fullscreenBtn) {
-        fullscreenBtn.addEventListener("click", () => this.toggleFullscreen());
-    }
-
-    // 時間排程設定BTN
-    const scheduleSettingsBtn = document.getElementById("schedule-settings-btn");
-    if (scheduleSettingsBtn) {
-        scheduleSettingsBtn.addEventListener("click", () => {
-            document.getElementById("schedule-modal").style.display = "block";
-        });
-    }
-
-    // 關閉modal
-    const closeModalBtn = document.querySelector(".close-modal");
-    if (closeModalBtn) {
-        closeModalBtn.addEventListener("click", () => {
-            document.getElementById("schedule-modal").style.display = "none";
-        });
-    }
-
-    // 儲存時間排程
-    const saveScheduleBtn = document.getElementById("save-schedule");
-    if (saveScheduleBtn) {
-        saveScheduleBtn.addEventListener("click", () => {
-            this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
-            this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
-            this.states.schedule.classStart = document.getElementById("class-start").value;
-            this.states.schedule.classEnd = document.getElementById("class-end").value;
-            this.saveSchedule();
-            document.getElementById("schedule-modal").style.display = "none";
-            this.checkSchedule();
-        });
-    }
-
-    // 雙擊關閉lightbox
-    const lightboxElement = document.getElementById("lightbox");
-    if (lightboxElement) {
-        lightboxElement.addEventListener("dblclick", () => {
-            this.closeLightbox();
-            if (this.states.isFullscreen) {
-                this.toggleFullscreen();
-            }
-        });
-    }
-},
-
     async fetchAlbums() {
         try {
             const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
@@ -202,7 +205,7 @@ setupEventListeners() {
             this.renderAlbumSelect(data.albums || []);
             this.loadPhotos();
         } catch (error) {
-            this.handleAuthError();
+            console.error("Failed to fetch albums", error);
         }
     },
 
@@ -219,7 +222,7 @@ setupEventListeners() {
 
     async loadPhotos() {
         if (this.states.isFetching || !this.states.hasMorePhotos) return;
-        
+
         const requestId = ++this.states.currentRequestId;
         this.states.isFetching = true;
         document.getElementById("loading-indicator").style.display = "block";
@@ -260,18 +263,17 @@ setupEventListeners() {
             this.renderPhotos();
         } catch (error) {
             console.error("照片加載失敗:", error);
-            this.showMessage("加載失敗，請檢查網路連線");
         } finally {
             if (requestId === this.states.currentRequestId) {
                 this.states.isFetching = false;
                 document.getElementById("loading-indicator").style.display = "none";
-                this.setupScrollObserver();
             }
         }
     },
 
     renderPhotos() {
         const container = document.getElementById("photo-container");
+        container.style.display = "grid";
         container.innerHTML = this.states.photos.map(photo => 
             `<img class="photo" 
                  src="${photo.baseUrl}=w150-h150" 
@@ -282,144 +284,23 @@ setupEventListeners() {
         ).join("");
 
         if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
-            container.insertAdjacentHTML("beforeend", `<p class="empty-state">已無更多相片</p>`);
+            container.insertAdjacentHTML("beforeend", '<p class="empty-state">已無更多相片</p>');
         }
 
         this.setupLazyLoad();
-        this.setupScrollObserver();
-    },
-
-    setupLazyLoad() {
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    const img = entry.target;
-                    if (!img.src.includes('w800')) {
-                        img.src = img.dataset.src;
-                    }
-                    observer.unobserve(img);
-                }
-            });
-        }, { 
-            rootMargin: "200px 0px",
-            threshold: 0.01 
-        });
-
-        document.querySelectorAll(".photo:not([data-loaded])").forEach(img => {
-            observer.observe(img);
-            img.setAttribute('data-loaded', 'true');
-        });
-    },
-
-    setupScrollObserver() {
-        if (this.states.observer) this.states.observer.disconnect();
-        
-        this.states.observer = new IntersectionObserver(
-            entries => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting && 
-                        this.states.hasMorePhotos &&
-                        !this.states.isFetching
-                    ) {
-                        setTimeout(() => this.loadPhotos(), 300);
-                    }
-                });
-            },
-            {
-                root: document.querySelector('#scroll-container'),
-                rootMargin: '400px 0px',
-                threshold: 0.1
-            }
-        );
-
-        const sentinel = document.createElement('div');
-        sentinel.id = 'scroll-sentinel';
-        document.getElementById('photo-container').appendChild(sentinel);
-        this.states.observer.observe(sentinel);
     },
 
     openLightbox(photoId) {
         this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
         const lightbox = document.getElementById("lightbox");
         const image = document.getElementById("lightbox-image");
-        
+
         image.src = `${this.states.photos[this.states.currentIndex].baseUrl}=w1920-h1080`;
         lightbox.style.display = "flex";
         setTimeout(() => {
             lightbox.style.opacity = 1;
             this.states.lightboxActive = true;
-            this.toggleButtonVisibility();
         }, 10);
-    },
-
-    closeLightbox() {
-        const lightbox = document.getElementById("lightbox");
-        lightbox.style.opacity = 0;
-        setTimeout(() => {
-            lightbox.style.display = "none";
-            this.states.lightboxActive = false;
-            this.toggleButtonVisibility();
-        }, 300);
-        this.stopSlideshow();
-    },
-
-    navigate(direction) {
-        this.states.currentIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
-        document.getElementById("lightbox-image").src = 
-            `${this.states.photos[this.states.currentIndex].baseUrl}=w1920-h1080`;
-    },
-
-    toggleSlideshow() {
-        if (this.states.slideshowInterval) {
-            this.stopSlideshow();
-        } else {
-            const speed = document.getElementById("slideshow-speed").value * 1000;
-            const isRandom = document.getElementById("play-mode").value === "random";
-            
-            const getNextIndex = () => {
-                if (isRandom) {
-                    let nextIndex;
-                    do {
-                        nextIndex = Math.floor(Math.random() * this.states.photos.length);
-                    } while (nextIndex === this.states.currentIndex);
-                    return nextIndex;
-                }
-                return (this.states.currentIndex + 1) % this.states.photos.length;
-            };
-
-            this.states.slideshowInterval = setInterval(() => {
-                this.states.currentIndex = getNextIndex();
-                document.getElementById("lightbox-image").src = 
-                    `${this.states.photos[this.states.currentIndex].baseUrl}=w1920-h1080`;
-            }, speed);
-        }
-        this.toggleButtonVisibility();
-    },
-
-    stopSlideshow() {
-        clearInterval(this.states.slideshowInterval);
-        this.states.slideshowInterval = null;
-        this.toggleButtonVisibility();
-    },
-
-    toggleFullscreen() {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(err => {
-                console.error('全螢幕錯誤:', err);
-            });
-        } else {
-            document.exitFullscreen();
-        }
-        this.toggleButtonVisibility();
-    },
-
-    toggleButtonVisibility() {
-        const buttons = document.querySelectorAll('.lightbox-buttons .nav-button');
-        if (this.states.slideshowInterval || this.states.isFullscreen) {
-            buttons.forEach(button => button.style.display = 'none');
-        } else {
-            buttons.forEach(button => button.style.display = 'block');
-        }
     },
 
     setupIdleMonitor() {
@@ -441,32 +322,19 @@ setupEventListeners() {
         document.addEventListener("keydown", resetTimer);
     },
 
-    resetPhotoData() {
-        this.states.currentRequestId++;
-        this.states.photos = [];
-        this.states.nextPageToken = null;
-        this.states.hasMorePhotos = true;
-        document.getElementById("photo-container").innerHTML = '';
-        this.setupScrollObserver();
-    },
-
-    handleAuthError() {
-        const retry = confirm("授權已過期，是否重新登入？");
-        if (retry) {
-            sessionStorage.removeItem("access_token");
-            window.location.reload();
+    toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                console.error('全螢幕錯誤:', err);
+            });
         } else {
-            document.getElementById("auth-container").style.display = "flex";
-            document.getElementById("app-container").style.display = "none";
+            document.exitFullscreen();
         }
     },
 
-    showMessage(message) {
-        const container = document.getElementById("photo-container");
-        const messageElement = document.createElement("p");
-        messageElement.className = "empty-state";
-        messageElement.textContent = message;
-        container.appendChild(messageElement);
+    toggleButtonVisibility() {
+        const buttons = document.querySelectorAll('.lightbox-buttons .nav-button');
+        buttons.forEach(button => button.style.display = this.states.slideshowInterval || this.states.isFullscreen ? 'none' : 'block');
     }
 };
 
