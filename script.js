@@ -22,9 +22,9 @@ const app = {
             classStart: "08:00",
             classEnd: "17:00"
         }
- },
+    },
 
-     init() {
+    init() {
         this.states.accessToken = sessionStorage.getItem("access_token");
         this.setupEventListeners();
         if (!this.checkAuth()) {
@@ -34,7 +34,7 @@ const app = {
         this.loadSchedule();
         this.checkSchedule();
         setInterval(() => this.checkSchedule(), 60000); // 60000 毫秒 = 1 分鐘
-     },
+    },
 
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
@@ -115,13 +115,13 @@ const app = {
         });
 
         // Lightbox 控制
-        document.getElementById("close-lightbox").addEventListener("click", () => this.closeLightbox());
+        document.getElementById("lightbox").addEventListener("dblclick", () => this.closeLightbox());
         document.getElementById("prev-photo").addEventListener("click", () => this.navigate(-1));
         document.getElementById("next-photo").addEventListener("click", () => this.navigate(1));
         document.getElementById("start-slideshow-btn").addEventListener("click", () => this.toggleSlideshow());
         document.getElementById("fullscreen-toggle-btn").addEventListener("click", () => this.toggleFullscreen());
-
-        // 播放模式切换
+        
+        // 播放模式切換
         document.getElementById("play-mode").addEventListener("change", (e) => {
             if (this.states.slideshowInterval) {
                 this.toggleSlideshow();
@@ -129,7 +129,7 @@ const app = {
             }
         });
 
-        // 速度输入防抖处理
+        // 速度輸入防抖處理
         let speedTimeout;
         document.getElementById("slideshow-speed").addEventListener("input", (e) => {
             clearTimeout(speedTimeout);
@@ -139,20 +139,6 @@ const app = {
                     this.toggleSlideshow();
                 }
             }, 500);
-        });
-
-        // 雙擊關閉 lightbox
-        document.getElementById("lightbox").addEventListener("dblclick", () => {
-            this.closeLightbox();
-            if (this.states.isFullscreen) {
-                this.toggleFullscreen();
-            }
-        });
-
-        // 全螢幕變化監聽
-        document.addEventListener("fullscreenchange", () => {
-            this.states.isFullscreen = !!document.fullscreenElement;
-            this.toggleButtonVisibility();
         });
 
         // 時間排程設定
@@ -369,6 +355,7 @@ const app = {
         return nextIndex;
     }
     return (this.states.currentIndex + 1) % this.states.photos.length;
+
 };
 
             this.states.slideshowInterval = setInterval(() => {
