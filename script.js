@@ -2,7 +2,7 @@ const app = {
     CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
     REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
-    
+
     states: {
         accessToken: null,
         albumId: "all",
@@ -17,8 +17,10 @@ const app = {
         lightboxActive: false,
         isFullscreen: false,
         schedule: {
+            sleepEnabled: true,
             sleepStart: "22:00",
             sleepEnd: "07:00",
+            classEnabled: true,
             classStart: "08:00",
             classEnd: "17:00"
         }
@@ -40,26 +42,58 @@ const app = {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
         if (schedule) {
             this.states.schedule = schedule;
+            this.updateScheduleInputs();
         }
     },
 
+    updateScheduleInputs() {
+        const sleepInputs = document.querySelectorAll('#sleep-start, #sleep-end');
+        const classInputs = document.querySelectorAll('#class-start, #class-end');
+        const sleepEnabled = document.getElementById('sleep-enabled');
+        const classEnabled = document.getElementById('class-enabled');
+
+        if (!this.states.schedule.sleepEnabled) {
+            sleepInputs.forEach(input => input.disabled = true);
+        } else {
+            sleepInputs.forEach(input => input.disabled = false);
+        }
+
+        if (!this.states.schedule.classEnabled) {
+            classInputs.forEach(input => input.disabled = true);
+        } else {
+            classInputs.forEach(input => input.disabled = false);
+        }
+
+        sleepEnabled.value = this.states.schedule.sleepEnabled ? 'true' : 'false';
+        classEnabled.value = this.states.schedule.classEnabled ? 'true' : 'false';
+    },
+
     saveSchedule() {
+        this.states.schedule.sleepEnabled = document.getElementById('sleep-enabled').value === 'true';
+        this.states.schedule.sleepStart = document.getElementById('sleep-start').value;
+        this.states.schedule.sleepEnd = document.getElementById('sleep-end').value;
+        this.states.schedule.classEnabled = document.getElementById('class-enabled').value === 'true';
+        this.states.schedule.classStart = document.getElementById('class-start').value;
+        this.states.schedule.classEnd = document.getElementById('class-end').value;
+        
         localStorage.setItem("schedule", JSON.stringify(this.states.schedule));
     },
 
     checkSchedule() {
         const now = new Date();
         const currentTime = now.getHours() * 60 + now.getMinutes();
-        const sleepStart = this.getTimeInMinutes(this.states.schedule.sleepStart);
-        const sleepEnd = this.getTimeInMinutes(this.states.schedule.sleepEnd);
-        const classStart = this.getTimeInMinutes(this.states.schedule.classStart);
-        const classEnd = this.getTimeInMinutes(this.states.schedule.classEnd);
+        const sleepEnabled = this.states.schedule.sleepEnabled;
+        const classEnabled = this.states.schedule.classEnabled;
 
-        if ((currentTime >= sleepStart && currentTime < sleepEnd) || 
-            (currentTime >= classStart && currentTime < classEnd)) {
+        if ((sleepEnabled && 
+             (currentTime >= this.getTimeInMinutes(this.states.schedule.sleepStart) && 
+              currentTime < this.getTimeInMinutes(this.states.schedule.sleepEnd))) ||
+            (classEnabled && 
+             (currentTime >= this.getTimeInMinutes(this.states.schedule.classStart) && 
+              currentTime < this.getTimeInMinutes(this.states.schedule.classEnd)))) {
             this.stopSlideshow();
             document.getElementById("screenOverlay").style.display = "block";
-        } else {
+        else {
             document.getElementById("screenOverlay").style.display = "none";
         }
     },
