@@ -8,7 +8,7 @@ body {
     overflow: hidden;
 }
 
-/* 授权页面 */
+/* 授權頁面樣式 */
 #auth-container {
     display: flex;
     flex-direction: column;
@@ -35,7 +35,7 @@ body {
     box-shadow: 0 6px 20px rgba(0,0,0,0.3);
 }
 
-/* 主界面 */
+/* 主界面樣式 */
 #app-container {
     display: none;
     padding: 10px;
@@ -43,7 +43,7 @@ body {
     margin: 0 auto;
 }
 
-/* 相簿选择和播放控制区域 */
+/* 相簿選擇和播放控制區域 */
 #album-selection-container {
     margin-bottom: 15px;
     padding: 10px;
@@ -54,24 +54,24 @@ body {
     gap: 10px;
 }
 
-select, input[type="number"] {
-    padding: 8px 12px;
-    font-size: 0.9rem;
-    background: rgba(255,255,255,0.9);
+.similar-btn {
+    padding: 10px 20px;
+    font-size: 1rem;
+    background: #3498db;
+    color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s;
     width: 100%;
-    max-width: 200px;
 }
 
-.slideshow-controls {
-    margin-top: 10px;
-    gap: 8px;
-    padding: 10px;
-    font-size: 0.9rem;
+.similar-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
-/* 滚动容器 */
+/* 滚动容器樣式 */
 #scroll-container {
     height: calc(100vh - 150px);
     overflow-y: auto;
@@ -79,7 +79,7 @@ select, input[type="number"] {
     margin: 0 -10px;
 }
 
-/* 自定义滚动条 */
+/* 自定義滾動條 */
 #scroll-container::-webkit-scrollbar {
     width: 8px;
 }
@@ -98,7 +98,7 @@ select, input[type="number"] {
     background: rgba(255,255,255,0.5);
 }
 
-/* 缩略图区域 */
+/* 缩略圖區域 */
 #photo-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -122,10 +122,11 @@ select, input[type="number"] {
     box-shadow: 0 8px 25px rgba(0,0,0,0.3);
 }
 
-/* 加载提示 */
+/* 加載提示 */
 #loading-indicator {
     position: relative;
     height: 100px;
+    transform: none;
     background: transparent;
     display: none;
     text-align: center;
@@ -141,7 +142,7 @@ select, input[type="number"] {
     margin-top: 20px;
 }
 
-/* Lightbox */
+/* Lightbox 樣式 */
 #lightbox {
     position: fixed;
     top: 0;
@@ -149,7 +150,7 @@ select, input[type="number"] {
     width: 100vw;
     height: 100vh;
     background: rgba(0,0,0,0.95);
-    display: none;
+    display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
@@ -189,7 +190,7 @@ select, input[type="number"] {
     transform: translateY(-2px);
 }
 
-/* 加载动画 */
+/* 加載畫面 */
 .loader {
     width: 50px;
     height: 50px;
@@ -205,7 +206,7 @@ select, input[type="number"] {
     100% { transform: rotate(360deg); }
 }
 
-/* 响应式设计 */
+/* 响應式設計 */
 @media (max-width: 768px) {
     #photo-container {
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -233,7 +234,7 @@ select, input[type="number"] {
     }
 }
 
-/* 闲置遮罩 */
+/* 閒置遮罩 */
 #screenOverlay {
     position: fixed;
     top: 0;
@@ -267,39 +268,28 @@ select, input[type="number"] {
     text-align: center;
 }
 
-.modal-content label {
-    display: block;
-    margin: 10px 0 5px;
+.toggle-checkbox {
+    margin-right: 10px;
+    width: 20px;
+    height: 20px;
 }
 
-.modal-content input[type="time"] {
-    padding: 8px;
-    font-size: 1rem;
-    width: 100%;
-    margin-bottom: 10px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
+.toggle-label {
+    display: inline-block;
+    padding: 0 5px;
 }
 
-.modal-content button {
+.modal-btn {
+    margin-top: 15px;
     padding: 10px 20px;
-    font-size: 1rem;
     background: #3498db;
-    color: #fff;
+    color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    transition: background 0.3s;
+    transition: all 0.3s;
 }
 
-.modal-content button:hover {
+.modal-btn:hover {
     background: #2980b9;
-}
-
-.close-modal {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 1.5rem;
-    cursor: pointer;
 }
