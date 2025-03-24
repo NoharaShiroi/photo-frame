@@ -143,30 +143,31 @@ const app = {
     },
 
     setupEventListeners() {
-        const authBtn = document.getElementById("authorize-btn");
-        authBtn.addEventListener("click", (e) => {
-            e.preventDefault();
-            this.handleAuthFlow();
-        });
+        setupEventListeners() {
+    const authBtn = document.getElementById("authorize-btn");
+    authBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        this.handleAuthFlow();
+    });
 
-        document.getElementById("album-select").addEventListener("change", (e) => {
-            this.states.albumId = e.target.value;
-            this.resetPhotoData();
-            this.loadPhotos();
-        });
+    document.getElementById("album-select").addEventListener("change", (e) => {
+        this.states.albumId = e.target.value;
+        this.resetPhotoData();
+        this.loadPhotos();
+    });
 
-        document.getElementById("schedule-settings-btn").addEventListener("click", () => {
-            this.openScheduleModal();
-        });
+    document.getElementById("schedule-settings-btn").addEventListener("click", () => {
+        this.openScheduleModal();
+    });
 
-        document.querySelector(".close-modal").addEventListener("click", () => {
-            this.closeScheduleModal();
-        });
+    document.getElementById("close-modal").addEventListener("click", () => {
+        this.closeScheduleModal();
+    });
 
-        document.getElementById("save-schedule").addEventListener("click", () => {
-            this.saveSchedule();
-            this.closeScheduleModal();
-        });
+    document.getElementById("save-schedule").addEventListener("click", () => {
+        this.saveSchedule();
+        this.closeScheduleModal();
+    });
 
         document.getElementById("enable-sleep").addEventListener("change", () => {
             document.getElementById("sleep-container").style.display = 
