@@ -20,8 +20,7 @@ const app = {
             sleepStart: "22:00",
             sleepEnd: "07:00",
             classStart: "08:00",
-            classEnd: "17:00",
-            ignore: false // 新增不設定選項
+            classEnd: "17:00"
         }
     },
 
@@ -55,8 +54,6 @@ const app = {
         const sleepEnd = this.getTimeInMinutes(this.states.schedule.sleepEnd);
         const classStart = this.getTimeInMinutes(this.states.schedule.classStart);
         const classEnd = this.getTimeInMinutes(this.states.schedule.classEnd);
-
-        if (this.states.schedule.ignore) return; // 如果選擇不設定，直接返回不解鎖
 
         if ((currentTime >= sleepStart && currentTime < sleepEnd) || 
             (currentTime >= classStart && currentTime < classEnd)) {
@@ -123,18 +120,6 @@ const app = {
         document.getElementById("start-slideshow-btn").addEventListener("click", () => this.toggleSlideshow());
         document.getElementById("fullscreen-toggle-btn").addEventListener("click", () => this.toggleFullscreen());
 
-        document.getElementById("play-mode").addEventListener("change", (e) => {
-            if (this.states.slideshowInterval) {
-                this.toggleSlideshow();
-            }
-        });
-
-        document.getElementById("slideshow-speed").addEventListener("input", (e) => {
-            if (this.states.slideshowInterval) {
-                this.toggleSlideshow();
-            }
-        });
-
         document.getElementById("schedule-settings-btn").addEventListener("click", () => {
             document.getElementById("schedule-modal").style.display = "block";
         });
@@ -148,11 +133,18 @@ const app = {
             this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
             this.states.schedule.classStart = document.getElementById("class-start").value;
             this.states.schedule.classEnd = document.getElementById("class-end").value;
-            this.states.schedule.ignore = document.getElementById("no-set").checked;
             this.saveSchedule();
             document.getElementById("schedule-modal").style.display = "none";
             this.checkSchedule();
         });
+
+        // 處理雙擊關閉lightbox
+        document.getElementById("lightbox").addEventListener("dblclick", () => {
+            this.closeLightbox();
+            if (this.states.isFullscreen) {
+                this.toggleFullscreen();
+            }
+       });
     },
 
     async fetchAlbums() {
@@ -235,14 +227,13 @@ const app = {
 
     renderPhotos() {
         const container = document.getElementById("photo-container");
-        container.style.display = "grid";
         container.innerHTML = this.states.photos.map(photo => 
             `<img class="photo" 
-                  src="${photo.baseUrl}=w150-h150"
-                  data-src="${photo.baseUrl}=w800-h600"
-                  alt="相片" 
-                  data-id="${photo.id}"
-                  onclick="app.openLightbox('${photo.id}')">`
+                 src="${photo.baseUrl}=w150-h150" 
+                 data-src="${photo.baseUrl}=w800-h600"
+                 alt="相片" 
+                 data-id="${photo.id}"
+                 onclick="app.openLightbox('${photo.id}')">`
         ).join("");
 
         if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
@@ -341,20 +332,12 @@ const app = {
             const isRandom = document.getElementById("play-mode").value === "random";
             
             const getNextIndex = () => {
-                if (this.states.photos.length === 0) return 0;
-
                 if (isRandom) {
-                    const alreadyPlayed = new Set();
-                    const totalPhotos = this.states.photos.length;
-                    
+                    let nextIndex;
                     do {
-                        const randomIndex = Math.floor(Math.random() * totalPhotos);
-                        if (!alreadyPlayed.has(this.states.photos[randomIndex].id)) {
-                            alreadyPlayed.add(this.states.photos[randomIndex].id);
-                            return randomIndex;
-                        }
-                    } while (alreadyPlayed.size < totalPhotos);
-                    return 0;
+                        nextIndex = Math.floor(Math.random() * this.states.photos.length);
+                    } while (nextIndex === this.states.currentIndex);
+                    return nextIndex;
                 }
                 return (this.states.currentIndex + 1) % this.states.photos.length;
             };
@@ -386,7 +369,7 @@ const app = {
     },
 
     toggleButtonVisibility() {
-        const buttons = document.querySelectorAll('.lightbox-buttons button');
+        const buttons = document.querySelectorAll('.lightbox-buttons .nav-button');
         if (this.states.slideshowInterval || this.states.isFullscreen) {
             buttons.forEach(button => button.style.display = 'none');
         } else {
