@@ -25,7 +25,7 @@
 
     <!-- 主應用界面 -->
     <div id="app-container">
-        <!-- 修改相簿选择和播放控制區域 -->
+        <!-- 修改相簿选择和播放控制区域 -->
         <div id="album-selection-container">
             <div>
                 <label for="album-select">相簿:</label>
@@ -45,7 +45,7 @@
                 </select>
             </div>
             <div>
-                <button id="schedule-settings-btn" class="select-btn">設定暫停時段</button>
+                <button id="schedule-settings-btn">設定暫停時段</button>
             </div>
         </div>
 
@@ -79,31 +79,25 @@
             <span class="close-modal">&times;</span>
             <h2>設定暫停時段</h2>
             <div>
-                <label>啟用睡覺時間:</label>
-                <select id="sleep-enabled">
-                    <option value="true">啟用</option>
-                    <option value="false">_disabled</option>
-                </select>
-            </div>
-            <div>
                 <label for="sleep-start">睡覺時間開始:</label>
-                <input type="time" id="sleep-start" value="22:00" disabled>
-                <input type="time" id="sleep-end" value="07:00" disabled>
+                <input type="time" id="sleep-start" value="22:00">
             </div>
             <div>
-                <label>啟用上課时间:</label>
-                <select id="class-enabled">
-                    <option value="true">啟用</option>
-                    <option value="false">_disabled</option>
-                </select>
+                <label for="sleep-end">睡覺時間結束:</label>
+                <input type="time" id="sleep-end" value="07:00">
             </div>
             <div>
                 <label for="class-start">上課時間開始:</label>
-                <input type="time" id="class-start" value="08:00" disabled>
-                <input type="time" id="class-end" value="17:00" disabled>
+                <input type="time" id="class-start" value="08:00">
+            </div>
+            <div>
+                <label for="class-end">上課時間結束:</label>
+                <input type="time" id="class-end" value="17:00">
             </div>
             <button id="save-schedule">儲存設定</button>
         </div>
     </div>
+    
+    <script src="script.js"></script>
 </body>
 </html>

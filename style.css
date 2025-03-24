@@ -54,20 +54,6 @@ body {
     gap: 10px;
 }
 
-.select-btn {
-    padding: 10px;
-    background: #3498db;
-    color: white;
-    border: none;
-    border-radius: 25px;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.select-btn:hover {
-    transform: translateY(-2px);
-}
-
 select, input[type="number"] {
     padding: 8px 12px;
     font-size: 0.9rem;
@@ -78,7 +64,14 @@ select, input[type="number"] {
     max-width: 200px;
 }
 
-/* 滾動容器 */
+.slideshow-controls {
+    margin-top: 10px;
+    gap: 8px;
+    padding: 10px;
+    font-size: 0.9rem;
+}
+
+/* 滚动容器 */
 #scroll-container {
     height: calc(100vh - 150px);
     overflow-y: auto;
@@ -281,15 +274,6 @@ select, input[type="number"] {
 }
 
 .modal-content input[type="time"] {
-    padding: 8px;
-    font-size: 1rem;
-    width: 100%;
-    margin-bottom: 10px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
-}
-
-.modal-content select {
     padding: 8px;
     font-size: 1rem;
     width: 100%;
