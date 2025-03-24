@@ -101,34 +101,75 @@ const app = {
         this.fetchAlbums();
     },
 
-    setupEventListeners() {
-        const authBtn = document.getElementById("authorize-btn");
+setupEventListeners() {
+    // 登入按鈕
+    const authBtn = document.getElementById("authorize-btn");
+    if (authBtn) {
         authBtn.addEventListener("click", (e) => {
             e.preventDefault();
             this.handleAuthFlow();
         });
+    }
 
-        document.getElementById("album-select").addEventListener("change", (e) => {
+    // 相簿選擇
+    const albumSelect = document.getElementById("album-select");
+    if (albumSelect) {
+        albumSelect.addEventListener("change", (e) => {
             this.states.albumId = e.target.value;
             this.resetPhotoData();
             this.loadPhotos();
         });
+    }
 
-        document.getElementById("close-lightbox").addEventListener("click", () => this.closeLightbox());
-        document.getElementById("prev-photo").addEventListener("click", () => this.navigate(-1));
-        document.getElementById("next-photo").addEventListener("click", () => this.navigate(1));
-        document.getElementById("start-slideshow-btn").addEventListener("click", () => this.toggleSlideshow());
-        document.getElementById("fullscreen-toggle-btn").addEventListener("click", () => this.toggleFullscreen());
+    // 關閉lightbox
+    const closeLightboxBtn = document.getElementById("close-lightbox");
+    if (closeLightboxBtn) {
+        closeLightboxBtn.addEventListener("click", () => this.closeLightbox());
+    }
 
-        document.getElementById("schedule-settings-btn").addEventListener("click", () => {
+    // 遷移照片
+    const prevPhotoBtn = document.getElementById("prev-photo");
+    if (prevPhotoBtn) {
+        prevPhotoBtn.addEventListener("click", () => this.navigate(-1));
+    }
+
+    const nextPhotoBtn = document.getElementById("next-photo");
+    if (nextPhotoBtn) {
+        nextPhotoBtn.addEventListener("click", () => this.navigate(1));
+    }
+
+    // 切幻燈片
+    const slideshowBtn = document.getElementById("start-slideshow-btn");
+    if (slideshowBtn) {
+        slideshowBtn.addEventListener("click", () => this.toggleSlideshow());
+    }
+
+    // 全螢幕切換
+    const fullscreenBtn = document.getElementById("fullscreen-toggle-btn");
+    if (fullscreenBtn) {
+        fullscreenBtn.addEventListener("click", () => this.toggleFullscreen());
+    }
+
+    // 時間排程設定BTN
+    const scheduleSettingsBtn = document.getElementById("schedule-settings-btn");
+    if (scheduleSettingsBtn) {
+        scheduleSettingsBtn.addEventListener("click", () => {
             document.getElementById("schedule-modal").style.display = "block";
         });
+    }
 
-        document.querySelector(".close-modal").addEventListener("click", () => {
+    // 關閉modal
+    const closeModalBtn = document.querySelector(".close-modal");
+    if (closeModalBtn) {
+        closeModalBtn.addEventListener("click", () => {
             document.getElementById("schedule-modal").style.display = "none";
         });
+    }
 
-        document.getElementById("save-schedule").addEventListener("click", () => {
+    // 儲存時間排程
+    const saveScheduleBtn = document.getElementById("save-schedule");
+    if (saveScheduleBtn) {
+        saveScheduleBtn.addEventListener("click", () => {
             this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
             this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
             this.states.schedule.classStart = document.getElementById("class-start").value;
@@ -137,15 +178,19 @@ const app = {
             document.getElementById("schedule-modal").style.display = "none";
             this.checkSchedule();
         });
+    }
 
-        // 處理雙擊關閉lightbox
-        document.getElementById("lightbox").addEventListener("dblclick", () => {
+    // 雙擊關閉lightbox
+    const lightboxElement = document.getElementById("lightbox");
+    if (lightboxElement) {
+        lightboxElement.addEventListener("dblclick", () => {
             this.closeLightbox();
             if (this.states.isFullscreen) {
                 this.toggleFullscreen();
             }
-       });
-    },
+        });
+    }
+},
 
     async fetchAlbums() {
         try {
