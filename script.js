@@ -20,11 +20,12 @@ const app = {
             sleepStart: "22:00",
             sleepEnd: "07:00",
             classStart: "08:00",
-            classEnd: "17:00"
+            classEnd: "17:00",
+            ignore: false // 新增不设置选项
         }
  },
 
-     init() {
+init() {
         this.states.accessToken = sessionStorage.getItem("access_token");
         this.setupEventListeners();
         if (!this.checkAuth()) {
@@ -34,7 +35,7 @@ const app = {
         this.loadSchedule();
         this.checkSchedule();
         setInterval(() => this.checkSchedule(), 60000); // 60000 毫秒 = 1 分鐘
-     },
+    },
 
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
@@ -54,6 +55,9 @@ const app = {
         const sleepEnd = this.getTimeInMinutes(this.states.schedule.sleepEnd);
         const classStart = this.getTimeInMinutes(this.states.schedule.classStart);
         const classEnd = this.getTimeInMinutes(this.states.schedule.classEnd);
+
+        // 检查是否忽略调度
+        if (this.states.schedule.ignore) return;
 
         if ((currentTime >= sleepStart && currentTime < sleepEnd) || 
             (currentTime >= classStart && currentTime < classEnd)) {
@@ -107,7 +111,16 @@ const app = {
             e.preventDefault();
             this.handleAuthFlow();
         });
-
+        document.getElementById("save-schedule").addEventListener("click", () => {
+            this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
+            this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
+            this.states.schedule.classStart = document.getElementById("class-start").value;
+            this.states.schedule.classEnd = document.getElementById("class-end").value;
+            this.states.schedule.ignore = document.getElementById("no-set").checked; // 更新不设置的值
+            this.saveSchedule();
+            document.getElementById("schedule-modal").style.display = "none";
+            this.checkSchedule();
+        });
         document.getElementById("album-select").addEventListener("change", (e) => {
             this.states.albumId = e.target.value;
             this.resetPhotoData();
@@ -361,15 +374,25 @@ const app = {
             const isRandom = document.getElementById("play-mode").value === "random";
             
             const getNextIndex = () => {
-    if (isRandom) {
-        let nextIndex;
-        do {
-            nextIndex = Math.floor(Math.random() * this.states.photos.length);
-        } while (nextIndex === this.states.currentIndex);
-        return nextIndex;
-    }
-    return (this.states.currentIndex + 1) % this.states.photos.length;
-};
+                // 确保所有照片都轮播后才开始新的随机播放
+                if (this.states.photos.length === 0) return 0;
+
+                if (isRandom) {
+                    // 检查是否已经播放过所有照片
+                    const alreadyPlayed = new Set(this.states.photos.slice(0, this.states.currentIndex + 1).map(p => p.id));
+
+                    if (alreadyPlayed.size === this.states.photos.length) {
+                        this.states.currentIndex = -1; // 重置
+                    }
+
+                    let nextIndex;
+                    do {
+                        nextIndex = Math.floor(Math.random() * this.states.photos.length);
+                    } while (alreadyPlayed.has(this.states.photos[nextIndex].id));
+                    return nextIndex;
+                }
+                return (this.states.currentIndex + 1) % this.states.photos.length;
+            };
 
             this.states.slideshowInterval = setInterval(() => {
                 this.states.currentIndex = getNextIndex();
@@ -379,7 +402,6 @@ const app = {
         }
         this.toggleButtonVisibility();
     },
-
     stopSlideshow() {
         clearInterval(this.states.slideshowInterval);
         this.states.slideshowInterval = null;
