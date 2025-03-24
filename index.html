@@ -25,6 +25,7 @@
 
     <!-- 主應用界面 -->
     <div id="app-container">
+        <!-- 修改相簿选择和播放控制区域 -->
         <div id="album-selection-container">
             <div>
                 <label for="album-select">相簿:</label>
@@ -48,6 +49,7 @@
             </div>
         </div>
 
+        <!-- 滚动容器 -->
         <div id="scroll-container">
             <div id="photo-container"></div>
             <div id="loading-indicator">
@@ -69,6 +71,7 @@
         </div>
     </div>
 
+    <!-- 閒置遮罩 -->
     <div id="screenOverlay"></div>
 
     <!-- 時間排程設定彈窗 -->
@@ -91,10 +94,6 @@
             <div>
                 <label for="class-end">上課時間結束:</label>
                 <input type="time" id="class-end" value="17:00">
-            </div>
-            <div>
-                <label for="no-set">新增不設定:</label>
-                <input type="checkbox" id="no-set" name="no-set">
             </div>
             <button id="save-schedule">儲存設定</button>
         </div>
