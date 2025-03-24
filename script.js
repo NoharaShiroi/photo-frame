@@ -21,11 +21,11 @@ const app = {
             sleepEnd: "07:00",
             classStart: "08:00",
             classEnd: "17:00",
-            ignore: false // 新增不设置选项
+            ignore: false // 新增不設定選項
         }
- },
+    },
 
-init() {
+    init() {
         this.states.accessToken = sessionStorage.getItem("access_token");
         this.setupEventListeners();
         if (!this.checkAuth()) {
@@ -34,7 +34,7 @@ init() {
         this.setupIdleMonitor();
         this.loadSchedule();
         this.checkSchedule();
-        setInterval(() => this.checkSchedule(), 60000); // 60000 毫秒 = 1 分鐘
+        setInterval(() => this.checkSchedule(), 60000);
     },
 
     loadSchedule() {
@@ -56,8 +56,7 @@ init() {
         const classStart = this.getTimeInMinutes(this.states.schedule.classStart);
         const classEnd = this.getTimeInMinutes(this.states.schedule.classEnd);
 
-        // 检查是否忽略调度
-        if (this.states.schedule.ignore) return;
+        if (this.states.schedule.ignore) return; // 如果選擇不設定，直接返回不解鎖
 
         if ((currentTime >= sleepStart && currentTime < sleepEnd) || 
             (currentTime >= classStart && currentTime < classEnd)) {
@@ -111,64 +110,31 @@ init() {
             e.preventDefault();
             this.handleAuthFlow();
         });
-        document.getElementById("save-schedule").addEventListener("click", () => {
-            this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
-            this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
-            this.states.schedule.classStart = document.getElementById("class-start").value;
-            this.states.schedule.classEnd = document.getElementById("class-end").value;
-            this.states.schedule.ignore = document.getElementById("no-set").checked; // 更新不设置的值
-            this.saveSchedule();
-            document.getElementById("schedule-modal").style.display = "none";
-            this.checkSchedule();
-        });
+
         document.getElementById("album-select").addEventListener("change", (e) => {
             this.states.albumId = e.target.value;
             this.resetPhotoData();
             this.loadPhotos();
         });
 
-        // Lightbox 控制
         document.getElementById("close-lightbox").addEventListener("click", () => this.closeLightbox());
         document.getElementById("prev-photo").addEventListener("click", () => this.navigate(-1));
         document.getElementById("next-photo").addEventListener("click", () => this.navigate(1));
         document.getElementById("start-slideshow-btn").addEventListener("click", () => this.toggleSlideshow());
         document.getElementById("fullscreen-toggle-btn").addEventListener("click", () => this.toggleFullscreen());
 
-        // 播放模式切换
         document.getElementById("play-mode").addEventListener("change", (e) => {
             if (this.states.slideshowInterval) {
                 this.toggleSlideshow();
+            }
+        });
+
+        document.getElementById("slideshow-speed").addEventListener("input", (e) => {
+            if (this.states.slideshowInterval) {
                 this.toggleSlideshow();
             }
         });
 
-        // 速度输入防抖处理
-        let speedTimeout;
-        document.getElementById("slideshow-speed").addEventListener("input", (e) => {
-            clearTimeout(speedTimeout);
-            speedTimeout = setTimeout(() => {
-                if (this.states.slideshowInterval) {
-                    this.toggleSlideshow();
-                    this.toggleSlideshow();
-                }
-            }, 500);
-        });
-
-        // 雙擊關閉 lightbox
-        document.getElementById("lightbox").addEventListener("dblclick", () => {
-            this.closeLightbox();
-            if (this.states.isFullscreen) {
-                this.toggleFullscreen();
-            }
-        });
-
-        // 全螢幕變化監聽
-        document.addEventListener("fullscreenchange", () => {
-            this.states.isFullscreen = !!document.fullscreenElement;
-            this.toggleButtonVisibility();
-        });
-
-        // 時間排程設定
         document.getElementById("schedule-settings-btn").addEventListener("click", () => {
             document.getElementById("schedule-modal").style.display = "block";
         });
@@ -182,6 +148,7 @@ init() {
             this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
             this.states.schedule.classStart = document.getElementById("class-start").value;
             this.states.schedule.classEnd = document.getElementById("class-end").value;
+            this.states.schedule.ignore = document.getElementById("no-set").checked;
             this.saveSchedule();
             document.getElementById("schedule-modal").style.display = "none";
             this.checkSchedule();
@@ -269,14 +236,14 @@ init() {
     renderPhotos() {
         const container = document.getElementById("photo-container");
         container.style.display = "grid";
-        container.innerHTML = this.states.photos.map(photo => `
-            <img class="photo" 
-                 src="${photo.baseUrl}=w150-h150"  // 修改为150x150尺寸
-                 data-src="${photo.baseUrl}=w800-h600"
-                 alt="相片" 
-                 data-id="${photo.id}"
-                 onclick="app.openLightbox('${photo.id}')">
-        `).join("");
+        container.innerHTML = this.states.photos.map(photo => 
+            `<img class="photo" 
+                  src="${photo.baseUrl}=w150-h150"
+                  data-src="${photo.baseUrl}=w800-h600"
+                  alt="相片" 
+                  data-id="${photo.id}"
+                  onclick="app.openLightbox('${photo.id}')">`
+        ).join("");
 
         if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
             container.insertAdjacentHTML("beforeend", `<p class="empty-state">已無更多相片</p>`);
@@ -374,22 +341,20 @@ init() {
             const isRandom = document.getElementById("play-mode").value === "random";
             
             const getNextIndex = () => {
-                // 确保所有照片都轮播后才开始新的随机播放
                 if (this.states.photos.length === 0) return 0;
 
                 if (isRandom) {
-                    // 检查是否已经播放过所有照片
-                    const alreadyPlayed = new Set(this.states.photos.slice(0, this.states.currentIndex + 1).map(p => p.id));
-
-                    if (alreadyPlayed.size === this.states.photos.length) {
-                        this.states.currentIndex = -1; // 重置
-                    }
-
-                    let nextIndex;
+                    const alreadyPlayed = new Set();
+                    const totalPhotos = this.states.photos.length;
+                    
                     do {
-                        nextIndex = Math.floor(Math.random() * this.states.photos.length);
-                    } while (alreadyPlayed.has(this.states.photos[nextIndex].id));
-                    return nextIndex;
+                        const randomIndex = Math.floor(Math.random() * totalPhotos);
+                        if (!alreadyPlayed.has(this.states.photos[randomIndex].id)) {
+                            alreadyPlayed.add(this.states.photos[randomIndex].id);
+                            return randomIndex;
+                        }
+                    } while (alreadyPlayed.size < totalPhotos);
+                    return 0;
                 }
                 return (this.states.currentIndex + 1) % this.states.photos.length;
             };
@@ -402,6 +367,7 @@ init() {
         }
         this.toggleButtonVisibility();
     },
+
     stopSlideshow() {
         clearInterval(this.states.slideshowInterval);
         this.states.slideshowInterval = null;
@@ -420,7 +386,7 @@ init() {
     },
 
     toggleButtonVisibility() {
-        const buttons = document.querySelectorAll('.lightbox-buttons .nav-button');
+        const buttons = document.querySelectorAll('.lightbox-buttons button');
         if (this.states.slideshowInterval || this.states.isFullscreen) {
             buttons.forEach(button => button.style.display = 'none');
         } else {
