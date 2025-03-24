@@ -1,3 +1,4 @@
+<!-- index.html - 保留原有功能並整合優化 -->
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -13,7 +14,7 @@
                    img-src 'self' data: https://*.googleusercontent.com;
                    connect-src 'self' https://*.googleapis.com https://photoslibrary.googleapis.com;
                    frame-src https://accounts.google.com;">
-    <title>Google 相簿數位相框</title>
+    <title>Google 相簿數位相框 - 保留功能整合版</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -25,7 +26,7 @@
 
     <!-- 主應用界面 -->
     <div id="app-container">
-        <!-- 修改相簿选择和播放控制区域 -->
+        <!-- 相簿選擇、播放控制與排程設定 -->
         <div id="album-selection-container">
             <div>
                 <label for="album-select">相簿:</label>
@@ -34,22 +35,24 @@
                 </select>
             </div>
             <div>
-                <label for="slideshow-speed">速度:</label>
+                <label for="album-input">相簿 ID:</label>
+                <input type="text" id="album-input" placeholder="輸入相簿 ID">
+            </div>
+            <div>
+                <label for="slideshow-speed">速度 (秒):</label>
                 <input type="number" id="slideshow-speed" min="1" value="5">
             </div>
             <div>
-                <label for="play-mode">模式:</label>
+                <label for="play-mode">播放模式:</label>
                 <select id="play-mode">
-                    <option value="sequential">順序</option>
-                    <option value="random">隨機</option>
+                    <option value="sequential">順序播放</option>
+                    <option value="random">隨機播放</option>
                 </select>
             </div>
-            <div>
-                <button id="schedule-settings-btn">設定暫停時段</button>
-            </div>
+            <button id="schedule-settings-btn">設定暫停時段</button>
         </div>
 
-        <!-- 滾動容器 -->
+        <!-- 縮圖滾動區 -->
         <div id="scroll-container">
             <div id="photo-container"></div>
             <div id="loading-indicator">
@@ -59,7 +62,7 @@
         </div>
     </div>
 
-    <!-- Lightbox -->
+    <!-- Lightbox 顯示 -->
     <div id="lightbox">
         <img id="lightbox-image" alt="Lightbox Image">
         <div class="lightbox-buttons">
@@ -73,7 +76,7 @@
     <!-- 閒置遮罩 -->
     <div id="screenOverlay"></div>
 
-    <!-- 時間排程設定彈窗 -->
+    <!-- 排程設定彈窗 -->
     <div id="schedule-modal" class="modal">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
@@ -85,14 +88,6 @@
             <div>
                 <label for="sleep-end">睡覺時間結束:</label>
                 <input type="time" id="sleep-end" value="07:00">
-            </div>
-            <div>
-                <label for="class-start">上課時間開始:</label>
-                <input type="time" id="class-start" value="08:00">
-            </div>
-            <div>
-                <label for="class-end">上課時間結束:</label>
-                <input type="time" id="class-end" value="17:00">
             </div>
             <button id="save-schedule">儲存設定</button>
         </div>
