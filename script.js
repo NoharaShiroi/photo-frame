@@ -33,10 +33,11 @@ const app = {
         if (!this.checkAuth()) {
             document.getElementById("auth-container").style.display = "flex";
         }
-       this.loadSchedule();
-        this.checkSchedule();
-        setInterval(() => this.checkSchedule(), 60000);
-    },
+       if (this.checkAuth()) {
+    this.loadSchedule();
+    this.checkSchedule();
+    setInterval(() => this.checkSchedule(), 60000);
+},
 
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
@@ -68,6 +69,7 @@ const app = {
     },
 isWeekday(date) {
         const day = date.getDay();
+    const isHolidayMode = this.states.schedule.useHoliday && !this.isWeekday(now);
         return day !== 0 && day !== 6; // 周日和 sábado 算假日，是否還要新增google 日曆API
     },
         
