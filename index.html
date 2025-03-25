@@ -13,19 +13,15 @@
                    img-src 'self' data: https://*.googleusercontent.com;
                    connect-src 'self' https://*.googleapis.com https://photoslibrary.googleapis.com;
                    frame-src https://accounts.google.com;">
-    <title>Google 相簿數位相框</title>
+    <title>Google 相簿數位相框 - 優化版</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- 授權登入 -->
     <div id="auth-container">
-        <h1>Google 相簿 數位相框</h1>
+        <h1>Google 相簿 數位相框 - 優化版</h1>
         <button id="authorize-btn">使用 Google 帳戶登入</button>
     </div>
-
-    <!-- 主應用界面 -->
     <div id="app-container">
-        <!-- 修改相簿选择和播放控制区域 -->
         <div id="album-selection-container">
             <div>
                 <label for="album-select">相簿:</label>
@@ -48,18 +44,14 @@
                 <button id="schedule-settings-btn" class="styled-button">設定暫停時段</button>
             </div>
         </div>
-
-        <!-- 滾動容器 -->
         <div id="scroll-container">
             <div id="photo-container"></div>
-            <div id="loading-indicator">
+            <div id="loading-indicator" class="fade-in">
                 <div class="loader"></div>
                 <p>加載更多照片中...</p>
             </div>
         </div>
     </div>
-
-    <!-- Lightbox -->
     <div id="lightbox">
         <img id="lightbox-image" alt="Lightbox Image">
         <div class="lightbox-buttons">
@@ -69,11 +61,7 @@
             <button id="fullscreen-toggle-btn" class="nav-button">全螢幕</button>
         </div>
     </div>
-
-    <!-- 閒置遮罩 -->
-    <div id="screenOverlay"></div>
-
-    <!-- 時間排程設定彈窗 -->
+    <div id="screenOverlay" ondblclick="app.cancelScheduleOverlay()"></div>
     <div id="schedule-modal" class="modal">
         <div class="modal-content">
             <span class="close-modal">&times;</span>
@@ -84,7 +72,7 @@
             </div>
             <div>
                 <label for="sleep-end">睡覺時間結束:</label>
-                <input type="time" id="sleep-end" value="07:00">
+                <input type="time" id="sleep-end" value="06:59">
             </div>
             <div>
                 <label for="class-start">上課時間開始:</label>
@@ -97,7 +85,6 @@
             <button id="save-schedule" class="styled-button">儲存設定</button>
         </div>
     </div>
-    
     <script src="script.js"></script>
 </body>
 </html>
