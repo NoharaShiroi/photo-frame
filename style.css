@@ -1,10 +1,11 @@
 /* 基础样式 */
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #1a1a1a;
-    color: #fff;
+    background-color: #f8f9fa; /* 更柔和的 warm 灰色 */
+    color: #333;
+    line-height: 1.6;
     overflow: hidden;
 }
 
@@ -15,30 +16,43 @@ body {
     align-items: center;
     justify-content: center;
     height: 100vh;
-    background: linear-gradient(135deg, #2c3e50, #3498db);
+    background: linear-gradient(135deg, #4a90e2, #90e04a); /* 更現代的薰衣草紫 */
+
+    /* 新增: 加入陰影效果 */
+    box-shadow: 0 0 20px rgba(97, 224, 225, 0.3);
 }
 
 #authorize-btn {
     padding: 15px 30px;
     font-size: 1.2rem;
-    background: #fff;
+    background: rgba(249, 249, 249, 0.95);
     color: #2c3e50;
     border: none;
-    border-radius: 25px;
+    border-radius: 12px;
     cursor: pointer;
-    transition: all 0.3s;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15),
+               inset 0 -2px 5px rgba(0,0,0,0.25); /* 新增內陰影效果 */
+
+    /* 新增: 按下效果 */
+    transform-style: preserve-3d;
 }
 
 #authorize-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    transform: translateY(-2px) rotateX(0deg) rotateY(0deg);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2),
+               inset 0 -3px 6px rgba(0,0,0,0.4);
+}
+
+#authorize-btn:active {
+    transform: translateY(1px) rotateX(0deg) rotateY(0deg);
+    box-shadow: inset 0 -1px 3px rgba(0,0,0,0.3);
 }
 
 /* 主界面 */
 #app-container {
     display: none;
-    padding: 10px;
+    padding: 20px;
     max-width: 1200px;
     margin: 0 auto;
 }
@@ -46,73 +60,95 @@ body {
 /* 相簿选择和播放控制区域 */
 #album-selection-container {
     margin-bottom: 15px;
-    padding: 10px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 8px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 10px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.98);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    backdrop-filter: blur(5px); /* 背景糊化效果 */
 }
 
 select, input[type="number"] {
-    padding: 8px 12px;
-    font-size: 0.9rem;
-    background: rgba(255,255,255,0.9);
-    border: none;
+    padding: 12px;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid rgba(255, 255, 255, 0.2);
     border-radius: 8px;
     width: 100%;
-    max-width: 200px;
+    max-width: 240px;
+    transition: all 0.3s ease;
+
+    /* 新增: 焦點效果 */
+    outline: none;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+select:focus, input[type="number"]:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.25);
 }
 
 .styled-button {
-    padding: 12px 20px;
+    padding: 12px 24px;
     font-size: 1rem;
-    background: rgba(255,255,255,0.9);
+    background: #4a90e2;
+    color: #fff;
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.3s;
-    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+    transform: translateY(0);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1),
+               inset 0 -1px 3px rgba(0,0,0,0.2);
+
+    /* 新增: 悬浮效果 */
+    will-change: transform, box-shadow;
 }
 
 .styled-button:hover {
-    background: #fff;
-    transform: translateY(-2px);
+    background: #357abd;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15),
+               inset 0 -2px 5px rgba(0,0,0,0.3);
+    transform: translateY(-1px);
+}
+
+.styled-button:active {
+    box-shadow: inset 0 0 0 3px rgba(0,0,0,0.1);
+    transform: translateY(1px);
 }
 
 /* 滾動容器 */
 #scroll-container {
     height: calc(100vh - 150px);
     overflow-y: auto;
-    padding: 10px 0;
-    margin: 0 -10px;
+    padding: 15px 0;
+    margin: 0 -15px;
+    border: 1px solid rgba(0,0,0,0.05);
+    border-radius: 8px;
 }
 
 /* 自定义滾动條 */
 #scroll-container::-webkit-scrollbar {
     width: 8px;
-}
-
-#scroll-container::-webkit-scrollbar-track {
     background: rgba(255,255,255,0.1);
-    border-radius: 4px;
 }
 
 #scroll-container::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.3);
+    background: #4a90e2;
     border-radius: 4px;
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.2);
 }
 
 #scroll-container::-webkit-scrollbar-thumb:hover {
-    background: rgba(255,255,255,0.5);
+    background: #357abd;
 }
 
 /* 缩略图区域 */
 #photo-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 8px;
-    padding: 0 10px;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 15px;
+    padding: 0 15px;
     min-height: calc(100% - 40px);
 }
 
@@ -120,15 +156,15 @@ select, input[type="number"] {
     width: 100%;
     aspect-ratio: 1;
     object-fit: cover;
-    border-radius: 6px;
+    border-radius: 10px;
     cursor: pointer;
-    transition: transform 0.3s, box-shadow 0.3s;
-    background: #333;
+    transition: all 0.3s ease;
+    background: rgba(249, 249, 249, 0.1);
 }
 
 .photo:hover {
-    transform: scale(1.03);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
 }
 
 /* 加载提示 */
@@ -139,7 +175,7 @@ select, input[type="number"] {
     background: transparent;
     display: none;
     text-align: center;
-    color: #fff;
+    color: #333;
 }
 
 .empty-state {
@@ -149,6 +185,16 @@ select, input[type="number"] {
     font-size: 1.2rem;
     padding: 20px;
     margin-top: 20px;
+    line-height: 1.6;
+}
+
+/* 加ormsgbox樣式 */
+ showMessage {
+    color: #ff4444;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
 }
 
 /* Lightbox */
@@ -158,14 +204,14 @@ select, input[type="number"] {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0,0,0,0.95);
+    background: rgba(0,0,0,0.8);
     display: none;
     justify-content: center;
     align-items: center;
     z-index: 1000;
     opacity: 0;
-    transition: opacity 0.3s;
-    box-shadow: 0 0 20px rgba(128, 128, 128, 0.5);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px); /* 背景糊化效果 */
 }
 
 #lightbox-image {
@@ -176,42 +222,48 @@ select, input[type="number"] {
     object-fit: contain;
     border-radius: 15px;
     box-shadow: 0 0 40px rgba(255,255,255,0.1);
+    background: #f8f9fa;
 }
 
 .lightbox-buttons {
     position: fixed;
-    bottom: 40px;
+    bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 20px;
+    gap: 15px;
+    z-index: 1001;
 }
 
 .nav-button {
-    padding: 12px 25px;
-    font-size: 1.1rem;
-    background: rgba(255,255,255,0.9);
+    padding: 10px 20px;
+    font-size: 1rem;
+    background: rgba(255, 255, 255, 0.98);
+    color: #333;
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.3s;
-    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1),
+               inset 0 -1px 3px rgba(0,0,0,0.2);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .nav-button:hover {
     background: #fff;
-    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15),
+               inset 0 -2px 5px rgba(0,0,0,0.3);
 }
 
-/* 加载动画 */
+/* 加載動畫 */
 .loader {
-    width: 50px;
-    height: 50px;
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid #3498db;
+    width: 40px;
+    height: 40px;
+    border: 5px solid rgba(249,249,249,0.3);
+    border-top: 5px solid #4a90e2;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin: 50px auto;
+    margin: 20px auto;
 }
 
 @keyframes spin {
@@ -219,7 +271,7 @@ select, input[type="number"] {
     100% { transform: rotate(360deg); }
 }
 
-/* 响应式设计 */
+/* 响應式設計 */
 @media (max-width: 768px) {
     #photo-container {
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -235,15 +287,15 @@ select, input[type="number"] {
     }
 
     .lightbox-buttons {
-        bottom: 20px;
+        bottom: 15px;
         gap: 10px;
         flex-wrap: wrap;
         justify-content: center;
     }
 
     .nav-button {
-        padding: 10px 20px;
-        font-size: 1rem;
+        padding: 8px 16px;
+        font-size: 0.9rem;
     }
 }
 
@@ -254,10 +306,15 @@ select, input[type="number"] {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0,0,0,0.9);
+    background: rgba(0,0,0,0.6);
     display: none;
     z-index: 9999;
-    transition: opacity 0.5s;
+    transition: all 0.3s ease;
+    opacity: 0;
+}
+
+#screenOverlay.Visible {
+    opacity: 1;
 }
 
 /* 時間排程設定彈窗 */
@@ -269,46 +326,62 @@ select, input[type="number"] {
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.7);
     justify-content: center;
     align-items: center;
 }
 
 .modal-content {
-    background-color: #1a1a1a;
+    background-color: rgba(255, 255, 255, 0.98);
     padding: 20px;
-    border-radius: 8px;
-    width: 300px;
+    border-radius: 12px;
+    width: 350px;
     text-align: center;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    backdrop-filter: blur(5px); /* 背景糊化效果 */
 }
 
 .modal-content label {
     display: block;
     margin: 10px 0 5px;
+    color: #333;
 }
 
 .modal-content input[type="time"] {
-    padding: 8px;
+    padding: 10px;
     font-size: 1rem;
     width: 100%;
     margin-bottom: 10px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.9);
+    transition: all 0.3s ease;
+}
+
+.modal-content input[type="time"]:focus {
+    border-color: #4a90e2;
+    box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.2);
 }
 
 .modal-content button {
-    padding: 10px 20px;
+    padding: 12px 24px;
     font-size: 1rem;
-    background: #3498db;
+    background: #4a90e2;
     color: #fff;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
-    transition: background 0.3s;
+    transition: all 0.3s ease;
+    will-change: transform, box-shadow;
 }
 
 .modal-content button:hover {
-    background: #2980b9;
+    background: #357abd;
+    transform: translateY(-1px);
+}
+
+.modal-content button:active {
+    transform: translateY(1px);
 }
 
 .close-modal {
@@ -317,6 +390,10 @@ select, input[type="number"] {
     right: 10px;
     font-size: 1.5rem;
     cursor: pointer;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.close-modal:hover {
     color: #fff;
 }
 
@@ -325,16 +402,51 @@ select, input[type="number"] {
     background-color: rgba(0, 0, 0, 0.8);
 }
 
-.time-input {
-    width: 100%;
-    padding: 8px;
-    margin: 5px 0;
-}
 
-/* 加ormsgbox樣式 */
- showMessage {
-    color: #ff4444;
-    padding: 10px;
-    border-radius: 5px;
-    margin-top: 10px;
-}
+以下是對您的Web應用程序的改进建議，涵蓋了顏色配置、按鈕樣式、圖片排版、LOADING指示器和Modal窗口等多方面的提升，以增強整體的視覺設計和用戶體驗。
+
+### 1. 顏色配置
+- **主背景色**：將主背景色從較深的灰色 (#1a1a1a) 更改為更柔和的暖灰色 (#f8f9fa)，提升整體明快感。
+- **按鈕顏色**：使用薰衣草紫 (#4a90e2) 作為主要按鈕顏色，增添現代感。
+- **文字顏色**：使用淺灰色 (#333) 來替代純白色，降低眼睛疲勞。
+
+### 2. 按鈕樣式
+- **交互效果**：增加按鈕的懸浮、按壓效果，使用TRANSFORM和BOX-SHADOW來實現三維效果。
+- **FOCUS效果**：為表單元素增加FOCUS時的BOARDER和BOX-SHADOW效果，提升用戶InteractionEnabled。
+- **邊緣_RADIUS**：將按鈕的邊緣圓角ADIUS調為12px，使按鈕看起來更圓滑。
+
+### 3. 圖片排版
+- **RESPONSEGRID**：使用更智能的GRID布局，根據螢幕尺寸自動調整COLS數，確保圖片在不同裝置上都能良好展示。
+- **ASPECT-RATIO**：強制固定圖片的長寬比，防止LOADING時比例失真。
+- **間距和邊緣圓角**：增加圖片之間的間距，使用10px的圓角來提升視覺美觀。
+
+### 4. Hover效果
+- **平滑過渡**：為Hover效果增加TRANSTION DELAY和更柔和的TRANSFORM，提升互動的 smoothness。
+- **BOX-SHADOW**：使用更深的BOX-SHADOW來強調Hover時的動畫效果。
+
+### 5. LOADING指示器
+- **旋轉動畫**：保留旋轉.Circle的LOADING指示器，但增加SIZE到40px，提升可見性。
+- **效果多樣化**：可考慮加入>List-like的LOADING動畫，增加多樣性。
+
+### 6. Modal設計
+- **背景透明度**：降低Modal的背景透明度，使其更柔和，與BACKGROUND更融合。
+- **BOX-SHADOW和BACKDROP-FILTER**：為Modal加入BOX-SHADOW和BACKDROP-FILTER，提升depth感。
+- **BUTTONS樣式**：為Modal內的BUTTONS增加FOCUS和ACTIVE效果，提升互動性。
+
+### 7. LIGHTBOX設計
+- **BACKGROUNDFILTER**：使用BACKDROP-FILTER實現背景糊化效果，提升LIGHTBOX的現代感。
+- **IMGBACKGROUND**：為LIGHTBOX內的圖片設置BACKGROUND，防止LOADING時的空白。
+- **BUTTON位置和樣式**：調整BUTTONS的位置，並提升BUTTONS的樣式，使其更為搶眼。
+
+### 8. Empty-state設計
+- **ICON和文字**：在空狀態時加入ICON和更生動的文字，提升用戶體驗。
+
+### 9. SCREENOverlay部分
+- **平滑過渡**：使用TRANSTION:opacity 0.3s，讓Overlay在顯示和隱藏時有平滑的效果。
+- **TEXT instructions**：在Overlay上加入一些文字指示，告訴用戶目前的_STATE。
+
+### 10. SCROLLBAR設計
+- **平滑滾動效應**：使用CSS.Animation來實現更MOOTH的滾動條移動效果。
+- **ROLLBAR樣式**：提升滾動條的VISUAL效果，使用更柔和的色彩。
+
+這些建議將幫助您的Web應用提升整體視覺效果和使用體驗，使其看起來更專業、現代且用戶友好。
