@@ -2,7 +2,7 @@ const app = {
     CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
     REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
-    
+
     states: {
         accessToken: null,
         albumId: "all",
@@ -33,7 +33,7 @@ const app = {
         this.setupIdleMonitor();
         this.loadSchedule();
         this.checkSchedule();
-        setInterval(() => this.checkSchedule(), 60000); // 60000 毫秒 = 1 分鐘
+        setInterval(() => this.checkSchedule(), 60000);
     },
 
     loadSchedule() {
@@ -102,8 +102,7 @@ const app = {
     },
 
     setupEventListeners() {
-        const authBtn = document.getElementById("authorize-btn");
-        authBtn.addEventListener("click", (e) => {
+        document.getElementById("authorize-btn").addEventListener("click", (e) => {
             e.preventDefault();
             this.handleAuthFlow();
         });
@@ -120,7 +119,7 @@ const app = {
         document.getElementById("next-photo").addEventListener("click", () => this.navigate(1));
         document.getElementById("start-slideshow-btn").addEventListener("click", () => this.toggleSlideshow());
         document.getElementById("fullscreen-toggle-btn").addEventListener("click", () => this.toggleFullscreen());
-        
+
         // 播放模式切換
         document.getElementById("play-mode").addEventListener("change", (e) => {
             if (this.states.slideshowInterval) {
@@ -188,7 +187,7 @@ const app = {
 
     async loadPhotos() {
         if (this.states.isFetching || !this.states.hasMorePhotos) return;
-        
+
         const requestId = ++this.states.currentRequestId;
         this.states.isFetching = true;
         document.getElementById("loading-indicator").style.display = "block";
@@ -221,7 +220,7 @@ const app = {
 
             const existingIds = new Set(this.states.photos.map(p => p.id));
             const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
-            
+
             this.states.photos = [...this.states.photos, ...newPhotos];
             this.states.nextPageToken = data.nextPageToken || null;
             this.states.hasMorePhotos = !!this.states.nextPageToken;
@@ -244,7 +243,7 @@ const app = {
         container.style.display = "grid";
         container.innerHTML = this.states.photos.map(photo => `
             <img class="photo" 
-                 src="${photo.baseUrl}=w150-h150"  // 修改为150x150尺寸
+                 src="${photo.baseUrl}=w150-h150"
                  data-src="${photo.baseUrl}=w800-h600"
                  alt="相片" 
                  data-id="${photo.id}"
@@ -283,14 +282,13 @@ const app = {
 
     setupScrollObserver() {
         if (this.states.observer) this.states.observer.disconnect();
-        
+
         this.states.observer = new IntersectionObserver(
             entries => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting && 
                         this.states.hasMorePhotos &&
-                        !this.states.isFetching
-                    ) {
+                        !this.states.isFetching) {
                         setTimeout(() => this.loadPhotos(), 300);
                     }
                 });
@@ -308,18 +306,44 @@ const app = {
         this.states.observer.observe(sentinel);
     },
 
+    getImageUrl(photo, width = 1920, height = 1080) {
+        if (!photo || !photo.baseUrl) {
+            console.error("无效的照片对象:", photo);
+            return "";
+        }
+        return `${photo.baseUrl}=w${width}-h${height}`;
+    },
+
     openLightbox(photoId) {
         this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
         const lightbox = document.getElementById("lightbox");
         const image = document.getElementById("lightbox-image");
         
-        image.src = `${this.states.photos[this.states.currentIndex].baseUrl}=w1920-h1080`;
-        lightbox.style.display = "flex";
-        setTimeout(() => {
-            lightbox.style.opacity = 1;
-            this.states.lightboxActive = true;
-            this.toggleButtonVisibility();
-        }, 10);
+        image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
+
+        image.onload = () => {
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            const imgAspectRatio = image.naturalWidth / image.naturalHeight;
+            const windowAspectRatio = windowWidth / windowHeight;
+
+            if (imgAspectRatio > windowAspectRatio) {
+                // 图片更宽，限制宽度
+                image.style.width = '90%';
+                image.style.height = 'auto';
+            } else {
+                // 图片更高，限制高度
+                image.style.height = '90%';
+                image.style.width = 'auto';
+            }
+
+            lightbox.style.display = "flex";
+            setTimeout(() => {
+                lightbox.style.opacity = 1;
+                this.states.lightboxActive = true;
+                this.toggleButtonVisibility();
+            }, 10);
+        };
     },
 
     closeLightbox() {
@@ -336,7 +360,7 @@ const app = {
     navigate(direction) {
         this.states.currentIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
         document.getElementById("lightbox-image").src = 
-            `${this.states.photos[this.states.currentIndex].baseUrl}=w1920-h1080`;
+            this.getImageUrl(this.states.photos[this.states.currentIndex]);
     },
 
     toggleSlideshow() {
@@ -345,23 +369,21 @@ const app = {
         } else {
             const speed = document.getElementById("slideshow-speed").value * 1000;
             const isRandom = document.getElementById("play-mode").value === "random";
-            
-            const getNextIndex = () => {
-    if (isRandom) {
-        let nextIndex;
-        do {
-            nextIndex = Math.floor(Math.random() * this.states.photos.length);
-        } while (nextIndex === this.states.currentIndex);
-        return nextIndex;
-    }
-    return (this.states.currentIndex + 1) % this.states.photos.length;
 
-};
+            const getNextIndex = () => {
+                if (isRandom) {
+                    let nextIndex;
+                    do {
+                        nextIndex = Math.floor(Math.random() * this.states.photos.length);
+                    } while (nextIndex === this.states.currentIndex);
+                    return nextIndex;
+                }
+                return (this.states.currentIndex + 1) % this.states.photos.length;
+            };
 
             this.states.slideshowInterval = setInterval(() => {
                 this.states.currentIndex = getNextIndex();
-                document.getElementById("lightbox-image").src = 
-                    `${this.states.photos[this.states.currentIndex].baseUrl}=w1920-h1080`;
+                this.navigate(0); // 使用 navigate 函数更好的适应 
             }, speed);
         }
         this.toggleButtonVisibility();
