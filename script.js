@@ -17,10 +17,13 @@ const app = {
         lightboxActive: false,
         isFullscreen: false,
         schedule: {
+            schedule: {
             sleepStart: "22:00",
             sleepEnd: "07:00",
             classStart: "08:00",
-            classEnd: "17:00"
+            classEnd: "17:00",
+            isEnabled: true,
+            useHoliday: true
         }
     },
 
@@ -53,16 +56,21 @@ const app = {
         const sleepEnd = this.getTimeInMinutes(this.states.schedule.sleepEnd);
         const classStart = this.getTimeInMinutes(this.states.schedule.classStart);
         const classEnd = this.getTimeInMinutes(this.states.schedule.classEnd);
-
-        if ((currentTime >= sleepStart && currentTime < sleepEnd) || 
-            (currentTime >= classStart && currentTime < classEnd)) {
+        const isSleepTime = this.states.schedule.isEnabled && 
+            ((currentTime >= sleepStart && currentTime < sleepEnd) ||
+             (currentTime >= classStart && currentTime < classEnd));
+        if (isSleepTime || isHolidayMode) {
             this.stopSlideshow();
             document.getElementById("screenOverlay").style.display = "block";
         } else {
             document.getElementById("screenOverlay").style.display = "none";
         }
     },
-
+isWeekday(date) {
+        const day = date.getDay();
+        return day !== 0 && day !== 6; // 周日和 sábado 算假日，是否還要新增google 日曆API
+    },
+        
     getTimeInMinutes(time) {
         const [hours, minutes] = time.split(":").map(Number);
         return hours * 60 + minutes;
@@ -140,11 +148,15 @@ const app = {
         });
 
         // 時間排程設定
-        document.getElementById("schedule-settings-btn").addEventListener("click", () => {
+             document.getElementById("schedule-settings-btn").addEventListener("click", () => {
             document.getElementById("schedule-modal").style.display = "block";
         });
 
         document.querySelector(".close-modal").addEventListener("click", () => {
+            document.getElementById("schedule-modal").style.display = "none";
+        });
+
+        document.getElementById("cancel-schedule").addEventListener("click", () => {
             document.getElementById("schedule-modal").style.display = "none";
         });
 
@@ -153,11 +165,13 @@ const app = {
             this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
             this.states.schedule.classStart = document.getElementById("class-start").value;
             this.states.schedule.classEnd = document.getElementById("class-end").value;
+            this.states.schedule.isEnabled = document.getElementById("is-enabled").checked;
+            this.states.schedule.useHoliday = document.getElementById("use-holiday").checked;
             this.saveSchedule();
             document.getElementById("schedule-modal").style.display = "none";
             this.checkSchedule();
         });
-    },
+  };
 
     async fetchAlbums() {
         try {
