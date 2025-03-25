@@ -243,10 +243,10 @@ const app = {
 
     renderPhotos() {
         const container = document.getElementById("photo-container");
-        container.style.display = "grid";
-        container.innerHTML = this.states.photos.map(photo => {
+    container.style.display = "grid";
+    container.innerHTML = this.states.photos.map(photo => {
         // 计算图片的尺寸，根据设备或容器大小来选择适当的尺寸
-        const imageSize = window.innerWidth < 768 ? "w150-h150" : "w800-h600"; // 小屏幕使用小图
+        const imageSize = window.innerWidth < 768 ? "w150-h150" : "w800-h600";  // 小屏幕使用小图
         return `
             <img class="photo" 
                  src="${photo.baseUrl}=w150-h150"  <!-- 初始加载小尺寸图片 -->
@@ -261,7 +261,7 @@ const app = {
         container.insertAdjacentHTML("beforeend", `<p class="empty-state">已無更多相片</p>`);
     }
 
-    this.setupLazyLoad(); // 启动懒加载
+    this.setupLazyLoad();  // 启动懒加载
     this.setupScrollObserver();
 },
 
@@ -270,11 +270,11 @@ const app = {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 const img = entry.target;
-                // 如果图片还没有加载低分辨率，则加载低分辨率图片
+                // 判断图片是否还未加载，只有当图片接近视口时才加载大图
                 if (!img.src.includes('w800')) {
-                    img.src = img.dataset.src;
+                    img.src = img.dataset.src;  // 将大图的 URL 设置为 src
                 }
-                observer.unobserve(img);
+                observer.unobserve(img);  // 停止监听已加载的图片
             }
         });
     }, {
@@ -282,9 +282,10 @@ const app = {
         threshold: 0.01
     });
 
+    // 为所有图片元素添加懒加载监听
     document.querySelectorAll(".photo:not([data-loaded])").forEach(img => {
         observer.observe(img);
-        img.setAttribute('data-loaded', 'true');
+        img.setAttribute('data-loaded', 'true');  // 防止重复加载
     });
 },
 
