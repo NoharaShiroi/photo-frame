@@ -30,6 +30,7 @@ const app = {
         if (!this.checkAuth()) {
             document.getElementById("auth-container").style.display = "flex";
         }
+        this.setupIdleMonitor();
         this.loadSchedule();
         this.checkSchedule();
         setInterval(() => this.checkSchedule(), 60000);
@@ -57,7 +58,7 @@ const app = {
         if ((currentTime >= sleepStart && currentTime < sleepEnd) || 
             (currentTime >= classStart && currentTime < classEnd)) {
             this.stopSlideshow();
-            document.getElementById("screenOverlay").style.display = "none";
+            document.getElementById("screenOverlay").style.display = "block";
         } else {
             document.getElementById("screenOverlay").style.display = "none";
         }
@@ -161,27 +162,17 @@ const app = {
 
     async fetchAlbums() {
         try {
-        // 1. 尝试从本地缓存加载相册
-        const cachedAlbums = localStorage.getItem("albums");
-        if (cachedAlbums) {
-            this.renderAlbumSelect(JSON.parse(cachedAlbums));  // 从缓存中加载相册
-        } else {
-            // 2. 没有缓存相册数据，则发起 API 请求
             const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
                 headers: { "Authorization": `Bearer ${this.states.accessToken}` }
             });
             if (!response.ok) throw new Error('無法取得相簿');
             const data = await response.json();
-            localStorage.setItem("albums", JSON.stringify(data.albums || []));  // 缓存相册
             this.renderAlbumSelect(data.albums || []);
+            this.loadPhotos();
+        } catch (error) {
+            this.handleAuthError();
         }
-
-        // 3. 加载照片
-        this.loadPhotos();
-    } catch (error) {
-        this.handleAuthError();
-    }
-},
+    },
 
     renderAlbumSelect(albums) {
         const select = document.getElementById("album-select");
@@ -195,105 +186,99 @@ const app = {
     },
 
     async loadPhotos() {
-       if (this.states.isFetching || !this.states.hasMorePhotos) return;
+        if (this.states.isFetching || !this.states.hasMorePhotos) return;
 
-    const requestId = ++this.states.currentRequestId;
-    this.states.isFetching = true;
-    document.getElementById("loading-indicator").style.display = "block";
+        const requestId = ++this.states.currentRequestId;
+        this.states.isFetching = true;
+        document.getElementById("loading-indicator").style.display = "block";
 
-    try {
-        // 1. 尝试从本地缓存加载照片
-        const cachedPhotos = JSON.parse(localStorage.getItem("photos")) || [];
-        if (cachedPhotos.length > 0) {
-            // 如果缓存中有照片，直接使用缓存数据
-            this.states.photos = [...cachedPhotos];
+        try {
+            const body = {
+                pageSize: 100,
+                pageToken: this.states.nextPageToken || undefined
+            };
+
+            if (this.states.albumId !== "all") {
+                body.albumId = this.states.albumId;
+            } else {
+                body.filters = { includeArchivedMedia: true };
+            }
+
+            const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${this.states.accessToken}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(body)
+            });
+
+            if (!response.ok) throw new Error('照片加載失敗');
+            const data = await response.json();
+
+            if (requestId !== this.states.currentRequestId) return;
+
+            const existingIds = new Set(this.states.photos.map(p => p.id));
+            const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
+
+            this.states.photos = [...this.states.photos, ...newPhotos];
+            this.states.nextPageToken = data.nextPageToken || null;
+            this.states.hasMorePhotos = !!this.states.nextPageToken;
+
             this.renderPhotos();
+        } catch (error) {
+            console.error("照片加載失敗:", error);
+            this.showMessage("加載失敗，請檢查網路連線");
+        } finally {
+            if (requestId === this.states.currentRequestId) {
+                this.states.isFetching = false;
+                document.getElementById("loading-indicator").style.display = "none";
+                this.setupScrollObserver();
+            }
         }
-
-        // 2. 发起 API 请求获取照片
-        const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${this.states.accessToken}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                pageSize: 100
-            })
-        });
-
-        if (!response.ok) throw new Error('照片加載失敗');
-        const data = await response.json();
-
-        if (requestId !== this.states.currentRequestId) return;
-
-        // 3. 更新本地缓存
-        localStorage.setItem("photos", JSON.stringify(data.mediaItems));  // 保存到缓存
-
-        this.states.photos = data.mediaItems;
-        this.renderPhotos();
-    } catch (error) {
-        console.error("照片加載失敗:", error);
-        this.showMessage("加載失敗，請檢查網路連線");
-    } finally {
-        this.states.isFetching = false;
-        document.getElementById("loading-indicator").style.display = "none";
-    }
-},
+    },
 
     renderPhotos() {
         const container = document.getElementById("photo-container");
-    container.style.display = "grid";
-    container.innerHTML = this.states.photos.map(photo => {
-        if (!photo.baseUrl) {
-            console.error("Photo baseUrl is missing:", photo);
-            return ''; // 如果没有 baseUrl，跳过这个图片
-        }
-        
-        // 计算图片的尺寸，根据设备或容器大小来选择适当的尺寸
-        const imageSize = window.innerWidth < 768 ? "w150-h150" : "w800-h600"; // 小屏幕使用小图
-        
-        return `
+        container.style.display = "grid";
+        container.innerHTML = this.states.photos.map(photo => `
             <img class="photo" 
-                 src="${photo.baseUrl}=w150-h150"  <!-- 初始加载小尺寸图片 -->
-                 data-src="${photo.baseUrl}=${imageSize}"  <!-- 当图片接近视口时加载大图 -->
+                 src="${photo.baseUrl}=w150-h150"
+                 data-src="${photo.baseUrl}=w800-h600"
                  alt="相片" 
                  data-id="${photo.id}"
                  onclick="app.openLightbox('${photo.id}')">
-        `;
-    }).join("");
+        `).join("");
 
-    if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
-        container.insertAdjacentHTML("beforeend", `<p class="empty-state">已無更多相片</p>`);
-    }
+        if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
+            container.insertAdjacentHTML("beforeend", `<p class="empty-state">已無更多相片</p>`);
+        }
 
-    this.setupLazyLoad();  // 启动懒加载
-    this.setupScrollObserver();
-},
+        this.setupLazyLoad();
+        this.setupScrollObserver();
+    },
 
     setupLazyLoad() {
         const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const img = entry.target;
-                // 判断图片是否还未加载，只有当图片接近视口时才加载大图
-                if (!img.src.includes('w800')) {
-                    img.src = img.dataset.src;  // 将大图的 URL 设置为 src
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    if (!img.src.includes('w800')) {
+                        img.src = img.dataset.src;
+                    }
+                    observer.unobserve(img);
                 }
-                observer.unobserve(img);  // 停止监听已加载的图片
-            }
+            });
+        }, { 
+            rootMargin: "200px 0px",
+            threshold: 0.01 
         });
-    }, {
-        rootMargin: "200px 0px", // 提前200px加载图片
-        threshold: 0.01
-    });
 
-    // 为所有图片元素添加懒加载监听
-    document.querySelectorAll(".photo:not([data-loaded])").forEach(img => {
-        observer.observe(img);
-        img.setAttribute('data-loaded', 'true');  // 防止重复加载
-    });
-},
+        document.querySelectorAll(".photo:not([data-loaded])").forEach(img => {
+            observer.observe(img);
+            img.setAttribute('data-loaded', 'true');
+        });
+    },
 
     setupScrollObserver() {
         if (this.states.observer) this.states.observer.disconnect();
@@ -430,7 +415,25 @@ const app = {
         }
     },
 
-    
+    setupIdleMonitor() {
+        let idleTime = 0;
+        const resetTimer = () => {
+            idleTime = 0;
+            document.getElementById("screenOverlay").style.display = "none";
+        };
+        
+        const idleInterval = setInterval(() => {
+            idleTime++;
+            if (idleTime > 300 && !this.states.lightboxActive) {
+                document.getElementById("screenOverlay").style.display = "block";
+            }
+        }, 1000);
+
+        document.addEventListener("mousemove", resetTimer);
+        document.addEventListener("touchstart", resetTimer);
+        document.addEventListener("keydown", resetTimer);
+    },
+
     resetPhotoData() {
         this.states.currentRequestId++;
         this.states.photos = [];
