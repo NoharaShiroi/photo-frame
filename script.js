@@ -326,8 +326,8 @@ const app = {
             const isSlideshowActive = this.states.slideshowInterval !== null;
             if (isSlideshowActive) {
                 // 启用幻灯片时，填满屏幕的100%
-                image.style.maxWidth = '100%';
-                image.style.maxHeight = '100%';
+                image.style.maxWidth = '99%';
+                image.style.maxHeight = '99%';
             } else {
                 // 当非启用幻灯片时，填满屏幕的90%
                 image.style.maxWidth = '90%';
