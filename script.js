@@ -245,8 +245,14 @@ const app = {
         const container = document.getElementById("photo-container");
     container.style.display = "grid";
     container.innerHTML = this.states.photos.map(photo => {
+        if (!photo.baseUrl) {
+            console.error("Photo baseUrl is missing:", photo);
+            return ''; // 如果没有 baseUrl，跳过这个图片
+        }
+        
         // 计算图片的尺寸，根据设备或容器大小来选择适当的尺寸
-        const imageSize = window.innerWidth < 768 ? "w150-h150" : "w800-h600";  // 小屏幕使用小图
+        const imageSize = window.innerWidth < 768 ? "w150-h150" : "w800-h600"; // 小屏幕使用小图
+        
         return `
             <img class="photo" 
                  src="${photo.baseUrl}=w150-h150"  <!-- 初始加载小尺寸图片 -->
