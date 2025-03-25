@@ -1,10 +1,10 @@
 /* 基础样式 */
 body {
-    font-family: Arial, sans-serif;
+    font-family: 'Roboto', sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #1a1a1a;
-    color: #fff;
+    background-color: #121212;
+    color: #ffffff;
     overflow: hidden;
 }
 
@@ -15,40 +15,43 @@ body {
     align-items: center;
     justify-content: center;
     height: 100vh;
-    background: linear-gradient(135deg, #2c3e50, #3498db);
+    background: linear-gradient(135deg, #1976d2, #4a148c);
+    text-align: center;
 }
 
 #authorize-btn {
     padding: 15px 30px;
     font-size: 1.2rem;
-    background: #fff;
-    color: #2c3e50;
+    background: linear-gradient(135deg, #1976d2, #4a148c);
     border: none;
     border-radius: 25px;
     cursor: pointer;
-    transition: all 0.3s;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: white;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 #authorize-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 }
 
 /* 主界面 */
 #app-container {
     display: none;
-    padding: 10px;
+    padding: 20px;
     max-width: 1200px;
     margin: 0 auto;
+    background-color: #1a1a1a;
 }
 
 /* 相簿选择和播放控制区域 */
 #album-selection-container {
     margin-bottom: 15px;
-    padding: 10px;
-    background: rgba(255,255,255,0.1);
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 10px;
@@ -57,78 +60,103 @@ body {
 select, input[type="number"] {
     padding: 8px 12px;
     font-size: 0.9rem;
-    background: rgba(255,255,255,0.9);
+    background: rgba(255, 255, 255, 0.8);
     border: none;
     border-radius: 8px;
     width: 100%;
     max-width: 200px;
+    color: #121212;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
 .styled-button {
     padding: 12px 20px;
     font-size: 1rem;
-    background: rgba(255,255,255,0.9);
+    background: rgba(255, 255, 255, 0.1);
     border: none;
     border-radius: 8px;
     cursor: pointer;
-    transition: all 0.3s;
-    backdrop-filter: blur(5px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(8px);
 }
 
 .styled-button:hover {
-    background: #fff;
-    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.styled-button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* 滾動容器 */
 #scroll-container {
     height: calc(100vh - 150px);
     overflow-y: auto;
-    padding: 10px 0;
-    margin: 0 -10px;
+    padding: 20px 0;
+    margin: 0 -20px;
+    box-sizing: border-box;
+    scrollbar-width: 8px;
 }
 
-/* 自定义滾动條 */
 #scroll-container::-webkit-scrollbar {
     width: 8px;
 }
 
 #scroll-container::-webkit-scrollbar-track {
-    background: rgba(255,255,255,0.1);
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 4px;
 }
 
 #scroll-container::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.3);
+    background: rgba(255, 255, 255, 0.3);
     border-radius: 4px;
+    transition: all 0.2s;
 }
 
 #scroll-container::-webkit-scrollbar-thumb:hover {
-    background: rgba(255,255,255,0.5);
+    background: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
 }
 
-/* 缩略图区域 */
+/* 相片区域 */
 #photo-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 8px;
-    padding: 0 10px;
-    min-height: calc(100% - 40px);
+    gap: 15px;
+    padding: 15px 20px;
+    margin-top: 20px;
 }
 
 .photo {
     width: 100%;
     aspect-ratio: 1;
     object-fit: cover;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
-    transition: transform 0.3s, box-shadow 0.3s;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0, 1);
     background: #333;
+    border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
 .photo:hover {
-    transform: scale(1.03);
-    box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+    transform: scale(1.05);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #666;
+    font-size: 1.2rem;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
 }
 
 /* 加载提示 */
@@ -142,15 +170,6 @@ select, input[type="number"] {
     color: #fff;
 }
 
-.empty-state {
-    grid-column: 1 / -1;
-    text-align: center;
-    color: #666;
-    font-size: 1.2rem;
-    padding: 20px;
-    margin-top: 20px;
-}
-
 /* Lightbox */
 #lightbox {
     position: fixed;
@@ -158,49 +177,57 @@ select, input[type="number"] {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0,0,0,0.95);
+    background: rgba(0, 0, 0, 0.95);
     display: none;
     justify-content: center;
     align-items: center;
     z-index: 1000;
     opacity: 0;
-    transition: opacity 0.3s;
-    box-shadow: 0 0 20px rgba(128, 255, 255, 0.5); /* 阴影效果 */
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0, 1);
+    box-shadow: 0 0 20px rgba(128, 255, 255, 0.5);
 }
 
 #lightbox-image {
-    max-width: 90%;   /* 使用百分比，确保更好的响应式 */
-    max-height: 90%;  /* 使用百分比，确保更好的响应式 */
-    width: auto;      /* 保持宽度为自动以尊重比例 */
-    height: auto;     /* 保持高度为自动以尊重比例 */
-    object-fit: contain;  /* 确保图像保持比例并适应容器 */
-    border-radius: 15px;
-    box-shadow: 0 0 40px rgba(255,255,255,0.1);
+    max-width: 95%;
+    max-height: 95%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    border-radius: 16px;
+    box-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.1);
 }
 
 .lightbox-buttons {
     position: fixed;
-    bottom: 40px;
+    bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 20px;
+    gap: 15px;
+    padding: 0 15px;
+    z-index: 1000;
 }
 
 .nav-button {
     padding: 12px 25px;
-    font-size: 1.1rem;
-    background: rgba(255,255,255,0.9);
+    font-size: 1rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
     border: none;
-    border-radius: 8px;
     cursor: pointer;
-    transition: all 0.3s;
-    backdrop-filter: blur(5px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(6px);
 }
 
 .nav-button:hover {
-    background: #fff;
+    background: rgba(255, 255, 255, 0.2);
     transform: translateY(-2px);
+}
+
+.nav-button:active {
+    transform: translateY(0);
 }
 
 /* 加载动画 */
@@ -223,7 +250,7 @@ select, input[type="number"] {
 @media (max-width: 768px) {
     #photo-container {
         grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-        gap: 6px;
+        gap: 8px;
     }
 
     #album-selection-container {
@@ -232,6 +259,15 @@ select, input[type="number"] {
 
     select, input[type="number"] {
         max-width: 100%;
+    }
+
+    .photo {
+        min-height: 150px;
+    }
+
+    #lightbox-image {
+        max-width: 98%;
+        max-height: 98%;
     }
 
     .lightbox-buttons {
@@ -243,7 +279,18 @@ select, input[type="number"] {
 
     .nav-button {
         padding: 10px 20px;
-        font-size: 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    #photo-container {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 6px;
+    }
+
+    .photo {
+        min-height: 120px;
     }
 }
 
@@ -254,9 +301,10 @@ select, input[type="number"] {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0,0,0,0.9);
+    background: rgba(0, 0, 0, 0.9);
     display: none;
     z-index: 9999;
+    opacity: 0.7;
 }
 
 /* 時間排程設定彈窗 */
@@ -268,7 +316,7 @@ select, input[type="number"] {
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.7);
     justify-content: center;
     align-items: center;
 }
@@ -279,11 +327,13 @@ select, input[type="number"] {
     border-radius: 8px;
     width: 300px;
     text-align: center;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
 }
 
 .modal-content label {
     display: block;
-    margin: 10px 0 5px;
+    margin: 15px 0 5px;
+    color: #b3b3b3;
 }
 
 .modal-content input[type="time"] {
@@ -292,22 +342,33 @@ select, input[type="number"] {
     width: 100%;
     margin-bottom: 10px;
     border-radius: 4px;
-    border: 1px solid #ccc;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    transition: all 0.3s ease;
+}
+
+.modal-content input[type="time"]:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 10px rgba(52, 152, 219, 0.3);
 }
 
 .modal-content button {
-    padding: 10px 20px;
+    padding: 12px 20px;
     font-size: 1rem;
-    background: #3498db;
-    color: #fff;
+    background: linear-gradient(135deg, #1976d2, #4a148c);
+    color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
-    transition: background 0.3s;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(4px);
 }
 
 .modal-content button:hover {
-    background: #2980b9;
+    background: linear-gradient(135deg, #1565c0, #3700b3);
+    transform: translateY(-1px);
 }
 
 .close-modal {
@@ -316,4 +377,10 @@ select, input[type="number"] {
     right: 10px;
     font-size: 1.5rem;
     cursor: pointer;
+    color: rgba(255, 255, 255, 0.7);
+    transition: color 0.3s ease;
+}
+
+.close-modal:hover {
+    color: #ffffff;
 }
