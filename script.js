@@ -371,7 +371,7 @@ const app = {
         if (this.states.slideshowInterval || this.states.isFullscreen) {
             buttons.forEach(button => button.style.display = 'none');
         } else {
-            buttons.forEach(button => button.style.display = 'block'));
+            buttons.forEach(button => button.style.display = 'block');
         }
     },
 
