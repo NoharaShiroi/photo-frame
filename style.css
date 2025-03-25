@@ -64,14 +64,23 @@ select, input[type="number"] {
     max-width: 200px;
 }
 
-.slideshow-controls {
-    margin-top: 10px;
-    gap: 8px;
-    padding: 10px;
-    font-size: 0.9rem;
+.styled-button {
+    padding: 12px 20px;
+    font-size: 1rem;
+    background: rgba(255,255,255,0.9);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    backdrop-filter: blur(5px);
 }
 
-/* 滚动容器 */
+.styled-button:hover {
+    background: #fff;
+    transform: translateY(-2px);
+}
+
+/* 滾動容器 */
 #scroll-container {
     height: calc(100vh - 150px);
     overflow-y: auto;
@@ -79,7 +88,7 @@ select, input[type="number"] {
     margin: 0 -10px;
 }
 
-/* 自定义滚动条 */
+/* 自定义滾动條 */
 #scroll-container::-webkit-scrollbar {
     width: 8px;
 }
@@ -159,8 +168,11 @@ select, input[type="number"] {
 }
 
 #lightbox-image {
-    max-width: 90%;
-    max-height: 80vh;
+    max-width: 90%;   /* 使用百分比，确保更好的响应式 */
+    max-height: 90%;  /* 使用百分比，确保更好的响应式 */
+    width: auto;      /* 保持宽度为自动以尊重比例 */
+    height: auto;     /* 保持高度为自动以尊重比例 */
+    object-fit: contain;  /* 确保图像保持比例并适应容器 */
     border-radius: 15px;
     box-shadow: 0 0 40px rgba(255,255,255,0.1);
 }
