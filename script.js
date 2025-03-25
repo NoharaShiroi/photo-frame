@@ -314,37 +314,37 @@ const app = {
         return `${photo.baseUrl}=w${width}-h${height}`;
     },
 
-    openLightbox(photoId) {
-        this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
-        const lightbox = document.getElementById("lightbox");
-        const image = document.getElementById("lightbox-image");
-        
-        image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
+   openLightbox(photoId) {
+    this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
+    const lightbox = document.getElementById("lightbox");
+    const image = document.getElementById("lightbox-image");
+    
+    image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
 
-        image.onload = () => {
-            const windowWidth = window.innerWidth;
-            const windowHeight = window.innerHeight;
-            const imgAspectRatio = image.naturalWidth / image.naturalHeight;
-            const windowAspectRatio = windowWidth / windowHeight;
+    // 监听图像加载事件，以确保调整图片展示位置
+    image.onload = () => {
+        const isSlideshowActive = this.states.slideshowInterval !== null;
+        if (isSlideshowActive) {
+            // 启用幻灯片时，填满屏幕的100%
+            image.style.maxWidth = '100%';
+            image.style.maxHeight = '100%';
+        } else {
+            // 当非启用幻灯片时，填满屏幕的90%
+            image.style.maxWidth = '90%';
+            image.style.maxHeight = '90%';
+        }
+        image.style.width = 'auto';
+        image.style.height = 'auto';
 
-            if (imgAspectRatio > windowAspectRatio) {
-                // 图片更宽，限制宽度
-                image.style.width = '90%';
-                image.style.height = 'auto';
-            } else {
-                // 图片更高，限制高度
-                image.style.height = '90%';
-                image.style.width = 'auto';
-            }
+        lightbox.style.display = "flex";
+        setTimeout(() => {
+            lightbox.style.opacity = 1;
+            this.states.lightboxActive = true;
+            this.toggleButtonVisibility();
+        }, 10);
+    };
+}
 
-            lightbox.style.display = "flex";
-            setTimeout(() => {
-                lightbox.style.opacity = 1;
-                this.states.lightboxActive = true;
-                this.toggleButtonVisibility();
-            }, 10);
-        };
-    },
 
     closeLightbox() {
         const lightbox = document.getElementById("lightbox");
