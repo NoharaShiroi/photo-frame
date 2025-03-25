@@ -25,7 +25,7 @@ const app = {
             isEnabled: true,
             useHoliday: true
         }
-    },
+    }
 
     init() {
         this.states.accessToken = sessionStorage.getItem("access_token");
@@ -38,7 +38,6 @@ const app = {
     this.checkSchedule();
     setInterval(() => this.checkSchedule(), 60000);
 },
-
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
         if (schedule) {
