@@ -57,7 +57,7 @@ const app = {
         if ((currentTime >= sleepStart && currentTime < sleepEnd) || 
             (currentTime >= classStart && currentTime < classEnd)) {
             this.stopSlideshow();
-            document.getElementById("screenOverlay").style.display = "block";
+            document.getElementById("screenOverlay").style.display = "none";
         } else {
             document.getElementById("screenOverlay").style.display = "none";
         }
