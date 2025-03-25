@@ -30,8 +30,7 @@ const app = {
         if (!this.checkAuth()) {
             document.getElementById("auth-container").style.display = "flex";
         }
-        this.setupIdleMonitor();
-        this.loadSchedule();
+       this.loadSchedule();
         this.checkSchedule();
         setInterval(() => this.checkSchedule(), 60000);
     },
@@ -414,26 +413,7 @@ const app = {
             buttons.forEach(button => button.style.display = 'block');
         }
     },
-
-    setupIdleMonitor() {
-        let idleTime = 0;
-        const resetTimer = () => {
-            idleTime = 0;
-            document.getElementById("screenOverlay").style.display = "none";
-        };
-        
-        const idleInterval = setInterval(() => {
-            idleTime++;
-            if (idleTime > 300 && !this.states.lightboxActive) {
-                document.getElementById("screenOverlay").style.display = "block";
-            }
-        }, 1000);
-
-        document.addEventListener("mousemove", resetTimer);
-        document.addEventListener("touchstart", resetTimer);
-        document.addEventListener("keydown", resetTimer);
-    },
-
+    
     resetPhotoData() {
         this.states.currentRequestId++;
         this.states.photos = [];
