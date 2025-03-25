@@ -24,16 +24,49 @@ const app = {
         }
     },
 
-    init() {
+        init() {
         this.states.accessToken = sessionStorage.getItem("access_token");
         this.setupEventListeners();
         if (!this.checkAuth()) {
             document.getElementById("auth-container").style.display = "flex";
         }
+        this.loadCachedPhotos();
         this.setupIdleMonitor();
         this.loadSchedule();
         this.checkSchedule();
         setInterval(() => this.checkSchedule(), 60000);
+    },
+
+    setupEventListeners() {
+        document.getElementById("authorize-btn").addEventListener("click", () => this.handleAuthFlow());
+
+        document.getElementById("album-select").addEventListener("change", (e) => {
+            this.states.albumId = e.target.value;
+            this.states.photos = [];
+            this.states.nextPageToken = null;
+            this.states.hasMorePhotos = true;
+            this.loadPhotos();
+        });
+
+        document.getElementById("schedule-settings-btn").addEventListener("click", () => {
+            document.getElementById("schedule-modal").style.display = "block";
+        });
+
+        document.querySelector(".close-modal").addEventListener("click", () => {
+            document.getElementById("schedule-modal").style.display = "none";
+        });
+
+        document.getElementById("save-schedule").addEventListener("click", () => {
+            this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
+            this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
+            this.states.schedule.classStart = document.getElementById("class-start").value;
+            this.states.schedule.classEnd = document.getElementById("class-end").value;
+            localStorage.setItem("schedule", JSON.stringify(this.states.schedule));
+            document.getElementById("schedule-modal").style.display = "none";
+            this.checkSchedule();
+        });
+
+        document.getElementById("screenOverlay").addEventListener("dblclick", () => this.cancelScheduleOverlay());
     },
 
     async fetchAlbums() {
