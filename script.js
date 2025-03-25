@@ -1,3 +1,4 @@
+
 const app = {
     CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
     REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
@@ -18,26 +19,68 @@ const app = {
         isFullscreen: false,
         schedule: {
             sleepStart: "22:00",
-            sleepEnd: "06:59",
+            sleepEnd: "07:00",
             classStart: "08:00",
             classEnd: "17:00"
         }
     },
 
-       init() {
+    init() {
         this.states.accessToken = sessionStorage.getItem("access_token");
         this.setupEventListeners();
         if (!this.checkAuth()) {
             document.getElementById("auth-container").style.display = "flex";
-        } else {
-            document.getElementById("auth-container").style.display = "none";
-            this.fetchAlbums();
         }
-        this.loadCachedPhotos();
-        this.setupIdleMonitor();
         this.loadSchedule();
         this.checkSchedule();
         setInterval(() => this.checkSchedule(), 60000);
+    },
+
+    loadSchedule() {
+        const schedule = JSON.parse(localStorage.getItem("schedule"));
+        if (schedule) {
+            this.states.schedule = schedule;
+        }
+    },
+
+    saveSchedule() {
+        localStorage.setItem("schedule", JSON.stringify(this.states.schedule));
+    },
+
+    checkSchedule() {
+        const now = new Date();
+        const currentTime = this.getTimeInMinutes(now);
+        const sleepStart = this.getTimeInMinutes(this.states.schedule.sleepStart);
+        const sleepEnd = this.getTimeInMinutes(this.states.schedule.sleepEnd);
+        const classStart = this.getTimeInMinutes(this.states.schedule.classStart);
+        const classEnd = this.getTimeInMinutes(this.states.schedule.classEnd);
+
+        if ((currentTime >= sleepStart && currentTime < sleepEnd) || 
+            (currentTime >= classStart && currentTime < classEnd)) {
+            this.stopSlideshow();
+            document.getElementById("screenOverlay").style.display = "block";
+        } else {
+            document.getElementById("screenOverlay").style.display = "none";
+        }
+    },
+
+    getTimeInMinutes(time) {
+        const [hours, minutes] = time.split(":").map(Number);
+        return hours * 60 + minutes;
+    },
+
+    handleAuthFlow() {
+        const authEndpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
+        const params = {
+            client_id: this.CLIENT_ID,
+            redirect_uri: this.REDIRECT_URI,
+            response_type: 'token',
+            scope: this.SCOPES,
+            include_granted_scopes: 'true',
+            state: 'pass-through-value',
+            prompt: 'consent'
+        };
+        window.location.href = authEndpoint + '?' + new URLSearchParams(params);
     },
 
     checkAuth() {
@@ -45,37 +88,59 @@ const app = {
         if (hashParams.has("access_token")) {
             this.states.accessToken = hashParams.get("access_token");
             sessionStorage.setItem("access_token", this.states.accessToken);
-            window.history.replaceState({}, document.title, window.location.pathname);
+            window.history.replaceState({}, "", window.location.pathname);
+            this.showApp();
             return true;
         }
-        return this.states.accessToken !== null;
+        return false;
     },
 
-    handleAuthFlow() {
-        const authEndpoint = "https://accounts.google.com/o/oauth2/v2/auth";
-        const params = {
-            client_id: this.CLIENT_ID,
-            redirect_uri: this.REDIRECT_URI,
-            response_type: "token",
-            scope: this.SCOPES,
-            include_granted_scopes: "true",
-            state: "pass-through-value",
-            prompt: "consent"
-        };
-        window.location.href = `${authEndpoint}?${new URLSearchParams(params).toString()}`;
+    showApp() {
+        document.getElementById("auth-container").style.display = "none";
+        document.getElementById("app-container").style.display = "block";
+        this.fetchAlbums();
     },
 
     setupEventListeners() {
-        document.getElementById("authorize-btn").addEventListener("click", () => this.handleAuthFlow());
+        document.getElementById("authorize-btn").addEventListener("click", (e) => {
+            e.preventDefault();
+            this.handleAuthFlow();
+        });
 
         document.getElementById("album-select").addEventListener("change", (e) => {
             this.states.albumId = e.target.value;
-            this.states.photos = [];
-            this.states.nextPageToken = null;
-            this.states.hasMorePhotos = true;
+            this.resetPhotoData();
             this.loadPhotos();
         });
 
+        // Lightbox 控制
+        document.getElementById("lightbox").addEventListener("dblclick", () => this.closeLightbox());
+        document.getElementById("prev-photo").addEventListener("click", () => this.navigate(-1));
+        document.getElementById("next-photo").addEventListener("click", () => this.navigate(1));
+        document.getElementById("start-slideshow-btn").addEventListener("click", () => this.toggleSlideshow());
+        document.getElementById("fullscreen-toggle-btn").addEventListener("click", () => this.toggleFullscreen());
+
+        // 播放模式切換
+        document.getElementById("play-mode").addEventListener("change", (e) => {
+            if (this.states.slideshowInterval) {
+                this.toggleSlideshow();
+                this.toggleSlideshow();
+            }
+        });
+
+        // 速度輸入防抖處理
+        let speedTimeout;
+        document.getElementById("slideshow-speed").addEventListener("input", (e) => {
+            clearTimeout(speedTimeout);
+            speedTimeout = setTimeout(() => {
+                if (this.states.slideshowInterval) {
+                    this.toggleSlideshow();
+                    this.toggleSlideshow();
+                }
+            }, 500);
+        });
+
+        // 時間排程設定
         document.getElementById("schedule-settings-btn").addEventListener("click", () => {
             document.getElementById("schedule-modal").style.display = "block";
         });
@@ -89,26 +154,35 @@ const app = {
             this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
             this.states.schedule.classStart = document.getElementById("class-start").value;
             this.states.schedule.classEnd = document.getElementById("class-end").value;
-            localStorage.setItem("schedule", JSON.stringify(this.states.schedule));
+            this.saveSchedule();
             document.getElementById("schedule-modal").style.display = "none";
             this.checkSchedule();
         });
-
-        document.getElementById("screenOverlay").addEventListener("dblclick", () => this.cancelScheduleOverlay());
     },
+
     async fetchAlbums() {
         try {
             const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
                 headers: { "Authorization": `Bearer ${this.states.accessToken}` }
             });
-            if (!response.ok) throw new Error("相簿載入失敗");
+            if (!response.ok) throw new Error('無法取得相簿');
             const data = await response.json();
             this.renderAlbumSelect(data.albums || []);
-            await this.loadPhotos();
+            this.loadPhotos();
         } catch (error) {
-            console.error("相簿載入錯誤:", error);
             this.handleAuthError();
         }
+    },
+
+    renderAlbumSelect(albums) {
+        const select = document.getElementById("album-select");
+        select.innerHTML = '<option value="all">所有相片</option>';
+        albums.forEach(album => {
+            const option = document.createElement("option");
+            option.value = album.id;
+            option.textContent = album.title;
+            select.appendChild(option);
+        });
     },
 
     async loadPhotos() {
@@ -124,8 +198,11 @@ const app = {
                 pageToken: this.states.nextPageToken || undefined
             };
 
-            if (this.states.albumId !== "all") body.albumId = this.states.albumId;
-            else body.filters = { includeArchivedMedia: true };
+            if (this.states.albumId !== "all") {
+                body.albumId = this.states.albumId;
+            } else {
+                body.filters = { includeArchivedMedia: true };
+            }
 
             const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
                 method: "POST",
@@ -136,44 +213,265 @@ const app = {
                 body: JSON.stringify(body)
             });
 
-            if (!response.ok) throw new Error("照片載入失敗");
+            if (!response.ok) throw new Error('照片加載失敗');
             const data = await response.json();
+
             if (requestId !== this.states.currentRequestId) return;
 
-            const newPhotos = data.mediaItems || [];
-            this.states.photos.push(...newPhotos);
+            const existingIds = new Set(this.states.photos.map(p => p.id));
+            const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
+
+            this.states.photos = [...this.states.photos, ...newPhotos];
             this.states.nextPageToken = data.nextPageToken || null;
             this.states.hasMorePhotos = !!this.states.nextPageToken;
 
-            this.cachePhotos();
             this.renderPhotos();
         } catch (error) {
-            console.error("照片載入錯誤:", error);
-            this.showMessage("載入失敗，請檢查網路連線");
+            console.error("照片加栽失敗:", error);
+            this.showMessage("加栽失敗，請檢查網路連線");
         } finally {
             if (requestId === this.states.currentRequestId) {
                 this.states.isFetching = false;
                 document.getElementById("loading-indicator").style.display = "none";
+                this.setupScrollObserver();
             }
         }
     },
 
-    cachePhotos() {
-        if (this.states.photos.length > 0) {
-            localStorage.setItem("cachedPhotos", JSON.stringify(this.states.photos));
+    renderPhotos() {
+        const container = document.getElementById("photo-container");
+        container.innerHTML = '';
+
+        if (this.states.photos.length === 0) {
+            const emptyState = document.createElement('p');
+            emptyState.className = "empty-state";
+            emptyState.textContent = '目前尚無照片';
+            container.appendChild(emptyState);
+            return;
+        }
+
+        const grid = document.createElement('div');
+        grid.className = 'photos-grid';
+        grid.style.gridTemplateColumns = `repeat(auto-fill, minmax(120px, 1fr))`;
+        grid.style.gap = '8px';
+        grid.style.padding = '0 10px';
+
+        this.states.photos.forEach(photo => {
+            const img = document.createElement('img');
+            img.className = 'photo';
+            img.src = photo.baseUrl + '=w150-h150';
+            img.dataset.src = photo.baseUrl + '=w800-h600';
+            img.dataset.id = photo.id;
+            img.loading = 'lazy';
+            img.onclick = () => this.openLightbox(photo.id);
+
+            img.addEventListener('lazyload', () => {
+                if (!img.src.includes('w800')) {
+                    img.src = img.dataset.src;
+                }
+            });
+
+            grid.appendChild(img);
+        });
+
+        container.appendChild(grid);
+        this.setupScrollObserver();
+    },
+
+    openLightbox(photoId) {
+        this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
+        const lightbox = document.getElementById("lightbox");
+        const image = document.getElementById("lightbox-image");
+        
+        image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
+        
+        // 调整图片显示比例
+        const isSlideshowActive = this.states.slideshowInterval !== null;
+        if (isSlideshowActive) {
+            image.style.maxWidth = '99%';
+            image.style.maxHeight = '99%';
+        } else {
+            image.style.maxWidth = '90%';
+            image.style.maxHeight = '90%';
+        }
+        image.style.width = 'auto';
+        image.style.height = 'auto';
+        lightbox.style.display = "flex";
+        setTimeout(() => {
+            lightbox.style.opacity = 1;
+            this.states.lightboxActive = true;
+            this.toggleButtonVisibility();
+        }, 10);
+    },
+
+    closeLightbox() {
+        const lightbox = document.getElementById("lightbox");
+        lightbox.style.opacity = 0;
+        setTimeout(() => {
+            lightbox.style.display = "none";
+            this.states.lightboxActive = false;
+            this.toggleButtonVisibility();
+        }, 300);
+        this.stopSlideshow();
+    },
+
+    navigate(direction) {
+        this.states.currentIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
+        document.getElementById("lightbox-image").src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
+    },
+
+    toggleSlideshow() {
+        if (this.states.slideshowInterval) {
+            this.stopSlideshow();
+        } else {
+            const speed = document.getElementById("slideshow-speed").value * 1000;
+            const isRandom = document.getElementById("play-mode").value === "random";
+
+            const getNextIndex = () => {
+                if (isRandom) {
+                    let nextIndex;
+                    do {
+                        nextIndex = Math.floor(Math.random() * this.states.photos.length);
+                    } while (nextIndex === this.states.currentIndex);
+                    return nextIndex;
+                }
+                return (this.states.currentIndex + 1) % this.states.photos.length;
+            };
+
+            this.states.slideshowInterval = setInterval(() => {
+                this.states.currentIndex = getNextIndex();
+                this.navigate(0); 
+            }, speed);
+        }
+        this.toggleButtonVisibility();
+    },
+    
+    stopSlideshow() {
+        if (this.states.slideshowInterval) {
+            clearInterval(this.states.slideshowInterval);
+            this.states.slideshowInterval = null;
+        }
+        this.toggleButtonVisibility();
+    },
+
+    toggleFullscreen() {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(err => {
+                console.error('全螢幕錯誤:', err);
+            });
+        } else {
+            document.exitFullscreen();
+        }
+        this.states.isFullscreen = !this.states.isFullscreen;
+        this.toggleButtonVisibility();
+    },
+
+    toggleButtonVisibility() {
+        const buttons = document.querySelectorAll('.lightbox-buttons button');
+        if (this.states.slideshowInterval || this.states.isFullscreen) {
+            buttons.forEach(button => button.style.display = 'none');
+        } else {
+            buttons.forEach(button => button.style.display = 'block'));
         }
     },
 
-    loadCachedPhotos() {
-        const cached = localStorage.getItem("cachedPhotos");
-        if (cached) {
-            this.states.photos = JSON.parse(cached);
-            this.renderPhotos();
+    setupIdleMonitor() {
+        let idleTime = 0;
+        const resetTimer = () => {
+            idleTime = 0;
+            document.getElementById("screenOverlay").style.display = "none";
+        };
+        
+        const idleInterval = setInterval(() => {
+            idleTime++;
+            if (idleTime > 300 && !this.states.lightboxActive) {
+                document.getElementById("screenOverlay").style.display = "block";
+            }
+        }, 1000);
+
+        document.addEventListener("mousemove", resetTimer);
+        document.addEventListener("touchstart", resetTimer);
+        document.addEventListener("keydown", resetTimer);
+    },
+
+    resetPhotoData() {
+        this.states.currentRequestId++;
+        this.states.photos = [];
+        this.states.nextPageToken = null;
+        this.states.hasMorePhotos = true;
+        document.getElementById("photo-container").innerHTML = '';
+        this.setupScrollObserver();
+    },
+
+    handleAuthError() {
+        const retry = confirm("授權已過期，是否重新登入？");
+        if (retry) {
+            sessionStorage.removeItem("access_token");
+            window.location.reload();
+        } else {
+            document.getElementById("auth-container").style.display = "flex";
+            document.getElementById("app-container").style.display = "none";
         }
     },
 
- cancelScheduleOverlay() {
-        document.getElementById("screenOverlay").style.display = "none";
+    showMessage(message) {
+        const container = document.getElementById("photo-container");
+        const messageElement = document.createElement("p");
+        messageElement.className = "empty-state";
+        messageElement.textContent = message;
+        container.appendChild(messageElement);
+    },
+
+    setupScrollListen() {
+        const lastKnownY = 0;
+        const sentinel = document.getElementById('scroll-sentinel');
+
+        window.addEventListener('scroll', () => {
+            this.states.isScrolling = true;
+            const currentY = window.scrollY;
+            
+            if (currentY > lastKnownY) {
+                // 上卷
+                document.getElementById('loading-indicator').style.display = 'block';
+            } else {
+                // 下卷
+                document.getElementById('loading-indicator').style.display = 'none';
+            }
+            
+            lastKnownY = currentY;
+        });
+
+        sentinel.addEventListener('scroll', (e) => {
+            if (!this.states.isFetching && this.states.hasMorePhotos) {
+                setTimeout(() => this.loadPhotos(), 300);
+            }
+        }, { passive: true });
+    },
+
+    setupScrollObserver() {
+        if (this.states.observer) this.states.observer.disconnect();
+
+        this.states.observer = new IntersectionObserver(
+            entries => {
+                if (this.states.hasMorePhotos && !this.states.isFetching) {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            setTimeout(() => this.loadPhotos(), 300);
+                        }
+                    });
+                }
+            },
+            {
+                root: document.querySelector('#scroll-container'),
+                rootMargin: '400px 0px',
+                threshold: 0.1
+            }
+        );
+
+        const sentinel = document.createElement('div');
+        sentinel.id = 'scroll-sentinel';
+        document.getElementById('photo-container').appendChild(sentinel);
+        this.states.observer.observe(sentinel);
     }
 };
 
