@@ -165,9 +165,7 @@ select, input[type="number"] {
     z-index: 1000;
     opacity: 0;
     transition: opacity 0.3s;
-    border: 5px solid #3498db; /* 增加一个蓝色边框 */
-    border-radius: 10px; /* 圆角效果 */
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); /* 阴影效果 */
+    box-shadow: 0 0 20px rgba(128, 255, 255, 0.5); /* 阴影效果 */
 }
 
 #lightbox-image {
