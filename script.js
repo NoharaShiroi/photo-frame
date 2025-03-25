@@ -1,4 +1,3 @@
-
 const app = {
     CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
     REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
@@ -31,6 +30,7 @@ const app = {
         if (!this.checkAuth()) {
             document.getElementById("auth-container").style.display = "flex";
         }
+        this.setupIdleMonitor();
         this.loadSchedule();
         this.checkSchedule();
         setInterval(() => this.checkSchedule(), 60000);
@@ -49,7 +49,7 @@ const app = {
 
     checkSchedule() {
         const now = new Date();
-        const currentTime = this.getTimeInMinutes(now);
+        const currentTime = now.getHours() * 60 + now.getMinutes();
         const sleepStart = this.getTimeInMinutes(this.states.schedule.sleepStart);
         const sleepEnd = this.getTimeInMinutes(this.states.schedule.sleepEnd);
         const classStart = this.getTimeInMinutes(this.states.schedule.classStart);
@@ -227,8 +227,8 @@ const app = {
 
             this.renderPhotos();
         } catch (error) {
-            console.error("照片加栽失敗:", error);
-            this.showMessage("加栽失敗，請檢查網路連線");
+            console.error("照片加載失敗:", error);
+            this.showMessage("加載失敗，請檢查網路連線");
         } finally {
             if (requestId === this.states.currentRequestId) {
                 this.states.isFetching = false;
@@ -240,42 +240,78 @@ const app = {
 
     renderPhotos() {
         const container = document.getElementById("photo-container");
-        container.innerHTML = '';
+        container.style.display = "grid";
+        container.innerHTML = this.states.photos.map(photo => `
+            <img class="photo" 
+                 src="${photo.baseUrl}=w150-h150"
+                 data-src="${photo.baseUrl}=w800-h600"
+                 alt="相片" 
+                 data-id="${photo.id}"
+                 onclick="app.openLightbox('${photo.id}')">
+        `).join("");
 
-        if (this.states.photos.length === 0) {
-            const emptyState = document.createElement('p');
-            emptyState.className = "empty-state";
-            emptyState.textContent = '目前尚無照片';
-            container.appendChild(emptyState);
-            return;
+        if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
+            container.insertAdjacentHTML("beforeend", `<p class="empty-state">已無更多相片</p>`);
         }
 
-        const grid = document.createElement('div');
-        grid.className = 'photos-grid';
-        grid.style.gridTemplateColumns = `repeat(auto-fill, minmax(120px, 1fr))`;
-        grid.style.gap = '8px';
-        grid.style.padding = '0 10px';
+        this.setupLazyLoad();
+        this.setupScrollObserver();
+    },
 
-        this.states.photos.forEach(photo => {
-            const img = document.createElement('img');
-            img.className = 'photo';
-            img.src = photo.baseUrl + '=w150-h150';
-            img.dataset.src = photo.baseUrl + '=w800-h600';
-            img.dataset.id = photo.id;
-            img.loading = 'lazy';
-            img.onclick = () => this.openLightbox(photo.id);
-
-            img.addEventListener('lazyload', () => {
-                if (!img.src.includes('w800')) {
-                    img.src = img.dataset.src;
+    setupLazyLoad() {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    if (!img.src.includes('w800')) {
+                        img.src = img.dataset.src;
+                    }
+                    observer.unobserve(img);
                 }
             });
-
-            grid.appendChild(img);
+        }, { 
+            rootMargin: "200px 0px",
+            threshold: 0.01 
         });
 
-        container.appendChild(grid);
-        this.setupScrollObserver();
+        document.querySelectorAll(".photo:not([data-loaded])").forEach(img => {
+            observer.observe(img);
+            img.setAttribute('data-loaded', 'true');
+        });
+    },
+
+    setupScrollObserver() {
+        if (this.states.observer) this.states.observer.disconnect();
+
+        this.states.observer = new IntersectionObserver(
+            entries => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && 
+                        this.states.hasMorePhotos &&
+                        !this.states.isFetching) {
+                        setTimeout(() => this.loadPhotos(), 300);
+                    }
+                });
+            },
+            {
+                root: document.querySelector('#scroll-container'),
+                rootMargin: '400px 0px',
+                threshold: 0.1
+            }
+        );
+
+        const sentinel = document.createElement('div');
+        sentinel.id = 'scroll-sentinel';
+        document.getElementById('photo-container').appendChild(sentinel);
+        this.states.observer.observe(sentinel);
+    },
+
+    getImageUrl(photo, width = 1920, height = 1080) {
+        if (!photo || !photo.baseUrl) {
+            console.error("无效的照片对象:", photo);
+            return "";
+        }
+        return `${photo.baseUrl}=w${width}-h${height}`;
     },
 
     openLightbox(photoId) {
@@ -284,24 +320,29 @@ const app = {
         const image = document.getElementById("lightbox-image");
         
         image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
-        
-        // 调整图片显示比例
-        const isSlideshowActive = this.states.slideshowInterval !== null;
-        if (isSlideshowActive) {
-            image.style.maxWidth = '99%';
-            image.style.maxHeight = '99%';
-        } else {
-            image.style.maxWidth = '90%';
-            image.style.maxHeight = '90%';
-        }
-        image.style.width = 'auto';
-        image.style.height = 'auto';
-        lightbox.style.display = "flex";
-        setTimeout(() => {
-            lightbox.style.opacity = 1;
-            this.states.lightboxActive = true;
-            this.toggleButtonVisibility();
-        }, 10);
+
+        // 监听图像加载事件，以确保调整图片展示位置
+        image.onload = () => {
+            const isSlideshowActive = this.states.slideshowInterval !== null;
+            if (isSlideshowActive) {
+                // 启用幻灯片时，填满屏幕的100%
+                image.style.maxWidth = '99%';
+                image.style.maxHeight = '99%';
+            } else {
+                // 当非启用幻灯片时，填满屏幕的90%
+                image.style.maxWidth = '90%';
+                image.style.maxHeight = '90%';
+            }
+            image.style.width = 'auto';
+            image.style.height = 'auto';
+
+            lightbox.style.display = "flex";
+            setTimeout(() => {
+                lightbox.style.opacity = 1;
+                this.states.lightboxActive = true;
+                this.toggleButtonVisibility();
+            }, 10);
+        };
     },
 
     closeLightbox() {
@@ -317,7 +358,8 @@ const app = {
 
     navigate(direction) {
         this.states.currentIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
-        document.getElementById("lightbox-image").src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
+        document.getElementById("lightbox-image").src = 
+            this.getImageUrl(this.states.photos[this.states.currentIndex]);
     },
 
     toggleSlideshow() {
@@ -346,11 +388,10 @@ const app = {
         this.toggleButtonVisibility();
     },
     
+
     stopSlideshow() {
-        if (this.states.slideshowInterval) {
-            clearInterval(this.states.slideshowInterval);
-            this.states.slideshowInterval = null;
-        }
+        clearInterval(this.states.slideshowInterval);
+        this.states.slideshowInterval = null;
         this.toggleButtonVisibility();
     },
 
@@ -362,12 +403,11 @@ const app = {
         } else {
             document.exitFullscreen();
         }
-        this.states.isFullscreen = !this.states.isFullscreen;
         this.toggleButtonVisibility();
     },
 
     toggleButtonVisibility() {
-        const buttons = document.querySelectorAll('.lightbox-buttons button');
+        const buttons = document.querySelectorAll('.lightbox-buttons .nav-button');
         if (this.states.slideshowInterval || this.states.isFullscreen) {
             buttons.forEach(button => button.style.display = 'none');
         } else {
@@ -420,58 +460,6 @@ const app = {
         messageElement.className = "empty-state";
         messageElement.textContent = message;
         container.appendChild(messageElement);
-    },
-
-    setupScrollListen() {
-        const lastKnownY = 0;
-        const sentinel = document.getElementById('scroll-sentinel');
-
-        window.addEventListener('scroll', () => {
-            this.states.isScrolling = true;
-            const currentY = window.scrollY;
-            
-            if (currentY > lastKnownY) {
-                // 上卷
-                document.getElementById('loading-indicator').style.display = 'block';
-            } else {
-                // 下卷
-                document.getElementById('loading-indicator').style.display = 'none';
-            }
-            
-            lastKnownY = currentY;
-        });
-
-        sentinel.addEventListener('scroll', (e) => {
-            if (!this.states.isFetching && this.states.hasMorePhotos) {
-                setTimeout(() => this.loadPhotos(), 300);
-            }
-        }, { passive: true });
-    },
-
-    setupScrollObserver() {
-        if (this.states.observer) this.states.observer.disconnect();
-
-        this.states.observer = new IntersectionObserver(
-            entries => {
-                if (this.states.hasMorePhotos && !this.states.isFetching) {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            setTimeout(() => this.loadPhotos(), 300);
-                        }
-                    });
-                }
-            },
-            {
-                root: document.querySelector('#scroll-container'),
-                rootMargin: '400px 0px',
-                threshold: 0.1
-            }
-        );
-
-        const sentinel = document.createElement('div');
-        sentinel.id = 'scroll-sentinel';
-        document.getElementById('photo-container').appendChild(sentinel);
-        this.states.observer.observe(sentinel);
     }
 };
 
