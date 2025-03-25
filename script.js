@@ -24,17 +24,45 @@ const app = {
         }
     },
 
-        init() {
+       init() {
         this.states.accessToken = sessionStorage.getItem("access_token");
         this.setupEventListeners();
         if (!this.checkAuth()) {
             document.getElementById("auth-container").style.display = "flex";
+        } else {
+            document.getElementById("auth-container").style.display = "none";
+            this.fetchAlbums();
         }
         this.loadCachedPhotos();
         this.setupIdleMonitor();
         this.loadSchedule();
         this.checkSchedule();
         setInterval(() => this.checkSchedule(), 60000);
+    },
+
+    checkAuth() {
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        if (hashParams.has("access_token")) {
+            this.states.accessToken = hashParams.get("access_token");
+            sessionStorage.setItem("access_token", this.states.accessToken);
+            window.history.replaceState({}, document.title, window.location.pathname);
+            return true;
+        }
+        return this.states.accessToken !== null;
+    },
+
+    handleAuthFlow() {
+        const authEndpoint = "https://accounts.google.com/o/oauth2/v2/auth";
+        const params = {
+            client_id: this.CLIENT_ID,
+            redirect_uri: this.REDIRECT_URI,
+            response_type: "token",
+            scope: this.SCOPES,
+            include_granted_scopes: "true",
+            state: "pass-through-value",
+            prompt: "consent"
+        };
+        window.location.href = `${authEndpoint}?${new URLSearchParams(params).toString()}`;
     },
 
     setupEventListeners() {
@@ -68,7 +96,6 @@ const app = {
 
         document.getElementById("screenOverlay").addEventListener("dblclick", () => this.cancelScheduleOverlay());
     },
-
     async fetchAlbums() {
         try {
             const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
@@ -145,7 +172,7 @@ const app = {
         }
     },
 
-    cancelScheduleOverlay() {
+ cancelScheduleOverlay() {
         document.getElementById("screenOverlay").style.display = "none";
     }
 };
