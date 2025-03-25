@@ -171,7 +171,7 @@ isWeekday(date) {
             document.getElementById("schedule-modal").style.display = "none";
             this.checkSchedule();
         });
-  };
+  }
 
     async fetchAlbums() {
         try {
