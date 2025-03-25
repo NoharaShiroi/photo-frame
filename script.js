@@ -195,8 +195,7 @@ const app = {
     },
 
     async loadPhotos() {
-      async loadPhotos() {
-    if (this.states.isFetching || !this.states.hasMorePhotos) return;
+       if (this.states.isFetching || !this.states.hasMorePhotos) return;
 
     const requestId = ++this.states.currentRequestId;
     this.states.isFetching = true;
