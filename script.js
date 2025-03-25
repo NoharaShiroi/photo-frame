@@ -1,4 +1,4 @@
-請幫我的code做最全面性的檢查、偵錯及補正，完成後請生成完整全部的code給我const app = {
+const app = {
     CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
     REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
