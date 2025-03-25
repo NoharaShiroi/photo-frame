@@ -171,8 +171,8 @@ isWeekday(date) {
             document.getElementById("schedule-modal").style.display = "none";
             this.checkSchedule();
         });
-  }
-
+    }
+};
     async fetchAlbums() {
         try {
             const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
