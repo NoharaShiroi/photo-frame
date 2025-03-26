@@ -127,6 +127,14 @@ const app = {
         });
 
         document.getElementById("lightbox").addEventListener("dblclick", () => this.closeLightbox());
+        let lastTouchTime = 0;
+document.getElementById("lightbox").addEventListener("touchend", (event) => {
+    const currentTime = new Date().getTime();
+    if (currentTime - lastTouchTime < 500) {
+        this.closeLightbox();
+    }
+    lastTouchTime = currentTime;
+});
         document.getElementById("prev-photo").addEventListener("click", () => this.navigate(-1));
         document.getElementById("next-photo").addEventListener("click", () => this.navigate(1));
         document.getElementById("start-slideshow-btn").addEventListener("click", () => this.toggleSlideshow());
