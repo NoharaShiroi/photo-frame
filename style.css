@@ -193,9 +193,9 @@ select, input[type="number"] {
     width: auto;
     height: auto;
     object-fit: contain;
-    border-radius: 16px;
+    border-radius: 8px;
     box-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 255, 255, 0.1);
+    border: 5px solid rgba(255, 255, 255, 0.1);
 }
 /* 新增OUGH	cancel 按鈕樣式 */
 #schedule-modal button {
