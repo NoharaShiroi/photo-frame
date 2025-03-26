@@ -185,6 +185,8 @@ select, input[type="number"] {
     opacity: 0;
     transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 0 20px rgba(128, 255, 255, 0.5);
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
 }
 #lightbox.fade-in {
         opacity: 1;
