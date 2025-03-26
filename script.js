@@ -128,7 +128,9 @@ const app = {
 
        let lastTouchTime = 0;
     const lightbox = document.getElementById("lightbox");
-
+lightbox.addEventListener("mousedown", (event) => {
+    event.preventDefault();  // 阻止聚焦，避免顯示遮罩
+});
     function shouldCloseLightbox(event) {
         // 排除點擊在 Lightbox 內的控制按鈕與圖片
         return !event.target.closest('.nav-button') && !event.target.closest('img');
