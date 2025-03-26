@@ -271,6 +271,11 @@ const app = {
 
         this.setupLazyLoad();
         this.setupScrollObserver();
+    container.addEventListener('click', () => {
+            if (this.states.slideshowInterval !== null) {
+                this.stopSlideshow();
+            }
+        });
     },
 
     setupLazyLoad() {
@@ -378,14 +383,14 @@ const app = {
                     let nextIndex;
                     do {
                         nextIndex = Math.floor(Math.random() * this.states.photos.length);
-                    } while (nextIndex === this.states.currentIndex);
+                    } while (nextIndex === this.states.currentIndex && this.states.photos.length > 1);
                     return nextIndex;
                 }
                 return (this.states.currentIndex + 1) % this.states.photos.length;
             };
 
             this.states.slideshowInterval = setInterval(() => {
-                this.states.currentIndex = getNextIndex();
+                this.states.currentIndex = getNextIndex(); 
                 this.navigate(0); 
             }, speed);
         }
