@@ -201,23 +201,18 @@ const app = {
     },
 
     async loadPhotos() {
-        if (this.states.isFetching || !this.states.hasMorePhotos) return;
+        if (this.states.isFetching || !this.states.hasMorePhotos || this.states.photos.length === 0) return;
 
         const requestId = ++this.states.currentRequestId;
         this.states.isFetching = true;
-        document.getElementById("loading-indicator").style.display = "block";
 
         try {
             const body = {
-                pageSize: 100,
-                pageToken: this.states.nextPageToken || undefined
+                pageSize: 30, // 分批大小优化
+                pageToken: this.states.nextPageToken || undefined,
+                albumId: this.states.albumId !== "all" ? this.states.albumId : undefined,
+                filters: this.states.albumId === "all" ? { includeArchivedMedia: true } : undefined
             };
-
-            if (this.states.albumId !== "all") {
-                body.albumId = this.states.albumId;
-            } else {
-                body.filters = { includeArchivedMedia: true };
-            }
 
             const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
                 method: "POST",
@@ -233,10 +228,7 @@ const app = {
 
             if (requestId !== this.states.currentRequestId) return;
 
-            const existingIds = new Set(this.states.photos.map(p => p.id));
-            const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
-
-            this.states.photos = [...this.states.photos, ...newPhotos];
+            this.states.photos = this.states.photos.concat(data.mediaItems || []);
             this.states.nextPageToken = data.nextPageToken || null;
             this.states.hasMorePhotos = !!this.states.nextPageToken;
 
@@ -247,7 +239,6 @@ const app = {
         } finally {
             if (requestId === this.states.currentRequestId) {
                 this.states.isFetching = false;
-                document.getElementById("loading-indicator").style.display = "none";
                 this.setupScrollObserver();
             }
         }
@@ -255,14 +246,13 @@ const app = {
 
     renderPhotos() {
         const container = document.getElementById("photo-container");
-        container.style.display = "grid";
+       // container.style.display = "grid";-暫時移除測試
         container.innerHTML = this.states.photos.map(photo => `
-            <img class="photo" 
-                 src="${photo.baseUrl}=w150-h150"
-                 data-src="${photo.baseUrl}=w800-h600"
-                 alt="相片" 
-                 data-id="${photo.id}"
-                 onclick="app.openLightbox('${photo.id}')">
+            <img class="photo lazy-load" 
+                  src="${photo.baseUrl}=w150-h150" 
+                  data-src="${photo.baseUrl}=w800-h600" 
+                  alt="相片" 
+                  data-id="${photo.id}">
         `).join("");
 
         if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
@@ -270,8 +260,7 @@ const app = {
         }
 
         this.setupLazyLoad();
-        this.setupScrollObserver();
-    container.addEventListener('click', () => {
+        container.addEventListener('click', () => {
             if (this.states.slideshowInterval !== null) {
                 this.stopSlideshow();
             }
@@ -283,35 +272,40 @@ const app = {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     const img = entry.target;
-                    if (!img.src.includes('w800')) {
-                        img.src = img.dataset.src;
-                    }
+                    img.src = img.dataset.src;
+                    img.classList.remove('lazy-load');
                     observer.unobserve(img);
                 }
             });
         }, { 
             rootMargin: "200px 0px",
-            threshold: 0.01 
+            threshold: 0.1 
         });
 
-        document.querySelectorAll(".photo:not([data-loaded])").forEach(img => {
+        document.querySelectorAll('.lazy-load').forEach(img => {
             observer.observe(img);
-            img.setAttribute('data-loaded', 'true');
         });
     },
 
     setupScrollObserver() {
-        if (this.states.observer) this.states.observer.disconnect();
+        const container = document.getElementById('photo-container');
+        const sentinel = document.createElement('div');
+        sentinel.id = 'scroll-sentinel';
+        
+        if (!document.getElementById('scroll-sentinel')) {
+            container.appendChild(sentinel);
+        }
 
-        this.states.observer = new IntersectionObserver(
-            entries => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting && 
-                        this.states.hasMorePhotos &&
-                        !this.states.isFetching) {
-                        setTimeout(() => this.loadPhotos(), 300);
+        const observer = new IntersectionObserver(
+            () => {
+                if (!this.states.hasMorePhotos || this.states.isFetching) return;
+                
+                setTimeout(() => {
+                    if (container.clientHeight + container.scrollTop >= 
+                        container.scrollHeight - 100) {
+                        this.loadPhotos();
                     }
-                });
+                }, 1000);
             },
             {
                 root: document.querySelector('#scroll-container'),
@@ -320,11 +314,14 @@ const app = {
             }
         );
 
-        const sentinel = document.createElement('div');
-        sentinel.id = 'scroll-sentinel';
-        document.getElementById('photo-container').appendChild(sentinel);
-        this.states.observer.observe(sentinel);
+        if (this.states.observer) {
+            this.states.observer.disconnect();
+        }
+
+        observer.observe(sentinel);
+        this.states.observer = observer;
     },
+
 
     getImageUrl(photo, width = 1920, height = 1080) {
         if (!photo || !photo.baseUrl) {
