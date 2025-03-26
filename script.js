@@ -246,7 +246,7 @@ const app = {
 
     renderPhotos() {
         const container = document.getElementById("photo-container");
-       // container.style.display = "grid";-暫時移除測試
+       container.style.display = "grid";
         container.innerHTML = this.states.photos.map(photo => `
             <img class="photo lazy-load" 
                   src="${photo.baseUrl}=w150-h150" 
