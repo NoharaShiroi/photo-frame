@@ -23,7 +23,8 @@ const app = {
             classEnd: "17:00",
             isEnabled: true,
             useHoliday: true,
-        }
+        },
+        cache: new Map(), // 新增的圖片快取管理
     },
 
     init() {
@@ -37,6 +38,7 @@ const app = {
             setInterval(() => this.checkSchedule(), 60000);
         }
     },
+
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
         if (schedule) {
@@ -55,7 +57,7 @@ const app = {
         const sleepEnd = this.getTimeInMinutes(this.states.schedule.sleepEnd);
         const classStart = this.getTimeInMinutes(this.states.schedule.classStart);
         const classEnd = this.getTimeInMinutes(this.states.schedule.classEnd);
-        const isSleepTime = this.states.schedule.isEnabled && 
+        const isSleepTime = this.stateschedule.isEnabled && 
             ((currentTime >= sleepStart && currentTime < sleepEnd) || 
              (currentTime >= classStart && currentTime < classEnd));
 
@@ -164,7 +166,7 @@ const app = {
 
         document.getElementById("save-schedule").addEventListener("click", () => {
             this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
-            this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
+            this.states_schedule.sleepEnd = document.getElementById("sleep-end").value;
             this.states.schedule.classStart = document.getElementById("class-start").value;
             this.states.schedule.classEnd = document.getElementById("class-end").value;
             this.stateschedule.isEnabled = document.getElementById("is-enabled").checked;
@@ -242,8 +244,8 @@ const app = {
 
             this.renderPhotos();
         } catch (error) {
-            console.error("照片加載失敗:", error);
-            this.showMessage("加載失敗，請檢查網路連線");
+            console.error("照片加栽失敗:", error);
+            this.showMessage("加栽失敗，請檢查網路連線");
         } finally {
             if (requestId === this.states.currentRequestId) {
                 this.states.isFetching = false;
@@ -270,12 +272,6 @@ const app = {
         }
 
         this.setupLazyLoad();
-        this.setupScrollObserver();
-    container.addEventListener('click', () => {
-            if (this.states.slideshowInterval !== null) {
-                this.stopSlideshow();
-            }
-        });
     },
 
     setupLazyLoad() {
@@ -326,9 +322,9 @@ const app = {
         this.states.observer.observe(sentinel);
     },
 
-    getImageUrl(photo, width = 1920, height = 1080) {
+    getImageUrl(photo, width = window.innerWidth > 1080 ? 1920 : 1024, height = window.innerHeight > 768 ? 1080 : 768) {
         if (!photo || !photo.baseUrl) {
-            console.error("无效的照片对象:", photo);
+            console.error("有效照片对象:", photo);
             return "";
         }
         return `${photo.baseUrl}=w${width}-h${height}`;
@@ -339,15 +335,21 @@ const app = {
         const lightbox = document.getElementById("lightbox");
         const image = document.getElementById("lightbox-image");
         
-        image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
+        const photo = this.states.photos[this.states.currentIndex];
+        const key = photo.baseUrl;
+        if (!this.states.cache.has(key)) {
+            this.states.cache.set(key, image);
+            const url = this.getImageUrl(photo);
+            image.src = url;
+        }
 
         image.onload = () => {
             const isSlideshowActive = this.states.slideshowInterval !== null;
             image.style.maxWidth = isSlideshowActive ? '99%' : '90%';
             image.style.maxHeight = isSlideshowActive ? '99%' : '90%';
             lightbox.style.display = "flex";
+            lightbox.classList.add('fade-in');
             setTimeout(() => {
-                lightbox.style.opacity = 1;
                 this.states.lightboxActive = true;
                 this.toggleButtonVisibility();
             }, 10);
@@ -356,7 +358,8 @@ const app = {
 
     closeLightbox() {
         const lightbox = document.getElementById("lightbox");
-        lightbox.style.opacity = 0;
+        lightbox.classList.remove('fade-in');
+        lightbox.classList.add('fade-out');
         setTimeout(() => {
             lightbox.style.display = "none";
             this.states.lightboxActive = false;
