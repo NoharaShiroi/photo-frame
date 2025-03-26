@@ -183,9 +183,16 @@ select, input[type="number"] {
     align-items: center;
     z-index: 1000;
     opacity: 0;
-    transition: opacity 0.3s cubic-bezier(0.4, 0, 0, 1);
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     box-shadow: 0 0 20px rgba(128, 255, 255, 0.5);
 }
+#lightbox.fade-in {
+        opacity: 1;
+   }
+
+    #lightbox.fade-out {
+        opacity: 0;
+    }
 
 #lightbox-image {
     max-width: 95%;
