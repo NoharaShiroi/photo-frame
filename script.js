@@ -23,9 +23,8 @@ const app = {
             classEnd: "17:00",
             isEnabled: true,
             useHoliday: true,
-        },
-        imgHeap: {} // 用于缓存图片
-      },
+        }
+    },
 
     init() {
         this.states.accessToken = sessionStorage.getItem("access_token");
@@ -259,8 +258,8 @@ const app = {
         container.style.display = "grid";
         container.innerHTML = this.states.photos.map(photo => `
             <img class="photo" 
-                 src="${this.getImageUrl(photo, 150, 150)}"
-                 data-src="${this.getImageUrl(photo, 800, 600)}"
+                 src="${photo.baseUrl}=w150-h150"
+                 data-src="${photo.baseUrl}=w800-h600"
                  alt="相片" 
                  data-id="${photo.id}"
                  onclick="app.openLightbox('${photo.id}')">
@@ -272,7 +271,7 @@ const app = {
 
         this.setupLazyLoad();
         this.setupScrollObserver();
-        container.addEventListener('click', () => {
+    container.addEventListener('click', () => {
             if (this.states.slideshowInterval !== null) {
                 this.stopSlideshow();
             }
@@ -336,46 +335,24 @@ const app = {
     },
 
     openLightbox(photoId) {
-       this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
+        this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
         const lightbox = document.getElementById("lightbox");
         const image = document.getElementById("lightbox-image");
-
-        const imgSrc = this.loadImage(this.states.photos[this.states.currentIndex]);
-
-        lightbox.style.display = "flex";
-        image.style.opacity = 0; // 动画效果
-        image.src = imgSrc;
+        
+        image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
 
         image.onload = () => {
+            const isSlideshowActive = this.states.slideshowInterval !== null;
+            image.style.maxWidth = isSlideshowActive ? '99%' : '90%';
+            image.style.maxHeight = isSlideshowActive ? '99%' : '90%';
+            lightbox.style.display = "flex";
             setTimeout(() => {
-                image.style.opacity = 1; // 使图像淡入
+                lightbox.style.opacity = 1;
                 this.states.lightboxActive = true;
                 this.toggleButtonVisibility();
             }, 10);
         };
     },
-
-    loadImage(photo) {
-        if (!photo || !photo.baseUrl) {
-            console.error("无效的照片对象:", photo);
-            return "";
-        }
-
-        const isRetina = window.devicePixelRatio > 1;
-        const width = isRetina ? 1600 : 800; // 根据显示器选择合适的宽度
-        const height = isRetina ? 1200 : 600;
-        const imageKey = `${photo.id}_${width}_${height}`;
-
-        // 检查缓存
-        if (this.states.imgHeap[imageKey]) {
-            return this.states.imgHeap[imageKey];
-        }
-
-        const imageUrl = `${photo.baseUrl}=w${width}-h${height}`;
-        this.states.imgHeap[imageKey] = imageUrl; // 缓存图片
-        return imageUrl;
-    },
-
 
     closeLightbox() {
         const lightbox = document.getElementById("lightbox");
