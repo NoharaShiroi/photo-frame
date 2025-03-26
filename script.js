@@ -22,7 +22,7 @@ const app = {
             classStart: "08:00",
             classEnd: "17:00",
             isEnabled: true,
-            useHoliday: true
+            useHoliday: true,
         }
     },
 
@@ -37,7 +37,6 @@ const app = {
             setInterval(() => this.checkSchedule(), 60000);
         }
     },
-
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
         if (schedule) {
