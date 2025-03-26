@@ -28,17 +28,15 @@ const app = {
 
     init() {
         this.states.accessToken = sessionStorage.getItem("access_token");
-    this.setupEventListeners();
-    if (!this.checkAuth()) {
-        document.getElementById("auth-container").style.display = "flex";
-    } else {
-        this.loadSchedule();
-        this.checkSchedule();
-        setInterval(() => this.checkSchedule(), 60000);
-        console.log("登入成功，調用 fetchAlbums()");
-        this.fetchAlbums();
-    }
-},
+        this.setupEventListeners();
+        if (!this.checkAuth()) {
+            document.getElementById("auth-container").style.display = "flex";
+        } else {
+            this.loadSchedule();
+            this.checkSchedule();
+            setInterval(() => this.checkSchedule(), 60000);
+        }
+    },
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
         if (schedule) {
@@ -179,19 +177,17 @@ const app = {
 
     async fetchAlbums() {
         try {
-        const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
-            headers: { "Authorization": `Bearer ${this.states.accessToken}` }
-        });
-        if (!response.ok) throw new Error('無法取得相簿');
-        const data = await response.json();
-        console.log("받은 앨범 데이터:", data); // Debug: 확인용 로그
-        this.renderAlbumSelect(data.albums || []);
-        this.loadPhotos();
-    } catch (error) {
-        console.error("fetchAlbums 중 오류 발생:", error);
-        this.handleAuthError();
-    }
-},
+            const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
+                headers: { "Authorization": `Bearer ${this.states.accessToken}` }
+            });
+            if (!response.ok) throw new Error('無法取得相簿');
+            const data = await response.json();
+            this.renderAlbumSelect(data.albums || []);
+            this.loadPhotos();
+        } catch (error) {
+            this.handleAuthError();
+        }
+    },
 
     renderAlbumSelect(albums) {
         const select = document.getElementById("album-select");
@@ -205,142 +201,130 @@ const app = {
     },
 
     async loadPhotos() {
-        if (this.states.isFetching || !this.states.hasMorePhotos || this.states.photos.length === 0) return;
+        if (this.states.isFetching || !this.states.hasMorePhotos) return;
 
-    const requestId = ++this.states.currentRequestId;
-    this.states.isFetching = true;
+        const requestId = ++this.states.currentRequestId;
+        this.states.isFetching = true;
+        document.getElementById("loading-indicator").style.display = "block";
 
-    try {
-        const body = {
-            pageSize: 30,
-            pageToken: this.states.nextPageToken || undefined,
-            albumId: this.states.albumId !== "all" ? this.states.albumId : undefined,
-            filters: this.states.albumId === "all" ? { includeArchivedMedia: true } : undefined
-        };
+        try {
+            const body = {
+                pageSize: 100,
+                pageToken: this.states.nextPageToken || undefined
+            };
 
-        const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${this.states.accessToken}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(body)
-        });
+            if (this.states.albumId !== "all") {
+                body.albumId = this.states.albumId;
+            } else {
+                body.filters = { includeArchivedMedia: true };
+            }
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error("API 응답오류:", errorData);
-            throw new Error('照片加載失敗');
+            const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${this.states.accessToken}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(body)
+            });
+
+            if (!response.ok) throw new Error('照片加載失敗');
+            const data = await response.json();
+
+            if (requestId !== this.states.currentRequestId) return;
+
+            const existingIds = new Set(this.states.photos.map(p => p.id));
+            const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
+
+            this.states.photos = [...this.states.photos, ...newPhotos];
+            this.states.nextPageToken = data.nextPageToken || null;
+            this.states.hasMorePhotos = !!this.states.nextPageToken;
+
+            this.renderPhotos();
+        } catch (error) {
+            console.error("照片加載失敗:", error);
+            this.showMessage("加載失敗，請檢查網路連線");
+        } finally {
+            if (requestId === this.states.currentRequestId) {
+                this.states.isFetching = false;
+                document.getElementById("loading-indicator").style.display = "none";
+                this.setupScrollObserver();
+            }
         }
-
-        const data = await response.json();
-        console.log("받은 사진 데이터:", data.mediaItems);
-
-        if (requestId !== this.states.currentRequestId) return;
-
-        this.states.photos = this.states.photos.concat(data.mediaItems || []);
-        this.states.nextPageToken = data.nextPageToken || null;
-        this.states.hasMorePhotos = !!this.states.nextPageToken;
-
-        this.renderPhotos();
-        console.log("의총에서 사진 렲렌더링 완료");
-    } catch (error) {
-        console.error("照片加載失敗:", error);
-        this.showMessage("加載失敗，請檢查網路連線");
-    } finally {
-        if (requestId === this.states.currentRequestId) {
-            this.states.isFetching = false;
-            this.setupScrollObserver();
-            console.log("장면 통제 채워트기");
-        }
-    }
-},
+    },
 
     renderPhotos() {
         const container = document.getElementById("photo-container");
-    console.log("렌더링할 사진 수:", this.states.photos.length); // Debug: 사진 수 확인
-    if (this.states.photos.length === 0) {
-        container.innerHTML = `<p class="empty-state">没有任何照片可供顯示</p>`;
-        return;
-    }
+        container.style.display = "grid";
+        container.innerHTML = this.states.photos.map(photo => `
+            <img class="photo" 
+                 src="${photo.baseUrl}=w150-h150"
+                 data-src="${photo.baseUrl}=w800-h600"
+                 alt="相片" 
+                 data-id="${photo.id}"
+                 onclick="app.openLightbox('${photo.id}')">
+        `).join("");
 
-    container.innerHTML = this.states.photos.map(photo => `
-        <img class="photo lazy-load" 
-              src="${photo.baseUrl}=w150-h150" 
-              data-src="${photo.baseUrl}=w800-h600" 
-              alt="相片" 
-              data-id="${photo.id}">
-    `).join("");
-
-    if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
-        container.insertAdjacentHTML("beforeend", `<p class="empty-state">已無更多相片</p>`);
-    }
-
-    this.setupLazyLoad();
-    container.addEventListener('click', () => {
-        if (this.states.slideshowInterval !== null) {
-            this.stopSlideshow();
+        if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
+            container.insertAdjacentHTML("beforeend", `<p class="empty-state">已無更多相片</p>`);
         }
-    });
-},
-    setupLazyLoad() {
-        const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                const img = entry.target;
-                img.src = img.dataset.src;
-                img.classList.remove('lazy-load');
-                observer.unobserve(img);
+
+        this.setupLazyLoad();
+        this.setupScrollObserver();
+    container.addEventListener('click', () => {
+            if (this.states.slideshowInterval !== null) {
+                this.stopSlideshow();
             }
         });
-    }, { 
-        rootMargin: "200px 0px",
-        threshold: 0.1 
-    });
+    },
 
-    document.querySelectorAll('.lazy-load').forEach(img => {
-        observer.observe(img);
-    });
-},
-    setupScrollObserver() {
-        const container = document.getElementById('photo-container');
-    const sentinel = document.createElement('div');
-    sentinel.id = 'scroll-sentinel';
-    
-    if (!document.getElementById('scroll-sentinel')) {
-        container.appendChild(sentinel);
-        console.log("滾動 감시자 추가:", sentinel.id);
-    }
-
-    const observer = new IntersectionObserver(
-        () => {
-            if (!this.states.hasMorePhotos || this.states.isFetching) return;
-            
-            setTimeout(() => {
-                if (container.clientHeight + container.scrollTop >= 
-                    container.scrollHeight - 100) {
-                    this.loadPhotos();
-                    console.log("스크롤 감시 중 페이지 로드觸發");
+    setupLazyLoad() {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    if (!img.src.includes('w800')) {
+                        img.src = img.dataset.src;
+                    }
+                    observer.unobserve(img);
                 }
-            }, 1000);
-        },
-        {
-            root: document.querySelector('#scroll-container'),
-            rootMargin: '400px 0px',
-            threshold: 0.1
-        }
-    );
+            });
+        }, { 
+            rootMargin: "200px 0px",
+            threshold: 0.01 
+        });
 
-    if (this.states.observer) {
-        this.states.observer.disconnect();
-        console.log("기존滚동 감시자 해제");
-    }
+        document.querySelectorAll(".photo:not([data-loaded])").forEach(img => {
+            observer.observe(img);
+            img.setAttribute('data-loaded', 'true');
+        });
+    },
 
-    observer.observe(sentinel);
-    this.states.observer = observer;
-    console.log("새滾動 감시자 초기화 완료");
-},
+    setupScrollObserver() {
+        if (this.states.observer) this.states.observer.disconnect();
 
+        this.states.observer = new IntersectionObserver(
+            entries => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && 
+                        this.states.hasMorePhotos &&
+                        !this.states.isFetching) {
+                        setTimeout(() => this.loadPhotos(), 300);
+                    }
+                });
+            },
+            {
+                root: document.querySelector('#scroll-container'),
+                rootMargin: '400px 0px',
+                threshold: 0.1
+            }
+        );
+
+        const sentinel = document.createElement('div');
+        sentinel.id = 'scroll-sentinel';
+        document.getElementById('photo-container').appendChild(sentinel);
+        this.states.observer.observe(sentinel);
+    },
 
     getImageUrl(photo, width = 1920, height = 1080) {
         if (!photo || !photo.baseUrl) {
