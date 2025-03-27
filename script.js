@@ -31,8 +31,7 @@ const app = {
     },
 
    init() {
-       init() {
-        this.states.accessToken = sessionStorage.getItem("access_token");
+            this.states.accessToken = sessionStorage.getItem("access_token");
         this.setupEventListeners();
         
         if (!this.checkAuth()) {
