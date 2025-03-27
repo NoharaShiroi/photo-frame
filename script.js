@@ -23,6 +23,9 @@ const app = {
             classEnd: "17:00",
             isEnabled: true,
             useHoliday: true,
+            isPaused: false,
+            lastResumeTime: 0,
+            idleTimeout: 10 * 60 * 1000 // 閒置10分鐘
         }
     },
 
@@ -47,8 +50,43 @@ const app = {
     saveSchedule() {
         localStorage.setItem("schedule", JSON.stringify(this.states.schedule));
     },
-
-    checkSchedule() {
+    togglePause() {
+            this.states.schedule.isPaused = !this.states.schedule.isPaused;
+            if (this.states.schedule.isPaused) {
+                // 大於0表示已恢復，現在要手動暫停
+                if (this.states.schedule.isEnabled) {
+                    const now = new Date();
+                    this.states.schedule.lastResumeTime = now.getTime();
+                    this.stopSlideshow();
+                    document.getElementById("screenOverlay").style.display = "block";
+                }
+            } else {
+                // 手動恢復
+                this.states.schedule.lastResumeTime = new Date().getTime();
+                if (!this.states.slideshowInterval) {
+                    const speed = document.getElementById("slideshow-speed").value * 1000 || 1000;
+                    const isRandom = document.getElementById("play-mode").value === "random";
+                    const getNextIndex = () => {
+                        if (isRandom) {
+                            let nextIndex;
+                            do {
+                                nextIndex = Math.floor(Math.random() * this.states.photos.length);
+                            } while (nextIndex === this.states.currentIndex && this.states.photos.length > 1);
+                            return nextIndex;
+                        }
+                        return (this.states.currentIndex + 1) % this.states.photos.length;
+                    };
+                    this.states.slideshowInterval = setInterval(() => {
+                        this.states.currentIndex = getNextIndex(); 
+                        this.navigate(0); 
+                    }, speed);
+                }
+                document.getElementById("screenOverlay").style.display = "none";
+            }
+            this.checkSchedule();
+        },
+   
+       checkSchedule() {
         const now = new Date();
         const currentTime = now.getHours() * 60 + now.getMinutes();
         const sleepStart = this.getTimeInMinutes(this.states.schedule.sleepStart);
@@ -58,7 +96,79 @@ const app = {
         const isSleepTime = this.states.schedule.isEnabled && 
             ((currentTime >= sleepStart && currentTime < sleepEnd) || 
              (currentTime >= classStart && currentTime < classEnd));
+        let isPausedBySystem = isSleepTime || (this.states.schedule.useHoliday && !this.isWeekday(now));
+            
+            // 检查是否需要自动恢复
+            if (!this.states.schedule.isPaused && isPausedBySystem) {
+                isPausedBySystem = false;
+            }
 
+            if (isPausedBySystem) {
+                this.stopSlideshow();
+                document.getElementById("screenOverlay").style.display = "block";
+            } else {
+                document.getElementById("screenOverlay").style.display = "none";
+            }
+
+            // 检查是否需要自动恢复
+            if (!this.states.schedule.isPaused && isPausedBySystem) {
+                return;
+            }
+
+            if (!this.states.schedule.isPaused) {
+                // 检查閒置時間
+                const currentTime = new Date().getTime();
+                const lastResumeTime = this.states.schedule.lastResumeTime;
+                const diffTime = currentTime - lastResumeTime;
+
+                if (diffTime > this.states.schedule.idleTimeout) {
+                    // 自動恢復暫停
+                    this.states.schedule.isPaused = true;
+                    this.stopSlideshow();
+                    document.getElementById("screenOverlay").style.display = "block";
+                }
+            }
+        },
+
+        // 初始化idfle timer
+        initIdleTimer() {
+            let lastActivityTime = new Date().getTime();
+            const oneHour = 60 * 60 * 1000;
+
+            window.addEventListener('.blur', () => {
+                lastActivityTime = new Date().getTime();
+            });
+
+            window.addEventListener('focus', () => {
+                lastActivityTime = new Date().getTime();
+            });
+
+            setInterval(() => {
+                const currentTime = new Date().getTime();
+                const idleTime = currentTime - lastActivityTime;
+                
+                if (idleTime > oneHour) {
+                    // 自動恢復暫停
+                    if (!this.states.schedule.isPaused) {
+                        this.states.schedule.isPaused = true;
+                        this.stopSlideshow();
+                        document.getElementById("screenOverlay").style.display = "block";
+                    }
+                }
+            }, 600000); // 每小時檢查一次
+        },
+
+        init() {
+            this.states.accessToken = sessionStorage.getItem("access_token");
+            this.setupEventListeners();
+            if (!this.checkAuth()) {
+                document.getElementById("auth-container").style.display = "flex";
+            } else {
+                this.loadSchedule();
+                this.checkSchedule();
+                setInterval(() => this.checkSchedule(), 60000);
+                this.initIdleTimer();
+            }
         if (isSleepTime || this.isHolidayMode(now)) {
             this.stopSlideshow();
             document.getElementById("screenOverlay").style.display = "block";
@@ -476,4 +586,7 @@ lightbox.addEventListener("mousedown", (event) => {
     }
 };
 
-document.addEventListener("DOMContentLoaded", () => app.init());
+document.addEventListener("DOMContentLoaded", () => {
+        app.init();
+        document.getElementById("pause-btn").addEventListener("click", () => app.togglePause());
+    });
