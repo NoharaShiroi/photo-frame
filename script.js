@@ -94,7 +94,7 @@ const app = {
 
     isWeekday(date) {
         const day = date.getDay();
-        return day !== 0 && day !== 6;
+        return day !== 0 && day !== 6; // 星期日和六为假日
     },
 
     getTimeInMinutes(time) {
@@ -147,6 +147,8 @@ const app = {
         });
 
         let lastClickTime = 0;
+        const lightbox = document.getElementById("lightbox");
+
         document.getElementById("screenOverlay").addEventListener("click", (event) => {
             const currentTime = new Date().getTime();
             if (currentTime - lastClickTime <= 500) {
@@ -165,13 +167,6 @@ const app = {
         document.getElementById("next-photo").addEventListener("click", () => this.navigate(1));
         document.getElementById("start-slideshow-btn").addEventListener("click", () => this.toggleSlideshow());
         document.getElementById("fullscreen-toggle-btn").addEventListener("click", () => this.toggleFullscreen());
-        
-        document.getElementById("play-mode").addEventListener("change", (e) => {
-            if (this.states.slideshowInterval) {
-                this.toggleSlideshow();
-                this.toggleSlideshow();
-            }
-        });
 
         let speedTimeout;
         document.getElementById("slideshow-speed").addEventListener("input", (e) => {
@@ -190,7 +185,7 @@ const app = {
             const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
                 headers: { "Authorization": `Bearer ${this.states.accessToken}` }
             });
-            if (!response.ok) throw new Error('無法取得相簿');
+            if (!response.ok) throw new Error('无效的相簿请求');
             const data = await response.json();
             this.renderAlbumSelect(data.albums || []);
             this.loadPhotos();
@@ -238,7 +233,7 @@ const app = {
                 body: JSON.stringify(body)
             });
 
-            if (!response.ok) throw new Error('照片加載失敗');
+            if (!response.ok) throw new Error('照片加载失败');
             const data = await response.json();
 
             if (requestId !== this.states.currentRequestId) return;
@@ -252,8 +247,8 @@ const app = {
 
             this.renderPhotos();
         } catch (error) {
-            console.error("照片加載失敗:", error);
-            this.showMessage("加載失敗，請檢查網路連線");
+            console.error("照片加载失败:", error);
+            this.showMessage("加载失败，请检查网络连接");
         } finally {
             if (requestId === this.states.currentRequestId) {
                 this.states.isFetching = false;
@@ -270,7 +265,7 @@ const app = {
             <img class="photo" 
                  src="${photo.baseUrl}=w150-h150"
                  data-src="${photo.baseUrl}=w800-h600"
-                 alt="相片" 
+                 alt="照片" 
                  data-id="${photo.id}">
         `).join("");
 
@@ -334,6 +329,9 @@ const app = {
         image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
 
         image.onload = () => {
+            const isSlideshowActive = this.states.slideshowInterval !== null;
+            image.style.maxWidth = isSlideshowActive ? '99%' : '90%';
+            image.style.maxHeight = isSlideshowActive ? '99%' : '90%';
             lightbox.style.display = "flex";
             setTimeout(() => {
                 lightbox.style.opacity = 1;
@@ -356,7 +354,8 @@ const app = {
 
     navigate(direction) {
         this.states.currentIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
-        document.getElementById("lightbox-image").src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
+        document.getElementById("lightbox-image").src = 
+            this.getImageUrl(this.states.photos[this.states.currentIndex]);
     },
 
     toggleSlideshow() {
@@ -367,15 +366,18 @@ const app = {
             const isRandom = document.getElementById("play-mode").value === "random";
 
             const getNextIndex = () => {
+                let nextIndex;
                 if (isRandom) {
-                    let nextIndex;
                     do {
                         nextIndex = Math.floor(Math.random() * this.states.photos.length);
-                    } while (this.states.displayedPhotos.has(nextIndex) && this.states.photos.length > this.states.displayedPhotos.size);
-                    this.states.displayedPhotos.add(nextIndex);
-                    return nextIndex;
+                    } while (this.states.displayedPhotos.has(nextIndex) && this.states.photos.length > 1);
+                } else {
+                    nextIndex = (this.states.currentIndex + 1) % this.states.photos.length;
                 }
-                return (this.states.currentIndex + 1) % this.states.photos.length;
+
+                // 标记已显示的照片
+                this.states.displayedPhotos.add(nextIndex);
+                return nextIndex;
             };
 
             this.states.slideshowInterval = setInterval(() => {
@@ -437,7 +439,7 @@ const app = {
     },
 
     handleAuthError() {
-        const retry = confirm("授權已過期，是否重新登入？");
+        const retry = confirm("授权已过期，是否重新登入？");
         if (retry) {
             sessionStorage.removeItem("access_token");
             window.location.reload();
