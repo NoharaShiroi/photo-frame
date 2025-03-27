@@ -29,7 +29,7 @@ const app = {
         initialLoadCount: 100 // 控制初始加载照片数量
     },
 
-    init() {
+   init() {
         this.states.accessToken = sessionStorage.getItem("access_token");
         this.setupEventListeners();
 
@@ -312,7 +312,7 @@ let lastTouchTime = 0;
             this.renderPhotos();
         } catch (error) {
             console.error("照片加載失敗:", error);
-            this.showMessage("加載中或相冊內無相片");
+            this.showMessage("加載失敗，請檢查網路連線或相冊內無相片");
         } finally {
             if (requestId === this.states.currentRequestId) {
                 this.states.isFetching = false;
@@ -323,9 +323,9 @@ let lastTouchTime = 0;
 
     startAutoLoading() {
         // 启动一个定时任务来持续加载
-        const loadInterval = setInterval(() => {
+        this.loadInterval = setInterval(() => {
             if (!this.states.hasMorePhotos || this.states.isFetching) {
-                clearInterval(loadInterval); // 如果没有更多照片或正在加载，停止加载
+                clearInterval(this.loadInterval); // 如果没有更多照片或正在加载，停止加载
             } else {
                 this.loadPhotos(); // 尝试加载更多照片
             }
@@ -361,7 +361,7 @@ setupAutoLoad() {
                  data-src="${photo.baseUrl}=w800-h600"
                  alt="相片" 
                  data-id="${photo.id}"
-                 onclick="app.openLightbox('${photo.id}')">
+                 onclick="app.openLightbox('${photo.id}')"> <!-- 确保这里的处理是正常的 -->
         `).join("");
 
         if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
@@ -371,7 +371,6 @@ setupAutoLoad() {
         this.setupLazyLoad();
         this.showLoadingProgress();
     },
-
     showLoadingProgress() {
         const totalPhotos = this.states.photos.length;
         const loadedPhotos = this.states.photos.filter(p => p.loaded).length; // 计算已加载的照片
