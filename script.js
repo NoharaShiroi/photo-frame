@@ -37,6 +37,7 @@ const app = {
         } else {
             this.loadSchedule();
             this.checkSchedule();
+            this.fetchAlbums();
             setInterval(() => this.checkSchedule(), 60000);
         }
     },
@@ -267,7 +268,7 @@ let lastTouchTime = 0;
     },
 
     async loadPhotos() {
-        if (this.states.isFetching || !this.states.hasMorePhotos) return;
+       if (this.states.isFetching || !this.states.hasMorePhotos) return;
 
         const requestId = ++this.states.currentRequestId;
         this.states.isFetching = true;
@@ -275,7 +276,7 @@ let lastTouchTime = 0;
 
         try {
             const body = {
-                pageSize: 100,
+                pageSize: 10, // 每次加载10张照片
                 pageToken: this.states.nextPageToken || undefined
             };
 
@@ -302,14 +303,14 @@ let lastTouchTime = 0;
             const existingIds = new Set(this.states.photos.map(p => p.id));
             const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
 
-            this.states.photos = [...this.states.photos, ...newPhotos];
+            this.states.photos.push(...newPhotos);
             this.states.nextPageToken = data.nextPageToken || null;
             this.states.hasMorePhotos = !!this.states.nextPageToken;
 
             this.renderPhotos();
         } catch (error) {
             console.error("照片加載失敗:", error);
-            this.showMessage("加載失敗，請檢查網路連線");
+            this.showMessage("加載失敗，請檢查網路連線或相冊內無相片");
         } finally {
             if (requestId === this.states.currentRequestId) {
                 this.states.isFetching = false;
@@ -320,7 +321,7 @@ let lastTouchTime = 0;
     },
 
     renderPhotos() {
-        const container = document.getElementById("photo-container");
+      const container = document.getElementById("photo-container");
         container.style.display = "grid";
         container.innerHTML = this.states.photos.map(photo => `
             <img class="photo" 
@@ -332,7 +333,7 @@ let lastTouchTime = 0;
         `).join("");
 
         if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
-            container.insertAdjacentHTML("beforeend", `<p class="empty-state">已無更多相片</p>`);
+            container.insertAdjacentHTML("beforeend", `<p class="empty-state">相片到底囉!</p>`);
         }
 
         this.setupLazyLoad();
@@ -344,8 +345,8 @@ let lastTouchTime = 0;
             }
         });
     },
-
     setupLazyLoad() {
+        // 使用 Intersection Observer 而非懒加载库
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -365,6 +366,23 @@ let lastTouchTime = 0;
             observer.observe(img);
             img.setAttribute('data-loaded', 'true');
         });
+    },
+getNextIndex() {
+        if (this.states.slideshowInterval === null) return;
+
+        const isRandom = document.getElementById("play-mode").value === "random";
+        if (isRandom) {
+            let nextIndex;
+            const playedIndexes = [];
+            for (let i = this.states.currentIndex; playedIndexes.length < this.states.photos.length; i = (i + 1) % this.states.photos.length) {
+                if (!playedIndexes.includes(i)) {
+                    playedIndexes.push(i);
+                }
+            }
+            nextIndex = playedIndexes.length > 1 ? playedIndexes[Math.floor(Math.random() * playedIndexes.length)] : playedIndexes[0];
+            return nextIndex;
+        }
+        return (this.states.currentIndex + 1) % this.states.photos.length;
     },
 
     setupScrollObserver() {
@@ -439,25 +457,13 @@ let lastTouchTime = 0;
     },
 
     toggleSlideshow() {
-        if (this.states.slideshowInterval) {
+       if (this.states.slideshowInterval) {
             this.stopSlideshow();
         } else {
             const speed = document.getElementById("slideshow-speed").value * 1000 || 1000;
-            const isRandom = document.getElementById("play-mode").value === "random";
-
-            const getNextIndex = () => {
-                if (isRandom) {
-                    let nextIndex;
-                    do {
-                        nextIndex = Math.floor(Math.random() * this.states.photos.length);
-                    } while (nextIndex === this.states.currentIndex && this.states.photos.length > 1);
-                    return nextIndex;
-                }
-                return (this.states.currentIndex + 1) % this.states.photos.length;
-            };
 
             this.states.slideshowInterval = setInterval(() => {
-                this.states.currentIndex = getNextIndex(); 
+                this.states.currentIndex = this.getNextIndex(); 
                 this.navigate(0); 
             }, speed);
         }
