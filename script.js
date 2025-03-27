@@ -26,12 +26,13 @@ const app = {
         },
         isPaused: false,
         idleTimeout: null,
+        initialLoadCount: 100 // 控制初始加载照片数量
     },
 
     init() {
         this.states.accessToken = sessionStorage.getItem("access_token");
         this.setupEventListeners();
-        
+
         if (!this.checkAuth()) {
             document.getElementById("auth-container").style.display = "flex";
         } else {
@@ -41,7 +42,7 @@ const app = {
             setInterval(() => this.checkSchedule(), 60000);
         }
     },
-
+    
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
         if (schedule) {
@@ -276,7 +277,7 @@ let lastTouchTime = 0;
 
         try {
             const body = {
-                pageSize: 10, // 每次加载10张照片
+                pageSize: this.states.initialLoadCount, // 控制初始加载数量
                 pageToken: this.states.nextPageToken || undefined
             };
 
@@ -308,6 +309,7 @@ let lastTouchTime = 0;
             this.states.hasMorePhotos = !!this.states.nextPageToken;
 
             this.renderPhotos();
+            this.setupAutoLoad(); // 启用后台动态加载
         } catch (error) {
             console.error("照片加載失敗:", error);
             this.showMessage("加載失敗，請檢查網路連線或相冊內無相片");
@@ -315,11 +317,30 @@ let lastTouchTime = 0;
             if (requestId === this.states.currentRequestId) {
                 this.states.isFetching = false;
                 document.getElementById("loading-indicator").style.display = "none";
-                this.setupScrollObserver();
             }
         }
     },
+setupAutoLoad() {
+        // 动态加载更多照片
+        const container = document.getElementById('photo-container');
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && this.states.hasMorePhotos && !this.states.isFetching) {
+                    this.loadPhotos();
+                }
+            });
+        }, {
+            root: container,
+            rootMargin: '200px',
+            threshold: 0.1
+        });
 
+        const sentinel = document.createElement('div');
+        container.appendChild(sentinel);
+        observer.observe(sentinel);
+        this.states.observer = observer;
+    },
+    
     renderPhotos() {
       const container = document.getElementById("photo-container");
         container.style.display = "grid";
@@ -338,12 +359,21 @@ let lastTouchTime = 0;
 
         this.setupLazyLoad();
         this.setupScrollObserver();
-        
+
         container.addEventListener('click', () => {
             if (this.states.slideshowInterval !== null) {
                 this.stopSlideshow();
             }
         });
+
+        this.showLoadingProgress();
+    },
+
+    showLoadingProgress() {
+        const totalPhotos = this.states.photos.length;
+        const loadedPhotos = this.states.photos.filter(p => p.loaded).length; // 计算已加载的照片
+        const progress = (loadedPhotos / totalPhotos) * 100;
+        document.getElementById('loading-progress').style.width = `${progress}%`;
     },
     setupLazyLoad() {
         // 使用 Intersection Observer 而非懒加载库
@@ -371,20 +401,21 @@ getNextIndex() {
         if (this.states.slideshowInterval === null) return;
 
         const isRandom = document.getElementById("play-mode").value === "random";
+        const playedIndexes = new Set();
+
         if (isRandom) {
             let nextIndex;
-            const playedIndexes = [];
-            for (let i = this.states.currentIndex; playedIndexes.length < this.states.photos.length; i = (i + 1) % this.states.photos.length) {
-                if (!playedIndexes.includes(i)) {
-                    playedIndexes.push(i);
+            while (playedIndexes.size < this.states.photos.length) {
+                nextIndex = Math.floor(Math.random() * this.states.photos.length);
+                if (!playedIndexes.has(nextIndex)) {
+                    playedIndexes.add(nextIndex);
+                    return nextIndex;
                 }
             }
-            nextIndex = playedIndexes.length > 1 ? playedIndexes[Math.floor(Math.random() * playedIndexes.length)] : playedIndexes[0];
-            return nextIndex;
         }
         return (this.states.currentIndex + 1) % this.states.photos.length;
     },
-
+    
     setupScrollObserver() {
         if (this.states.observer) this.states.observer.disconnect();
 
