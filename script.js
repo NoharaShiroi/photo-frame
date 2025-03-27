@@ -21,8 +21,8 @@ const app = {
             sleepEnd: "07:00",
             classStart: "08:00",
             classEnd: "17:00",
-            isEnabled: true,
-            useHoliday: true,
+            isEnabled: false,
+            useHoliday: false,
         },
         isPaused: false,
         idleTimeout: null,
@@ -40,6 +40,7 @@ const app = {
             this.checkSchedule();
             this.fetchAlbums();
             setInterval(() => this.checkSchedule(), 60000);
+            this.startAutoLoading(); // 开启自动加载
         }
     },
     
@@ -277,7 +278,7 @@ let lastTouchTime = 0;
 
         try {
             const body = {
-                pageSize: this.states.initialLoadCount, // 控制初始加载数量
+                pageSize: this.states.initialLoadCount,
                 pageToken: this.states.nextPageToken || undefined
             };
 
@@ -309,16 +310,26 @@ let lastTouchTime = 0;
             this.states.hasMorePhotos = !!this.states.nextPageToken;
 
             this.renderPhotos();
-            this.setupAutoLoad(); // 启用后台动态加载
         } catch (error) {
             console.error("照片加載失敗:", error);
-            this.showMessage("加載失敗，請檢查網路連線或相冊內無相片");
+            this.showMessage("加載中或相冊內無相片");
         } finally {
             if (requestId === this.states.currentRequestId) {
                 this.states.isFetching = false;
                 document.getElementById("loading-indicator").style.display = "none";
             }
         }
+    },
+
+    startAutoLoading() {
+        // 启动一个定时任务来持续加载
+        const loadInterval = setInterval(() => {
+            if (!this.states.hasMorePhotos || this.states.isFetching) {
+                clearInterval(loadInterval); // 如果没有更多照片或正在加载，停止加载
+            } else {
+                this.loadPhotos(); // 尝试加载更多照片
+            }
+        }, 2000); // 每2秒尝试一次加载
     },
 setupAutoLoad() {
         // 动态加载更多照片
@@ -358,23 +369,17 @@ setupAutoLoad() {
         }
 
         this.setupLazyLoad();
-        this.setupScrollObserver();
-
-        container.addEventListener('click', () => {
-            if (this.states.slideshowInterval !== null) {
-                this.stopSlideshow();
-            }
-        });
-
         this.showLoadingProgress();
     },
 
     showLoadingProgress() {
+        showLoadingProgress() {
         const totalPhotos = this.states.photos.length;
         const loadedPhotos = this.states.photos.filter(p => p.loaded).length; // 计算已加载的照片
         const progress = (loadedPhotos / totalPhotos) * 100;
         document.getElementById('loading-progress').style.width = `${progress}%`;
     },
+    
     setupLazyLoad() {
         // 使用 Intersection Observer 而非懒加载库
         const observer = new IntersectionObserver((entries) => {
