@@ -270,7 +270,7 @@ let lastTouchTime = 0;
     },
 
     async loadPhotos() {
-       if (this.states.isFetching || !this.states.hasMorePhotos) return;
+      if (this.states.isFetching || !this.states.hasMorePhotos) return;
 
         const requestId = ++this.states.currentRequestId;
         this.states.isFetching = true;
@@ -310,6 +310,11 @@ let lastTouchTime = 0;
             this.states.hasMorePhotos = !!this.states.nextPageToken;
 
             this.renderPhotos();
+
+            // 重新启动自动加载
+            if (this.states.hasMorePhotos) {
+                this.startAutoLoading(); // 如果还有更多照片，则继续自动加载
+            }
         } catch (error) {
             console.error("照片加載失敗:", error);
             this.showMessage("加載失敗，請檢查網路連線或相冊內無相片");
@@ -323,14 +328,18 @@ let lastTouchTime = 0;
 
     startAutoLoading() {
         // 启动一个定时任务来持续加载
+       if (this.loadInterval) return;
+
         this.loadInterval = setInterval(() => {
             if (!this.states.hasMorePhotos || this.states.isFetching) {
                 clearInterval(this.loadInterval); // 如果没有更多照片或正在加载，停止加载
+                this.loadInterval = null; // 清除定时器
             } else {
                 this.loadPhotos(); // 尝试加载更多照片
             }
         }, 2000); // 每2秒尝试一次加载
     },
+
 setupAutoLoad() {
         // 动态加载更多照片
         const container = document.getElementById('photo-container');
@@ -371,6 +380,7 @@ setupAutoLoad() {
         this.setupLazyLoad();
         this.showLoadingProgress();
     },
+
     showLoadingProgress() {
         const totalPhotos = this.states.photos.length;
         const loadedPhotos = this.states.photos.filter(p => p.loaded).length; // 计算已加载的照片
