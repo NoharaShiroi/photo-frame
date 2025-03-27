@@ -163,18 +163,12 @@ let lastTouchTime = 0;
             const currentTime = new Date().getTime();
             if (currentTime - lastTouchTime < 500) {
                 this.closeLightbox();
+                this.resetIdleTimer();
             }
             lastTouchTime = currentTime;
         }
     });
-        const lightbox = document.getElementById("lightbox");
-        
-        lightbox.addEventListener("dblclick", (event) => {
-            this.resetIdleTimer(); // Reset idle timer on double click
-            this.closeLightbox();
-        });
-
-        document.getElementById("screenOverlay").addEventListener("dblclick", (event) => {
+              document.getElementById("screenOverlay").addEventListener("dblclick", (event) => {
             // 双击遮罩解除功能
             if (this.states.isPaused) {
                 document.getElementById("screenOverlay").style.display = "none"; // 解除遮罩
