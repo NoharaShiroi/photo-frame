@@ -26,13 +26,14 @@ const app = {
         },
         isPaused: false,
         idleTimeout: null,
-        initialLoadCount: 100 // 控制初始加载照片数量
+        initialLoadCount: 100, // 控制初始加载照片数量
+        canAutoLoad: true // 新增状态以控制自动加载
     },
 
    init() {
         this.states.accessToken = sessionStorage.getItem("access_token");
         this.setupEventListeners();
-
+        
         if (!this.checkAuth()) {
             document.getElementById("auth-container").style.display = "flex";
         } else {
@@ -270,7 +271,7 @@ let lastTouchTime = 0;
     },
 
     async loadPhotos() {
-      if (this.states.isFetching || !this.states.hasMorePhotos) return;
+      if (this.states.isFetching || !this.states.hasMorePhotos || !this.states.canAutoLoad) return;
 
         const requestId = ++this.states.currentRequestId;
         this.states.isFetching = true;
@@ -318,6 +319,7 @@ let lastTouchTime = 0;
         } catch (error) {
             console.error("照片加載失敗:", error);
             this.showMessage("加載失敗，請檢查網路連線或相冊內無相片");
+            this.states.canAutoLoad = false; // 停止自动加载
         } finally {
             if (requestId === this.states.currentRequestId) {
                 this.states.isFetching = false;
@@ -328,10 +330,11 @@ let lastTouchTime = 0;
 
     startAutoLoading() {
         // 启动一个定时任务来持续加载
-       if (this.loadInterval) return;
+       // 如果已经在加载，就不再启动
+        if (this.loadInterval) return;
 
         this.loadInterval = setInterval(() => {
-            if (!this.states.hasMorePhotos || this.states.isFetching) {
+            if (!this.states.hasMorePhotos || this.states.isFetching || !this.states.canAutoLoad) {
                 clearInterval(this.loadInterval); // 如果没有更多照片或正在加载，停止加载
                 this.loadInterval = null; // 清除定时器
             } else {
@@ -380,7 +383,7 @@ setupAutoLoad() {
         this.setupLazyLoad();
         this.showLoadingProgress();
     },
-
+    
     showLoadingProgress() {
         const totalPhotos = this.states.photos.length;
         const loadedPhotos = this.states.photos.filter(p => p.loaded).length; // 计算已加载的照片
