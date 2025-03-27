@@ -161,6 +161,22 @@ const app = {
             }
         });
 
+        // 处理点击事件
+        let lastClickTime = 0;
+        document.getElementById("screenOverlay").addEventListener("click", (event) => {
+            const currentTime = new Date().getTime();
+            if (currentTime - lastClickTime <= 500) { // 如果两次点击的时间间隔小于500ms，则认为是双击
+                if (this.states.isPaused) {
+                    document.getElementById("screenOverlay").style.display = "none"; // 解除遮罩
+                    this.states.isPaused = false; // 设置为未暂停状态
+                    this.resetIdleTimer(); // 重置空闲计时器
+                }
+                lastClickTime = 0; // 重置点击时间
+            } else {
+                lastClickTime = currentTime; // 更新最后一次点击时间
+            }
+        });
+
         document.getElementById("prev-photo").addEventListener("click", () => this.navigate(-1));
         document.getElementById("next-photo").addEventListener("click", () => this.navigate(1));
         document.getElementById("start-slideshow-btn").addEventListener("click", () => this.toggleSlideshow());
