@@ -144,7 +144,29 @@ const app = {
             this.resetPhotoData();
             this.loadPhotos();
         });
+let lastTouchTime = 0;
+    const lightbox = document.getElementById("lightbox");
 
+    function shouldCloseLightbox(event) {
+        // 排除點擊在 Lightbox 內的控制按鈕與圖片
+        return !event.target.closest('.nav-button') && !event.target.closest('img');
+    }
+
+    lightbox.addEventListener("dblclick", (event) => {
+        if (shouldCloseLightbox(event)) {
+            this.closeLightbox();
+        }
+    });
+
+    lightbox.addEventListener("touchend", (event) => {
+        if (shouldCloseLightbox(event)) {
+            const currentTime = new Date().getTime();
+            if (currentTime - lastTouchTime < 500) {
+                this.closeLightbox();
+            }
+            lastTouchTime = currentTime;
+        }
+    });
         const lightbox = document.getElementById("lightbox");
         
         lightbox.addEventListener("dblclick", (event) => {
