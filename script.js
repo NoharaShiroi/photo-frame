@@ -144,16 +144,20 @@ const app = {
             this.resetPhotoData();
             this.loadPhotos();
         });
-        
+
         const lightbox = document.getElementById("lightbox");
         
         lightbox.addEventListener("dblclick", (event) => {
             this.resetIdleTimer(); // Reset idle timer on double click
+            this.closeLightbox();
+        });
+
+        document.getElementById("screenOverlay").addEventListener("dblclick", (event) => {
+            // 双击遮罩解除功能
             if (this.states.isPaused) {
-                document.getElementById("screenOverlay").style.display = "none";
-                this.states.isPaused = false; // Unpause
-            } else {
-                this.closeLightbox();
+                document.getElementById("screenOverlay").style.display = "none"; // 解除遮罩
+                this.states.isPaused = false; // 设置为未暂停状态
+                this.resetIdleTimer(); // 重置空闲计时器
             }
         });
 
