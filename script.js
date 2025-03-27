@@ -373,7 +373,7 @@ setupAutoLoad() {
     },
 
     showLoadingProgress() {
-            const totalPhotos = this.states.photos.length;
+        const totalPhotos = this.states.photos.length;
         const loadedPhotos = this.states.photos.filter(p => p.loaded).length; // 计算已加载的照片
         const progress = (loadedPhotos / totalPhotos) * 100;
         document.getElementById('loading-progress').style.width = `${progress}%`;
