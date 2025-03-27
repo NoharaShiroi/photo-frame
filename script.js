@@ -25,7 +25,7 @@ const app = {
             useHoliday: true,
             isPaused: false,
             lastResumeTime: 0,
-            idleTimeout: 10 * 60 * 1000 // 閒置10分鐘
+            idleTimeout: 1 * 60 * 1000 // 閒置1分鐘
         }
     },
 
@@ -155,7 +155,7 @@ const app = {
                         document.getElementById("screenOverlay").style.display = "block";
                     }
                 }
-            }, 600000); // 每小時檢查一次
+            }, 60000); // 每分鐘檢查一次
         },
 
         init() {
