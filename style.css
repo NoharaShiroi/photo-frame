@@ -18,13 +18,7 @@ body {
     background: linear-gradient(135deg, #1976d2, #4a148c);
     text-align: center;
 }
-#pause-btn {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            padding: 10px;
-            cursor: pointer;
-        }
+
 #authorize-btn {
     padding: 15px 30px;
     font-size: 1.2rem;
