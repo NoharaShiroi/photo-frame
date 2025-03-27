@@ -31,6 +31,7 @@ const app = {
     },
 
    init() {
+       init() {
         this.states.accessToken = sessionStorage.getItem("access_token");
         this.setupEventListeners();
         
@@ -271,11 +272,10 @@ let lastTouchTime = 0;
     },
 
     async loadPhotos() {
-      if (this.states.isFetching || !this.states.hasMorePhotos || !this.states.canAutoLoad) return;
+     if (this.states.isFetching || !this.states.canAutoLoad) return;
 
-        const requestId = ++this.states.currentRequestId;
         this.states.isFetching = true;
-        document.getElementById("loading-indicator").style.display = "block";
+        const requestId = ++this.states.currentRequestId;
 
         try {
             const body = {
@@ -298,48 +298,48 @@ let lastTouchTime = 0;
                 body: JSON.stringify(body)
             });
 
-            if (!response.ok) throw new Error('照片加載失敗');
-            const data = await response.json();
+            if (!response.ok) {
+                throw new Error('照片加載失敗');
+            }
 
+            const data = await response.json();
             if (requestId !== this.states.currentRequestId) return;
 
             const existingIds = new Set(this.states.photos.map(p => p.id));
             const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
-
             this.states.photos.push(...newPhotos);
             this.states.nextPageToken = data.nextPageToken || null;
             this.states.hasMorePhotos = !!this.states.nextPageToken;
 
             this.renderPhotos();
 
-            // 重新启动自动加载
+            // 如果还有更多照片，则继续自动加载
             if (this.states.hasMorePhotos) {
-                this.startAutoLoading(); // 如果还有更多照片，则继续自动加载
+                this.startAutoLoading();
+            } else {
+                this.states.canAutoLoad = true; // 可以继续自动加载
             }
+
         } catch (error) {
             console.error("照片加載失敗:", error);
             this.showMessage("加載失敗，請檢查網路連線或相冊內無相片");
-            this.states.canAutoLoad = false; // 停止自动加载
+            this.states.canAutoLoad = this.states.hasMorePhotos; // 确保继续能进行手动加载，但不再自动加载
         } finally {
-            if (requestId === this.states.currentRequestId) {
-                this.states.isFetching = false;
-                document.getElementById("loading-indicator").style.display = "none";
-            }
+            this.states.isFetching = false;
         }
     },
 
     startAutoLoading() {
         // 启动一个定时任务来持续加载
-       // 如果已经在加载，就不再启动
-        if (this.loadInterval) return;
+       if (this.loadInterval) return; // 防止重复启动
 
         this.loadInterval = setInterval(() => {
-            if (!this.states.hasMorePhotos || this.states.isFetching || !this.states.canAutoLoad) {
-                clearInterval(this.loadInterval); // 如果没有更多照片或正在加载，停止加载
+            if (!this.states.hasMorePhotos || this.states.isFetching) {
+                clearInterval(this.loadInterval);
                 this.loadInterval = null; // 清除定时器
-            } else {
-                this.loadPhotos(); // 尝试加载更多照片
+                return; // 停止加载
             }
+            this.loadPhotos(); // 尝试加载更多照片
         }, 2000); // 每2秒尝试一次加载
     },
 
