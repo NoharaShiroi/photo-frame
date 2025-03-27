@@ -21,17 +21,15 @@ const app = {
             sleepEnd: "07:00",
             classStart: "08:00",
             classEnd: "17:00",
-            isEnabled: false,
-            useHoliday: false,
+            isEnabled: true,
+            useHoliday: true,
         },
         isPaused: false,
         idleTimeout: null,
-        initialLoadCount: 100, // 控制初始加载照片数量
-        canAutoLoad: true // 新增状态以控制自动加载
     },
 
-   init() {
-            this.states.accessToken = sessionStorage.getItem("access_token");
+    init() {
+        this.states.accessToken = sessionStorage.getItem("access_token");
         this.setupEventListeners();
         
         if (!this.checkAuth()) {
@@ -39,12 +37,10 @@ const app = {
         } else {
             this.loadSchedule();
             this.checkSchedule();
-            this.fetchAlbums();
             setInterval(() => this.checkSchedule(), 60000);
-            this.startAutoLoading(); // 开启自动加载
         }
     },
-    
+
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
         if (schedule) {
@@ -271,14 +267,15 @@ let lastTouchTime = 0;
     },
 
     async loadPhotos() {
-     if (this.states.isFetching || !this.states.canAutoLoad) return;
+        if (this.states.isFetching || !this.states.hasMorePhotos) return;
 
-        this.states.isFetching = true;
         const requestId = ++this.states.currentRequestId;
+        this.states.isFetching = true;
+        document.getElementById("loading-indicator").style.display = "block";
 
         try {
             const body = {
-                pageSize: this.states.initialLoadCount,
+                pageSize: 100,
                 pageToken: this.states.nextPageToken || undefined
             };
 
@@ -297,74 +294,33 @@ let lastTouchTime = 0;
                 body: JSON.stringify(body)
             });
 
-            if (!response.ok) {
-                throw new Error('照片加載失敗');
-            }
-
+            if (!response.ok) throw new Error('照片加載失敗');
             const data = await response.json();
+
             if (requestId !== this.states.currentRequestId) return;
 
             const existingIds = new Set(this.states.photos.map(p => p.id));
             const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
-            this.states.photos.push(...newPhotos);
+
+            this.states.photos = [...this.states.photos, ...newPhotos];
             this.states.nextPageToken = data.nextPageToken || null;
             this.states.hasMorePhotos = !!this.states.nextPageToken;
 
             this.renderPhotos();
-
-            // 如果还有更多照片，则继续自动加载
-            if (this.states.hasMorePhotos) {
-                this.startAutoLoading();
-            } else {
-                this.states.canAutoLoad = true; // 可以继续自动加载
-            }
-
         } catch (error) {
             console.error("照片加載失敗:", error);
-            this.showMessage("加載失敗，請檢查網路連線或相冊內無相片");
-            this.states.canAutoLoad = this.states.hasMorePhotos; // 确保继续能进行手动加载，但不再自动加载
+            this.showMessage("加載失敗，請檢查網路連線");
         } finally {
-            this.states.isFetching = false;
+            if (requestId === this.states.currentRequestId) {
+                this.states.isFetching = false;
+                document.getElementById("loading-indicator").style.display = "none";
+                this.setupScrollObserver();
+            }
         }
     },
 
-    startAutoLoading() {
-        // 启动一个定时任务来持续加载
-       if (this.loadInterval) return; // 防止重复启动
-
-        this.loadInterval = setInterval(() => {
-            if (!this.states.hasMorePhotos || this.states.isFetching) {
-                clearInterval(this.loadInterval);
-                this.loadInterval = null; // 清除定时器
-                return; // 停止加载
-            }
-            this.loadPhotos(); // 尝试加载更多照片
-        }, 2000); // 每2秒尝试一次加载
-    },
-
-setupAutoLoad() {
-        // 动态加载更多照片
-        const container = document.getElementById('photo-container');
-        const observer = new IntersectionObserver(entries => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting && this.states.hasMorePhotos && !this.states.isFetching) {
-                    this.loadPhotos();
-                }
-            });
-        }, {
-            root: container,
-            rootMargin: '200px',
-            threshold: 0.1
-        });
-
-        const sentinel = document.createElement('div');
-        container.appendChild(sentinel);
-        observer.observe(sentinel);
-        this.states.observer = observer;
-    },
-    
     renderPhotos() {
-      const container = document.getElementById("photo-container");
+        const container = document.getElementById("photo-container");
         container.style.display = "grid";
         container.innerHTML = this.states.photos.map(photo => `
             <img class="photo" 
@@ -372,26 +328,24 @@ setupAutoLoad() {
                  data-src="${photo.baseUrl}=w800-h600"
                  alt="相片" 
                  data-id="${photo.id}"
-                 onclick="app.openLightbox('${photo.id}')"> <!-- 确保这里的处理是正常的 -->
+                 onclick="app.openLightbox('${photo.id}')">
         `).join("");
 
         if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
-            container.insertAdjacentHTML("beforeend", `<p class="empty-state">相片到底囉!</p>`);
+            container.insertAdjacentHTML("beforeend", `<p class="empty-state">已無更多相片</p>`);
         }
 
         this.setupLazyLoad();
-        this.showLoadingProgress();
+        this.setupScrollObserver();
+        
+        container.addEventListener('click', () => {
+            if (this.states.slideshowInterval !== null) {
+                this.stopSlideshow();
+            }
+        });
     },
-    
-    showLoadingProgress() {
-        const totalPhotos = this.states.photos.length;
-        const loadedPhotos = this.states.photos.filter(p => p.loaded).length; // 计算已加载的照片
-        const progress = (loadedPhotos / totalPhotos) * 100;
-        document.getElementById('loading-progress').style.width = `${progress}%`;
-    },
-    
+
     setupLazyLoad() {
-        // 使用 Intersection Observer 而非懒加载库
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -412,25 +366,7 @@ setupAutoLoad() {
             img.setAttribute('data-loaded', 'true');
         });
     },
-getNextIndex() {
-        if (this.states.slideshowInterval === null) return;
 
-        const isRandom = document.getElementById("play-mode").value === "random";
-        const playedIndexes = new Set();
-
-        if (isRandom) {
-            let nextIndex;
-            while (playedIndexes.size < this.states.photos.length) {
-                nextIndex = Math.floor(Math.random() * this.states.photos.length);
-                if (!playedIndexes.has(nextIndex)) {
-                    playedIndexes.add(nextIndex);
-                    return nextIndex;
-                }
-            }
-        }
-        return (this.states.currentIndex + 1) % this.states.photos.length;
-    },
-    
     setupScrollObserver() {
         if (this.states.observer) this.states.observer.disconnect();
 
@@ -503,13 +439,25 @@ getNextIndex() {
     },
 
     toggleSlideshow() {
-       if (this.states.slideshowInterval) {
+        if (this.states.slideshowInterval) {
             this.stopSlideshow();
         } else {
             const speed = document.getElementById("slideshow-speed").value * 1000 || 1000;
+            const isRandom = document.getElementById("play-mode").value === "random";
+
+            const getNextIndex = () => {
+                if (isRandom) {
+                    let nextIndex;
+                    do {
+                        nextIndex = Math.floor(Math.random() * this.states.photos.length);
+                    } while (nextIndex === this.states.currentIndex && this.states.photos.length > 1);
+                    return nextIndex;
+                }
+                return (this.states.currentIndex + 1) % this.states.photos.length;
+            };
 
             this.states.slideshowInterval = setInterval(() => {
-                this.states.currentIndex = this.getNextIndex(); 
+                this.states.currentIndex = getNextIndex(); 
                 this.navigate(0); 
             }, speed);
         }
