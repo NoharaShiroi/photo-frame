@@ -14,6 +14,16 @@
                    connect-src 'self' https://*.googleapis.com https://photoslibrary.googleapis.com;
                    frame-src https://accounts.google.com;">
     <title>Google 相簿數位相框</title>
+    <style>
+        /* 其他樣式保持不變 */
+        #pause-btn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 10px;
+            cursor: pointer;
+        }
+    </style>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -103,7 +113,7 @@
             <button id="cancel-schedule" class="styled-button">關閉</button>
         </div>
     </div>
-    
+    <button id="pause-btn">暫停</button>
     <script src="script.js"></script>
 </body>
 </html>
