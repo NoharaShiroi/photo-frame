@@ -23,12 +23,15 @@ const app = {
             classEnd: "17:00",
             isEnabled: true,
             useHoliday: true,
-        }
+        },
+        isPaused: false,
+        idleTimeout: null,
     },
 
     init() {
         this.states.accessToken = sessionStorage.getItem("access_token");
         this.setupEventListeners();
+        
         if (!this.checkAuth()) {
             document.getElementById("auth-container").style.display = "flex";
         } else {
@@ -37,6 +40,7 @@ const app = {
             setInterval(() => this.checkSchedule(), 60000);
         }
     },
+
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
         if (schedule) {
@@ -56,15 +60,30 @@ const app = {
         const classStart = this.getTimeInMinutes(this.states.schedule.classStart);
         const classEnd = this.getTimeInMinutes(this.states.schedule.classEnd);
         const isSleepTime = this.states.schedule.isEnabled && 
-            ((currentTime >= sleepStart && currentTime < sleepEnd) || 
-             (currentTime >= classStart && currentTime < classEnd));
+                            ((currentTime >= sleepStart && currentTime < sleepEnd) || 
+                             (currentTime >= classStart && currentTime < classEnd));
 
         if (isSleepTime || this.isHolidayMode(now)) {
-            this.stopSlideshow();
+            this.pauseSlideshow(); // Pause the slideshow
             document.getElementById("screenOverlay").style.display = "block";
+            this.states.isPaused = true; // Set paused state
         } else {
             document.getElementById("screenOverlay").style.display = "none";
+            this.states.isPaused = false; // Clear paused state
+            this.resetIdleTimer(); // Reset idle timer when not in sleep mode
         }
+    },
+
+    resetIdleTimer() {
+        if (this.states.idleTimeout) {
+            clearTimeout(this.states.idleTimeout);
+        }
+        
+        this.states.idleTimeout = setTimeout(() => {
+            if (this.states.isPaused) { // Restore pause if idle
+                document.getElementById("screenOverlay").style.display = "block";
+            }
+        }, 5 * 60 * 1000); // 5 minutes
     },
 
     isHolidayMode(date) {
@@ -125,80 +144,66 @@ const app = {
             this.resetPhotoData();
             this.loadPhotos();
         });
-
-       let lastTouchTime = 0;
-    const lightbox = document.getElementById("lightbox");
-lightbox.addEventListener("mousedown", (event) => {
-    event.preventDefault();  // 阻止聚焦，避免顯示遮罩
-});
-    function shouldCloseLightbox(event) {
-        // 排除點擊在 Lightbox 內的控制按鈕與圖片
-        return !event.target.closest('.nav-button') && !event.target.closest('img');
-    }
-
-    lightbox.addEventListener("dblclick", (event) => {
-        if (shouldCloseLightbox(event)) {
-            this.closeLightbox();
-        }
-    });
-
-    lightbox.addEventListener("touchend", (event) => {
-        if (shouldCloseLightbox(event)) {
-            const currentTime = new Date().getTime();
-            if (currentTime - lastTouchTime < 500) {
+        
+        const lightbox = document.getElementById("lightbox");
+        
+        lightbox.addEventListener("dblclick", (event) => {
+            this.resetIdleTimer(); // Reset idle timer on double click
+            if (this.states.isPaused) {
+                document.getElementById("screenOverlay").style.display = "none";
+                this.states.isPaused = false; // Unpause
+            } else {
                 this.closeLightbox();
             }
-            lastTouchTime = currentTime;
-        }
-    });
+        });
 
-    document.getElementById("prev-photo").addEventListener("click", () => this.navigate(-1));
-    document.getElementById("next-photo").addEventListener("click", () => this.navigate(1));
-    document.getElementById("start-slideshow-btn").addEventListener("click", () => this.toggleSlideshow());
-    document.getElementById("fullscreen-toggle-btn").addEventListener("click", () => this.toggleFullscreen());
+        document.getElementById("prev-photo").addEventListener("click", () => this.navigate(-1));
+        document.getElementById("next-photo").addEventListener("click", () => this.navigate(1));
+        document.getElementById("start-slideshow-btn").addEventListener("click", () => this.toggleSlideshow());
+        document.getElementById("fullscreen-toggle-btn").addEventListener("click", () => this.toggleFullscreen());
 
-    document.getElementById("play-mode").addEventListener("change", (e) => {
-        if (this.states.slideshowInterval) {
-            this.toggleSlideshow();
-            this.toggleSlideshow();
-        }
-    });
-
-    let speedTimeout;
-    document.getElementById("slideshow-speed").addEventListener("input", (e) => {
-        clearTimeout(speedTimeout);
-        speedTimeout = setTimeout(() => {
+        document.getElementById("play-mode").addEventListener("change", (e) => {
             if (this.states.slideshowInterval) {
                 this.toggleSlideshow();
                 this.toggleSlideshow();
             }
-        }, 500);
-    });
+        });
 
-    document.getElementById("schedule-settings-btn").addEventListener("click", () => {
-        document.getElementById("schedule-modal").style.display = "block";
-    });
+        let speedTimeout;
+        document.getElementById("slideshow-speed").addEventListener("input", (e) => {
+            clearTimeout(speedTimeout);
+            speedTimeout = setTimeout(() => {
+                if (this.states.slideshowInterval) {
+                    this.toggleSlideshow();
+                    this.toggleSlideshow();
+                }
+            }, 500);
+        });
 
-    document.querySelector(".close-modal").addEventListener("click", () => {
-        document.getElementById("schedule-modal").style.display = "none";
-    });
+        document.getElementById("schedule-settings-btn").addEventListener("click", () => {
+            document.getElementById("schedule-modal").style.display = "block";
+        });
 
-    document.getElementById("cancel-schedule").addEventListener("click", () => {
-        document.getElementById("schedule-modal").style.display = "none";
-    });
+        document.querySelector(".close-modal").addEventListener("click", () => {
+            document.getElementById("schedule-modal").style.display = "none";
+        });
 
-    document.getElementById("save-schedule").addEventListener("click", () => {
-        this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
-        this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
-        this.states.schedule.classStart = document.getElementById("class-start").value;
-        this.states.schedule.classEnd = document.getElementById("class-end").value;
-        this.states.schedule.isEnabled = document.getElementById("is-enabled").checked;
-        this.states.schedule.useHoliday = document.getElementById("use-holiday").checked;
-        this.saveSchedule();
-        document.getElementById("schedule-modal").style.display = "none";
-        this.checkSchedule();
-    });
-},
+        document.getElementById("cancel-schedule").addEventListener("click", () => {
+            document.getElementById("schedule-modal").style.display = "none";
+        });
+
+        document.getElementById("save-schedule").addEventListener("click", () => {
+            this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
+            this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
+            this.states.schedule.classStart = document.getElementById("class-start").value;
+            this.states.schedule.classEnd = document.getElementById("class-end").value;
+            this.states.schedule.isEnabled = document.getElementById("is-enabled").checked;
+            this.states.schedule.useHoliday = document.getElementById("use-holiday").checked;
+            this.saveSchedule();
+            document.getElementById("schedule-modal").style.display = "none";
+            this.checkSchedule();
+        });
+    },
 
     async fetchAlbums() {
         try {
@@ -296,7 +301,8 @@ lightbox.addEventListener("mousedown", (event) => {
 
         this.setupLazyLoad();
         this.setupScrollObserver();
-    container.addEventListener('click', () => {
+        
+        container.addEventListener('click', () => {
             if (this.states.slideshowInterval !== null) {
                 this.stopSlideshow();
             }
@@ -426,6 +432,13 @@ lightbox.addEventListener("mousedown", (event) => {
         clearInterval(this.states.slideshowInterval);
         this.states.slideshowInterval = null;
         this.toggleButtonVisibility();
+    },
+
+    pauseSlideshow() {
+        if (this.states.slideshowInterval) {
+            this.stopSlideshow();
+            this.states.isPaused = true;
+        }
     },
 
     toggleFullscreen() {
