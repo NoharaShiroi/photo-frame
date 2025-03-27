@@ -26,6 +26,7 @@ const app = {
         },
         isPaused: false,
         idleTimeout: null,
+        displayedPhotos: new Set(), // 用于记录已显示的照片
     },
 
     init() {
@@ -38,6 +39,7 @@ const app = {
             this.loadSchedule();
             this.checkSchedule();
             setInterval(() => this.checkSchedule(), 60000);
+            this.loadPhotos();
         }
     },
 
@@ -64,13 +66,13 @@ const app = {
                              (currentTime >= classStart && currentTime < classEnd));
 
         if (isSleepTime || this.isHolidayMode(now)) {
-            this.pauseSlideshow(); // Pause the slideshow
+            this.pauseSlideshow();
             document.getElementById("screenOverlay").style.display = "block";
-            this.states.isPaused = true; // Set paused state
+            this.states.isPaused = true;
         } else {
             document.getElementById("screenOverlay").style.display = "none";
-            this.states.isPaused = false; // Clear paused state
-            this.resetIdleTimer(); // Reset idle timer when not in sleep mode
+            this.states.isPaused = false;
+            this.resetIdleTimer();
         }
     },
 
@@ -80,20 +82,19 @@ const app = {
         }
         
         this.states.idleTimeout = setTimeout(() => {
-            if (this.states.isPaused) { // Restore pause if idle
+            if (this.states.isPaused) {
                 document.getElementById("screenOverlay").style.display = "block";
             }
-        }, 5 * 60 * 1000); // 5 minutes
+        }, 5 * 60 * 1000);
     },
 
     isHolidayMode(date) {
-        const day = date.getDay();
         return this.states.schedule.useHoliday && !this.isWeekday(date);
     },
 
     isWeekday(date) {
         const day = date.getDay();
-        return day !== 0 && day !== 6; // 星期日和六為假日
+        return day !== 0 && day !== 6;
     },
 
     getTimeInMinutes(time) {
@@ -112,7 +113,7 @@ const app = {
             state: 'pass-through-value',
             prompt: 'consent'
         };
-        window.location.href = authEndpoint + '?' + new URLSearchParams(params);
+        window.location.href = `${authEndpoint}?${new URLSearchParams(params)}`;
     },
 
     checkAuth() {
@@ -144,52 +145,19 @@ const app = {
             this.resetPhotoData();
             this.loadPhotos();
         });
-let lastTouchTime = 0;
-    const lightbox = document.getElementById("lightbox");
 
-    function shouldCloseLightbox(event) {
-        // 排除點擊在 Lightbox 內的控制按鈕與圖片
-        return !event.target.closest('.nav-button') && !event.target.closest('img');
-    }
-
-    lightbox.addEventListener("dblclick", (event) => {
-        if (shouldCloseLightbox(event)) {
-            this.closeLightbox();
-        }
-    });
-
-    lightbox.addEventListener("touchend", (event) => {
-        if (shouldCloseLightbox(event)) {
-            const currentTime = new Date().getTime();
-            if (currentTime - lastTouchTime < 500) {
-                this.closeLightbox();
-                this.resetIdleTimer();
-            }
-            lastTouchTime = currentTime;
-        }
-    });
-              document.getElementById("screenOverlay").addEventListener("dblclick", (event) => {
-            // 双击遮罩解除功能
-            if (this.states.isPaused) {
-                document.getElementById("screenOverlay").style.display = "none"; // 解除遮罩
-                this.states.isPaused = false; // 设置为未暂停状态
-                this.resetIdleTimer(); // 重置空闲计时器
-            }
-        });
-
-        // 处理点击事件
         let lastClickTime = 0;
         document.getElementById("screenOverlay").addEventListener("click", (event) => {
             const currentTime = new Date().getTime();
-            if (currentTime - lastClickTime <= 500) { // 如果两次点击的时间间隔小于500ms，则认为是双击
+            if (currentTime - lastClickTime <= 500) {
                 if (this.states.isPaused) {
-                    document.getElementById("screenOverlay").style.display = "none"; // 解除遮罩
-                    this.states.isPaused = false; // 设置为未暂停状态
-                    this.resetIdleTimer(); // 重置空闲计时器
+                    document.getElementById("screenOverlay").style.display = "none";
+                    this.states.isPaused = false;
+                    this.resetIdleTimer();
                 }
-                lastClickTime = 0; // 重置点击时间
+                lastClickTime = 0;
             } else {
-                lastClickTime = currentTime; // 更新最后一次点击时间
+                lastClickTime = currentTime; 
             }
         });
 
@@ -197,7 +165,7 @@ let lastTouchTime = 0;
         document.getElementById("next-photo").addEventListener("click", () => this.navigate(1));
         document.getElementById("start-slideshow-btn").addEventListener("click", () => this.toggleSlideshow());
         document.getElementById("fullscreen-toggle-btn").addEventListener("click", () => this.toggleFullscreen());
-
+        
         document.getElementById("play-mode").addEventListener("change", (e) => {
             if (this.states.slideshowInterval) {
                 this.toggleSlideshow();
@@ -214,30 +182,6 @@ let lastTouchTime = 0;
                     this.toggleSlideshow();
                 }
             }, 500);
-        });
-
-        document.getElementById("schedule-settings-btn").addEventListener("click", () => {
-            document.getElementById("schedule-modal").style.display = "block";
-        });
-
-        document.querySelector(".close-modal").addEventListener("click", () => {
-            document.getElementById("schedule-modal").style.display = "none";
-        });
-
-        document.getElementById("cancel-schedule").addEventListener("click", () => {
-            document.getElementById("schedule-modal").style.display = "none";
-        });
-
-        document.getElementById("save-schedule").addEventListener("click", () => {
-            this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
-            this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
-            this.states.schedule.classStart = document.getElementById("class-start").value;
-            this.states.schedule.classEnd = document.getElementById("class-end").value;
-            this.states.schedule.isEnabled = document.getElementById("is-enabled").checked;
-            this.states.schedule.useHoliday = document.getElementById("use-holiday").checked;
-            this.saveSchedule();
-            document.getElementById("schedule-modal").style.display = "none";
-            this.checkSchedule();
         });
     },
 
@@ -275,7 +219,7 @@ let lastTouchTime = 0;
 
         try {
             const body = {
-                pageSize: 100,
+                pageSize: 30, // 修改为每次加载30张
                 pageToken: this.states.nextPageToken || undefined
             };
 
@@ -327,22 +271,11 @@ let lastTouchTime = 0;
                  src="${photo.baseUrl}=w150-h150"
                  data-src="${photo.baseUrl}=w800-h600"
                  alt="相片" 
-                 data-id="${photo.id}"
-                 onclick="app.openLightbox('${photo.id}')">
+                 data-id="${photo.id}">
         `).join("");
-
-        if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
-            container.insertAdjacentHTML("beforeend", `<p class="empty-state">已無更多相片</p>`);
-        }
 
         this.setupLazyLoad();
         this.setupScrollObserver();
-        
-        container.addEventListener('click', () => {
-            if (this.states.slideshowInterval !== null) {
-                this.stopSlideshow();
-            }
-        });
     },
 
     setupLazyLoad() {
@@ -393,14 +326,6 @@ let lastTouchTime = 0;
         this.states.observer.observe(sentinel);
     },
 
-    getImageUrl(photo, width = 1920, height = 1080) {
-        if (!photo || !photo.baseUrl) {
-            console.error("无效的照片对象:", photo);
-            return "";
-        }
-        return `${photo.baseUrl}=w${width}-h${height}`;
-    },
-
     openLightbox(photoId) {
         this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
         const lightbox = document.getElementById("lightbox");
@@ -409,9 +334,6 @@ let lastTouchTime = 0;
         image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
 
         image.onload = () => {
-            const isSlideshowActive = this.states.slideshowInterval !== null;
-            image.style.maxWidth = isSlideshowActive ? '99%' : '90%';
-            image.style.maxHeight = isSlideshowActive ? '99%' : '90%';
             lightbox.style.display = "flex";
             setTimeout(() => {
                 lightbox.style.opacity = 1;
@@ -434,8 +356,7 @@ let lastTouchTime = 0;
 
     navigate(direction) {
         this.states.currentIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
-        document.getElementById("lightbox-image").src = 
-            this.getImageUrl(this.states.photos[this.states.currentIndex]);
+        document.getElementById("lightbox-image").src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
     },
 
     toggleSlideshow() {
@@ -450,7 +371,8 @@ let lastTouchTime = 0;
                     let nextIndex;
                     do {
                         nextIndex = Math.floor(Math.random() * this.states.photos.length);
-                    } while (nextIndex === this.states.currentIndex && this.states.photos.length > 1);
+                    } while (this.states.displayedPhotos.has(nextIndex) && this.states.photos.length > this.states.displayedPhotos.size);
+                    this.states.displayedPhotos.add(nextIndex);
                     return nextIndex;
                 }
                 return (this.states.currentIndex + 1) % this.states.photos.length;
@@ -501,8 +423,17 @@ let lastTouchTime = 0;
         this.states.photos = [];
         this.states.nextPageToken = null;
         this.states.hasMorePhotos = true;
+        this.states.displayedPhotos.clear(); // 清空已显示照片的集合
         document.getElementById("photo-container").innerHTML = '';
         this.setupScrollObserver();
+    },
+
+    getImageUrl(photo, width = 1920, height = 1080) {
+        if (!photo || !photo.baseUrl) {
+            console.error("无效的照片对象:", photo);
+            return "";
+        }
+        return `${photo.baseUrl}=w${width}-h${height}`;
     },
 
     handleAuthError() {
