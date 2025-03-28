@@ -272,7 +272,7 @@ lightbox.addEventListener("mousedown", (event) => {
             if (!this.states.isFetching && this.states.hasMorePhotos) {
                 this.loadPhotos();
             }
-        }, 10000); // 調整為適合您伺服器負擔的值,單位為毫秒,10000=10秒
+        }, 2000); // 調整為適合您伺服器負擔的值,單位為毫秒,10000=10秒
     } catch (error) {
         console.error("照片加載失敗:", error);
         this.showMessage("加載失敗，請檢查網路連線");
@@ -285,6 +285,28 @@ lightbox.addEventListener("mousedown", (event) => {
     }
 },
 
+    checkPhotoLoadStatus() {
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const img = entry.target;
+                if (!img.src.includes('w800') && !img.classList.contains('lazy-load')) {
+                    img.src = img.dataset.src;
+                    img.classList.add('lazy-load');
+                }
+            }
+        });
+    }, { 
+        rootMargin: "200px 0px",
+        threshold: 0.01 
+    });
+
+    document.querySelectorAll(".photo:not([data-loaded])").forEach(img => {
+        observer.observe(img);
+        img.setAttribute('data-loaded', 'true');
+    });
+    },
+    
     renderPhotos() {
         const container = document.getElementById("photo-container");
     container.style.display = "grid";
