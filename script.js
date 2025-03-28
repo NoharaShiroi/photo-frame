@@ -35,8 +35,23 @@ const app = {
             this.loadSchedule();
             this.checkSchedule();
             setInterval(() => this.checkSchedule(), 60000);
+            this.autoLoadPhotos();  // 启动自动加载功能
         }
     },
+    
+    // 自动加载功能
+    async autoLoadPhotos() {
+        if (this.states.isFetching || !this.states.hasMorePhotos) return;
+        while (this.states.hasMorePhotos) {
+            await this.loadPhotos(); // 在后台持续加载
+        }
+    },
+
+
+
+
+
+    
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
         if (schedule) {
@@ -226,7 +241,7 @@ lightbox.addEventListener("mousedown", (event) => {
     },
 
     async loadPhotos() {
-        if (this.states.isFetching || !this.states.hasMorePhotos) return;
+       if (this.states.isFetching || !this.states.hasMorePhotos) return;
 
         const requestId = ++this.states.currentRequestId;
         this.states.isFetching = true;
@@ -253,7 +268,7 @@ lightbox.addEventListener("mousedown", (event) => {
                 body: JSON.stringify(body)
             });
 
-            if (!response.ok) throw new Error('照片加載失敗');
+            if (!response.ok) throw new Error('照片加载失败');
             const data = await response.json();
 
             if (requestId !== this.states.currentRequestId) return;
@@ -267,8 +282,8 @@ lightbox.addEventListener("mousedown", (event) => {
 
             this.renderPhotos();
         } catch (error) {
-            console.error("照片加載失敗:", error);
-            this.showMessage("加載失敗，請檢查網路連線");
+            console.error("照片加载失败:", error);
+            this.showMessage("加载失败，请检查网络连接");
         } finally {
             if (requestId === this.states.currentRequestId) {
                 this.states.isFetching = false;
@@ -279,7 +294,7 @@ lightbox.addEventListener("mousedown", (event) => {
     },
 
     renderPhotos() {
-        const container = document.getElementById("photo-container");
+       const container = document.getElementById("photo-container");
         container.style.display = "grid";
         container.innerHTML = this.states.photos.map(photo => `
             <img class="photo" 
@@ -291,18 +306,13 @@ lightbox.addEventListener("mousedown", (event) => {
         `).join("");
 
         if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
-            container.insertAdjacentHTML("beforeend", `<p class="empty-state">已無更多相片</p>`);
+            container.insertAdjacentHTML("beforeend", `<p class="empty-state">已无更多相片</p>`);
         }
 
         this.setupLazyLoad();
         this.setupScrollObserver();
-    container.addEventListener('click', () => {
-            if (this.states.slideshowInterval !== null) {
-                this.stopSlideshow();
-            }
-        });
     },
-
+    
     setupLazyLoad() {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
@@ -331,9 +341,7 @@ lightbox.addEventListener("mousedown", (event) => {
         this.states.observer = new IntersectionObserver(
             entries => {
                 entries.forEach(entry => {
-                    if (entry.isIntersecting && 
-                        this.states.hasMorePhotos &&
-                        !this.states.isFetching) {
+                    if (entry.isIntersecting && this.states.hasMorePhotos && !this.states.isFetching) {
                         setTimeout(() => this.loadPhotos(), 300);
                     }
                 });
@@ -350,7 +358,7 @@ lightbox.addEventListener("mousedown", (event) => {
         document.getElementById('photo-container').appendChild(sentinel);
         this.states.observer.observe(sentinel);
     },
-
+    
     getImageUrl(photo, width = 1920, height = 1080) {
         if (!photo || !photo.baseUrl) {
             console.error("无效的照片对象:", photo);
@@ -391,13 +399,13 @@ lightbox.addEventListener("mousedown", (event) => {
     },
 
     navigate(direction) {
-        this.states.currentIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
+       this.states.currentIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
         document.getElementById("lightbox-image").src = 
             this.getImageUrl(this.states.photos[this.states.currentIndex]);
     },
 
     toggleSlideshow() {
-        if (this.states.slideshowInterval) {
+         if (this.states.slideshowInterval) {
             this.stopSlideshow();
         } else {
             const speed = document.getElementById("slideshow-speed").value * 1000 || 1000;
@@ -421,7 +429,7 @@ lightbox.addEventListener("mousedown", (event) => {
         }
         this.toggleButtonVisibility();
     },
-
+    
     stopSlideshow() {
         clearInterval(this.states.slideshowInterval);
         this.states.slideshowInterval = null;
@@ -468,12 +476,12 @@ lightbox.addEventListener("mousedown", (event) => {
     },
 
     showMessage(message) {
-        const container = document.getElementById("photo-container");
+       const container = document.getElementById("photo-container");
         const messageElement = document.createElement("p");
         messageElement.className = "empty-state";
         messageElement.textContent = message;
         container.appendChild(messageElement);
-    }
+    },
 };
 
 document.addEventListener("DOMContentLoaded", () => app.init());
