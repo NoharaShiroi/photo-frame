@@ -128,7 +128,17 @@ const app = {
             this.resetPhotoData();
             this.loadPhotos();
         });
+const lightbox = document.getElementById("lightbox");
+lightbox.addEventListener("dblclick", (event) => {
+    if (shouldCloseLightbox(event)) {
+        this.closeLightbox(); // 调用关闭lightbox函数
+    }
+});
 
+// Prevents clicking on the image from interfering with the double click logic
+lightbox.addEventListener("mousedown", (event) => {
+    event.preventDefault();  // 阻止默认行为避免显示遮罩
+});
        let lastTouchTime = 0;
     const lightbox = document.getElementById("lightbox");
 lightbox.addEventListener("mousedown", (event) => {
@@ -237,7 +247,7 @@ lightbox.addEventListener("mousedown", (event) => {
 
     try {
         const body = {
-            pageSize: 10, // 每次加载 10 张照片
+            pageSize: 100, // 每次加载 100 张照片
             pageToken: this.states.nextPageToken || undefined
         };
 
@@ -271,8 +281,8 @@ lightbox.addEventListener("mousedown", (event) => {
 
         this.renderPhotos();
 
-        // 如果幻灯片开始播放，并且照片有没有加载完，自动加载更多
-        if (this.states.slideshowInterval && newPhotos.length > 0) {
+        // 如果幻灯片开始播放，并且当前选中的相册照片未加载完，自动加载更多
+        if (this.states.slideshowInterval && (this.states.loadedCount < 100 || this.states.hasMorePhotos)) {
             this.checkForMorePhotos();
         }
     } catch (error) {
@@ -290,6 +300,7 @@ lightbox.addEventListener("mousedown", (event) => {
         }
     }
 },
+
 checkForMorePhotos() {
         // 检查是否需要加载更多照片
     if (this.states.loadedCount < 99999999 && this.states.hasMorePhotos) { // 少于 99999999 张且有更多照片自动加载
@@ -387,34 +398,34 @@ stopAutoLoad() {
 
     openLightbox(photoId) {
         this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
-        const lightbox = document.getElementById("lightbox");
-        const image = document.getElementById("lightbox-image");
-        
-        image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
+    const lightbox = document.getElementById("lightbox");
+    const image = document.getElementById("lightbox-image");
+    
+    image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
 
-        image.onload = () => {
-            const isSlideshowActive = this.states.slideshowInterval !== null;
-            image.style.maxWidth = isSlideshowActive ? '99%' : '90%';
-            image.style.maxHeight = isSlideshowActive ? '99%' : '90%';
-            lightbox.style.display = "flex";
-            setTimeout(() => {
-                lightbox.style.opacity = 1;
-                this.states.lightboxActive = true;
-                this.toggleButtonVisibility();
-            }, 10);
-        };
-    },
+    image.onload = () => {
+        const isSlideshowActive = this.states.slideshowInterval !== null;
+        image.style.maxWidth = isSlideshowActive ? '99%' : '90%';
+        image.style.maxHeight = isSlideshowActive ? '99%' : '90%';
+        lightbox.style.display = "flex";
+        setTimeout(() => {
+            lightbox.style.opacity = 1;
+            this.states.lightboxActive = true; // 设置为active状态
+            this.toggleButtonVisibility();
+        }, 10);
+    };
+},
 
     closeLightbox() {
         const lightbox = document.getElementById("lightbox");
-        lightbox.style.opacity = 0;
-        setTimeout(() => {
-            lightbox.style.display = "none";
-            this.states.lightboxActive = false;
-            this.toggleButtonVisibility();
-        }, 300);
-        this.stopSlideshow();
-    },
+    lightbox.style.opacity = 0;
+    setTimeout(() => {
+        lightbox.style.display = "none"; // 隐藏lightbox
+        this.states.lightboxActive = false; // 设置为非active状态
+        this.toggleButtonVisibility();
+        this.stopSlideshow(); // 确保停止幻灯片播放
+    }, 300);
+},
 
     navigate(direction) {
         this.states.currentIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
