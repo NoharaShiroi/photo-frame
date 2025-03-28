@@ -135,10 +135,6 @@ lightbox.addEventListener("dblclick", (event) => {
     }
 });
 
-// Prevents clicking on the image from interfering with the double click logic
-lightbox.addEventListener("mousedown", (event) => {
-    event.preventDefault();  // 阻止默认行为避免显示遮罩
-});
        let lastTouchTime = 0;
     const lightbox = document.getElementById("lightbox");
 lightbox.addEventListener("mousedown", (event) => {
