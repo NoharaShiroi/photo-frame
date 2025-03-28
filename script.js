@@ -23,12 +23,11 @@ const app = {
             classEnd: "17:00",
             isEnabled: false,
             useHoliday: false,
-        },
-        },
+         },
         loadedCount: 0, // 新增变量来追踪已加载的照片数量
         slideshowPhotoIds: [] // 新增用于追踪幻灯片中显示的照片 ID
-         autoLoadTimeout: null // 新增用于自动加载超时管理
-    },
+        autoLoadTimeout: null // 新增用于自动加载超时管理
+      },
 
     init() {
         this.states.accessToken = sessionStorage.getItem("access_token");
