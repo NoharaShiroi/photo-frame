@@ -23,7 +23,8 @@ const app = {
             classEnd: "17:00",
             isEnabled: true,
             useHoliday: true,
-        }
+        },
+        allPhotosLoaded: false  // 添加一个状态来追踪是否已加载所有照片
     },
 
     init() {
@@ -41,17 +42,13 @@ const app = {
     
     // 自动加载功能
     async autoLoadPhotos() {
-        if (this.states.isFetching || !this.states.hasMorePhotos) return;
-        while (this.states.hasMorePhotos) {
-            await this.loadPhotos(); // 在后台持续加载
+        if (this.states.isFetching || !this.states.hasMorePhotos || this.states.allPhotosLoaded) return;
+                // 持续加载，直到没有更多照片
+        while (this.states.hasMorePhotos && !this.states.allPhotosLoaded) {
+            await this.loadPhotos(); 
         }
     },
 
-
-
-
-
-    
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
         if (schedule) {
@@ -241,7 +238,7 @@ lightbox.addEventListener("mousedown", (event) => {
     },
 
     async loadPhotos() {
-       if (this.states.isFetching || !this.states.hasMorePhotos) return;
+       if (this.states.isFetching || !this.states.hasMorePhotos || this.states.allPhotosLoaded) return;
 
         const requestId = ++this.states.currentRequestId;
         this.states.isFetching = true;
@@ -280,6 +277,10 @@ lightbox.addEventListener("mousedown", (event) => {
             this.states.nextPageToken = data.nextPageToken || null;
             this.states.hasMorePhotos = !!this.states.nextPageToken;
 
+            if (!this.states.hasMorePhotos) {
+                this.states.allPhotosLoaded = true;  // 如果没有更多照片了，停止加载
+            }
+
             this.renderPhotos();
         } catch (error) {
             console.error("照片加载失败:", error);
@@ -288,7 +289,6 @@ lightbox.addEventListener("mousedown", (event) => {
             if (requestId === this.states.currentRequestId) {
                 this.states.isFetching = false;
                 document.getElementById("loading-indicator").style.display = "none";
-                this.setupScrollObserver();
             }
         }
     },
