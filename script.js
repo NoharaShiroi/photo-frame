@@ -21,8 +21,8 @@ const app = {
             sleepEnd: "07:00",
             classStart: "08:00",
             classEnd: "17:00",
-            isEnabled: false,
-            useHoliday: false,
+            isEnabled: true,
+            useHoliday: true,
         }
     },
 
@@ -234,7 +234,7 @@ lightbox.addEventListener("mousedown", (event) => {
 
         try {
             const body = {
-                pageSize: 99999,
+                pageSize: 100,
                 pageToken: this.states.nextPageToken || undefined
             };
 
@@ -341,7 +341,7 @@ lightbox.addEventListener("mousedown", (event) => {
             {
                 root: document.querySelector('#scroll-container'),
                 rootMargin: '400px 0px',
-                threshold: 0
+                threshold: 0.1
             }
         );
 
