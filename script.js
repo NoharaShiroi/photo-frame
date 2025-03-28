@@ -21,11 +21,9 @@ const app = {
             sleepEnd: "07:00",
             classStart: "08:00",
             classEnd: "17:00",
-            isEnabled: false,
-            useHoliday: false,
-        },
-        loadedCount: 0,
-        slideshowPhotoIds: []
+            isEnabled: true,
+            useHoliday: true,
+        }
     },
 
     init() {
@@ -36,11 +34,9 @@ const app = {
         } else {
             this.loadSchedule();
             this.checkSchedule();
-            this.loadPhotos();
             setInterval(() => this.checkSchedule(), 60000);
         }
     },
-
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
         if (schedule) {
@@ -130,80 +126,79 @@ const app = {
             this.loadPhotos();
         });
 
-        const lightbox = document.getElementById("lightbox"); // 只定义一次
-        let lastTouchTime = 0;
+       let lastTouchTime = 0;
+    const lightbox = document.getElementById("lightbox");
+lightbox.addEventListener("mousedown", (event) => {
+    event.preventDefault();  // 阻止聚焦，避免顯示遮罩
+});
+    function shouldCloseLightbox(event) {
+        // 排除點擊在 Lightbox 內的控制按鈕與圖片
+        return !event.target.closest('.nav-button') && !event.target.closest('img');
+    }
 
-        const shouldCloseLightbox = (event) => {
-            return !event.target.closest('.nav-button') && !event.target.closest('img');
-        };
+    lightbox.addEventListener("dblclick", (event) => {
+        if (shouldCloseLightbox(event)) {
+            this.closeLightbox();
+        }
+    });
 
-        lightbox.addEventListener("dblclick", (event) => {
-            if (shouldCloseLightbox(event)) {
+    lightbox.addEventListener("touchend", (event) => {
+        if (shouldCloseLightbox(event)) {
+            const currentTime = new Date().getTime();
+            if (currentTime - lastTouchTime < 500) {
                 this.closeLightbox();
             }
-        });
+            lastTouchTime = currentTime;
+        }
+    });
 
-        lightbox.addEventListener("mousedown", (event) => {
-            event.preventDefault();
-        });
+    document.getElementById("prev-photo").addEventListener("click", () => this.navigate(-1));
+    document.getElementById("next-photo").addEventListener("click", () => this.navigate(1));
+    document.getElementById("start-slideshow-btn").addEventListener("click", () => this.toggleSlideshow());
+    document.getElementById("fullscreen-toggle-btn").addEventListener("click", () => this.toggleFullscreen());
 
-        lightbox.addEventListener("touchend", (event) => {
-            if (shouldCloseLightbox(event)) {
-                const currentTime = new Date().getTime();
-                if (currentTime - lastTouchTime < 500) {
-                    this.closeLightbox();
-                }
-                lastTouchTime = currentTime;
-            }
-        });
+    document.getElementById("play-mode").addEventListener("change", (e) => {
+        if (this.states.slideshowInterval) {
+            this.toggleSlideshow();
+            this.toggleSlideshow();
+        }
+    });
 
-        document.getElementById("prev-photo").addEventListener("click", () => this.navigate(-1));
-        document.getElementById("next-photo").addEventListener("click", () => this.navigate(1));
-        document.getElementById("start-slideshow-btn").addEventListener("click", () => this.toggleSlideshow());
-        document.getElementById("fullscreen-toggle-btn").addEventListener("click", () => this.toggleFullscreen());
-
-        document.getElementById("play-mode").addEventListener("change", (e) => {
+    let speedTimeout;
+    document.getElementById("slideshow-speed").addEventListener("input", (e) => {
+        clearTimeout(speedTimeout);
+        speedTimeout = setTimeout(() => {
             if (this.states.slideshowInterval) {
                 this.toggleSlideshow();
                 this.toggleSlideshow();
             }
-        });
+        }, 500);
+    });
 
-        let speedTimeout;
-        document.getElementById("slideshow-speed").addEventListener("input", (e) => {
-            clearTimeout(speedTimeout);
-            speedTimeout = setTimeout(() => {
-                if (this.states.slideshowInterval) {
-                    this.toggleSlideshow();
-                    this.toggleSlideshow();
-                }
-            }, 500);
-        });
+    document.getElementById("schedule-settings-btn").addEventListener("click", () => {
+        document.getElementById("schedule-modal").style.display = "block";
+    });
 
-        document.getElementById("schedule-settings-btn").addEventListener("click", () => {
-            document.getElementById("schedule-modal").style.display = "block";
-        });
+    document.querySelector(".close-modal").addEventListener("click", () => {
+        document.getElementById("schedule-modal").style.display = "none";
+    });
 
-        document.querySelector(".close-modal").addEventListener("click", () => {
-            document.getElementById("schedule-modal").style.display = "none";
-        });
+    document.getElementById("cancel-schedule").addEventListener("click", () => {
+        document.getElementById("schedule-modal").style.display = "none";
+    });
 
-        document.getElementById("cancel-schedule").addEventListener("click", () => {
-            document.getElementById("schedule-modal").style.display = "none";
-        });
-
-        document.getElementById("save-schedule").addEventListener("click", () => {
-            this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
-            this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
-            this.states.schedule.classStart = document.getElementById("class-start").value;
-            this.states.schedule.classEnd = document.getElementById("class-end").value;
-            this.states.schedule.isEnabled = document.getElementById("is-enabled").checked;
-            this.states.schedule.useHoliday = document.getElementById("use-holiday").checked;
-            this.saveSchedule();
-            document.getElementById("schedule-modal").style.display = "none";
-            this.checkSchedule();
-        });
-    },
+    document.getElementById("save-schedule").addEventListener("click", () => {
+        this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
+        this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
+        this.states.schedule.classStart = document.getElementById("class-start").value;
+        this.states.schedule.classEnd = document.getElementById("class-end").value;
+        this.states.schedule.isEnabled = document.getElementById("is-enabled").checked;
+        this.states.schedule.useHoliday = document.getElementById("use-holiday").checked;
+        this.saveSchedule();
+        document.getElementById("schedule-modal").style.display = "none";
+        this.checkSchedule();
+    });
+},
 
     async fetchAlbums() {
         try {
@@ -269,14 +264,8 @@ const app = {
             this.states.photos = [...this.states.photos, ...newPhotos];
             this.states.nextPageToken = data.nextPageToken || null;
             this.states.hasMorePhotos = !!this.states.nextPageToken;
-            this.states.loadedCount += newPhotos.length;
 
             this.renderPhotos();
-
-            // 如果幻灯片开始播放，并且当前选中的相册照片未加载完，自动加载更多
-            if (this.states.slideshowInterval && (this.states.loadedCount < 100 || this.states.hasMorePhotos)) {
-                this.checkForMorePhotos();
-            }
         } catch (error) {
             console.error("照片加載失敗:", error);
             this.showMessage("加載失敗，請檢查網路連線");
@@ -284,29 +273,14 @@ const app = {
             if (requestId === this.states.currentRequestId) {
                 this.states.isFetching = false;
                 document.getElementById("loading-indicator").style.display = "none";
-
-                if (!this.states.hasMorePhotos) {
-                    this.stopAutoLoad();
-                }
+                this.setupScrollObserver();
             }
         }
-    },
-
-    checkForMorePhotos() {
-        if (this.states.loadedCount < 100 && this.states.hasMorePhotos) {
-            this.loadPhotos();
-        }
-    },
-
-    stopAutoLoad() {
-        clearTimeout(this.autoLoadTimeout);
-        this.autoLoadTimeout = null;
     },
 
     renderPhotos() {
         const container = document.getElementById("photo-container");
         container.style.display = "grid";
-
         container.innerHTML = this.states.photos.map(photo => `
             <img class="photo" 
                  src="${photo.baseUrl}=w150-h150"
@@ -322,11 +296,11 @@ const app = {
 
         this.setupLazyLoad();
         this.setupScrollObserver();
-
-        // 加载完全部照片后，启动循环播放模式
-        if (!this.states.hasMorePhotos && this.states.photos.length > 0 && this.states.slideshowInterval === null) {
-            this.toggleSlideshow();
-        }
+    container.addEventListener('click', () => {
+            if (this.states.slideshowInterval !== null) {
+                this.stopSlideshow();
+            }
+        });
     },
 
     setupLazyLoad() {
@@ -412,8 +386,8 @@ const app = {
             lightbox.style.display = "none";
             this.states.lightboxActive = false;
             this.toggleButtonVisibility();
-            this.stopSlideshow();
         }, 300);
+        this.stopSlideshow();
     },
 
     navigate(direction) {
@@ -430,27 +404,27 @@ const app = {
             const isRandom = document.getElementById("play-mode").value === "random";
 
             const getNextIndex = () => {
-                let nextIndex;
                 if (isRandom) {
+                    let nextIndex;
                     do {
                         nextIndex = Math.floor(Math.random() * this.states.photos.length);
-                    } while (this.states.slideshowPhotoIds.includes(this.states.photos[nextIndex].id));
-                    this.states.slideshowPhotoIds.push(this.states.photos[nextIndex].id);
-                    if (this.states.slideshowPhotoIds.length >= this.states.photos.length) {
-                        this.states.slideshowPhotoIds = []; // 如果所有图片都已经播放过，重置
-                    }
-                } else {
-                    nextIndex = (this.states.currentIndex + 1) % this.states.photos.length;
+                    } while (nextIndex === this.states.currentIndex && this.states.photos.length > 1);
+                    return nextIndex;
                 }
-                return nextIndex;
+                return (this.states.currentIndex + 1) % this.states.photos.length;
             };
 
             this.states.slideshowInterval = setInterval(() => {
                 this.states.currentIndex = getNextIndex(); 
-                this.navigate(0);
-                this.checkForMorePhotos(); // 检查并加载更多
+                this.navigate(0); 
             }, speed);
         }
+        this.toggleButtonVisibility();
+    },
+
+    stopSlideshow() {
+        clearInterval(this.states.slideshowInterval);
+        this.states.slideshowInterval = null;
         this.toggleButtonVisibility();
     },
 
