@@ -31,6 +31,12 @@ body {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
+#scroll-sentinel {
+    height: 1px;
+    width: 100%;
+    visibility: hidden;
+}
+
 #authorize-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
@@ -43,6 +49,27 @@ body {
     max-width: 1200px;
     margin: 0 auto;
     background-color: #1a1a1a;
+}
+.lightbox-loading {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 1.2rem;
+    z-index: 1001;
+    display: none;
+}
+
+.loading-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    display: none;
 }
 
 /* 相簿选择和播放控制区域 */
