@@ -21,8 +21,8 @@ const app = {
             sleepEnd: "07:00",
             classStart: "08:00",
             classEnd: "17:00",
-            isEnabled: true,
-            useHoliday: true,
+            isEnabled: false,
+            useHoliday: false,
         }
     },
 
@@ -234,7 +234,7 @@ lightbox.addEventListener("mousedown", (event) => {
 
         try {
             const body = {
-                pageSize: 100,
+                pageSize: 99999,
                 pageToken: this.states.nextPageToken || undefined
             };
 
@@ -334,7 +334,7 @@ lightbox.addEventListener("mousedown", (event) => {
                     if (entry.isIntersecting && 
                         this.states.hasMorePhotos &&
                         !this.states.isFetching) {
-                        setTimeout(() => this.loadPhotos(), 300);
+                        setTimeout(() => this.loadPhotos(), 1000);
                     }
                 });
             },
