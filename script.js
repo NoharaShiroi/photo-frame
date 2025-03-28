@@ -293,7 +293,7 @@ const app = {
     },
 
     checkForMorePhotos() {
-        if (this.states.loadedCount < 99999999 && this.states.hasMorePhotos) {
+        if (this.states.loadedCount < 100 && this.states.hasMorePhotos) {
             this.loadPhotos();
         }
     },
