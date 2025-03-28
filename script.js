@@ -21,9 +21,12 @@ const app = {
             sleepEnd: "07:00",
             classStart: "08:00",
             classEnd: "17:00",
-            isEnabled: true,
-            useHoliday: true,
-        }
+            isEnabled: false,
+            useHoliday: false,
+        },
+        },
+        loadedCount: 0, // 新增变量来追踪已加载的照片数量
+        slideshowPhotoIds: [] // 新增用于追踪幻灯片中显示的照片 ID
     },
 
     init() {
@@ -34,6 +37,7 @@ const app = {
         } else {
             this.loadSchedule();
             this.checkSchedule();
+            this.loadPhotos(); // 初始加载照片
             setInterval(() => this.checkSchedule(), 60000);
         }
     },
@@ -226,61 +230,84 @@ lightbox.addEventListener("mousedown", (event) => {
     },
 
     async loadPhotos() {
-        if (this.states.isFetching || !this.states.hasMorePhotos) return;
+       if (this.states.isFetching || !this.states.hasMorePhotos) return;
 
-        const requestId = ++this.states.currentRequestId;
-        this.states.isFetching = true;
-        document.getElementById("loading-indicator").style.display = "block";
+    const requestId = ++this.states.currentRequestId;
+    this.states.isFetching = true;
+    document.getElementById("loading-indicator").style.display = "block";
 
-        try {
-            const body = {
-                pageSize: 100,
-                pageToken: this.states.nextPageToken || undefined
-            };
+    try {
+        const body = {
+            pageSize: 10, // 每次加载 10 张照片
+            pageToken: this.states.nextPageToken || undefined
+        };
 
-            if (this.states.albumId !== "all") {
-                body.albumId = this.states.albumId;
-            } else {
-                body.filters = { includeArchivedMedia: true };
-            }
+        if (this.states.albumId !== "all") {
+            body.albumId = this.states.albumId;
+        } else {
+            body.filters = { includeArchivedMedia: true };
+        }
 
-            const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${this.states.accessToken}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(body)
-            });
+        const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${this.states.accessToken}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
+        });
 
-            if (!response.ok) throw new Error('照片加載失敗');
-            const data = await response.json();
+        if (!response.ok) throw new Error('照片加載失敗');
+        const data = await response.json();
 
-            if (requestId !== this.states.currentRequestId) return;
+        if (requestId !== this.states.currentRequestId) return;
 
-            const existingIds = new Set(this.states.photos.map(p => p.id));
-            const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
+        const existingIds = new Set(this.states.photos.map(p => p.id));
+        const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
 
-            this.states.photos = [...this.states.photos, ...newPhotos];
-            this.states.nextPageToken = data.nextPageToken || null;
-            this.states.hasMorePhotos = !!this.states.nextPageToken;
+        this.states.photos = [...this.states.photos, ...newPhotos];
+        this.states.nextPageToken = data.nextPageToken || null;
+        this.states.hasMorePhotos = !!this.states.nextPageToken;
+        this.states.loadedCount += newPhotos.length; // 更新已加载数量
 
-            this.renderPhotos();
-        } catch (error) {
-            console.error("照片加載失敗:", error);
-            this.showMessage("加載失敗，請檢查網路連線");
-        } finally {
-            if (requestId === this.states.currentRequestId) {
-                this.states.isFetching = false;
-                document.getElementById("loading-indicator").style.display = "none";
-                this.setupScrollObserver();
+        this.renderPhotos();
+
+        // 如果幻灯片开始播放，并且照片有没有加载完，自动加载更多
+        if (this.states.slideshowInterval && newPhotos.length > 0) {
+            this.checkForMorePhotos();
+        }
+    } catch (error) {
+        console.error("照片加載失敗:", error);
+        this.showMessage("加載失敗，請檢查網路連線");
+    } finally {
+        if (requestId === this.states.currentRequestId) {
+            this.states.isFetching = false;
+            document.getElementById("loading-indicator").style.display = "none";
+
+            // 停止自动加载时的清理操作
+            if (!this.states.hasMorePhotos) {
+                this.stopAutoLoad(); // 停止自动加载
             }
         }
-    },
+    }
+},
+checkForMorePhotos() {
+        // 检查是否需要加载更多照片
+    if (this.states.loadedCount < 50 && this.states.hasMorePhotos) { // 少于 50 张且有更多照片自动加载
+        this.loadPhotos();
+    }
+},
+
+stopAutoLoad() {
+    // 在所有照片加载完成时停止调用 loadPhotos
+    clearTimeout(this.autoLoadTimeout); // 清理任何已设定的超时
+    this.autoLoadTimeout = null; // 重置超时
+},
 
     renderPhotos() {
         const container = document.getElementById("photo-container");
         container.style.display = "grid";
+
         container.innerHTML = this.states.photos.map(photo => `
             <img class="photo" 
                  src="${photo.baseUrl}=w150-h150"
@@ -296,11 +323,11 @@ lightbox.addEventListener("mousedown", (event) => {
 
         this.setupLazyLoad();
         this.setupScrollObserver();
-    container.addEventListener('click', () => {
-            if (this.states.slideshowInterval !== null) {
-                this.stopSlideshow();
-            }
-        });
+
+        // 加载完全部照片后，启动循环播放模式
+        if (!this.states.hasMorePhotos && this.states.photos.length > 0 && this.states.slideshowInterval === null) {
+            this.toggleSlideshow();
+        }
     },
 
     setupLazyLoad() {
@@ -404,27 +431,27 @@ lightbox.addEventListener("mousedown", (event) => {
             const isRandom = document.getElementById("play-mode").value === "random";
 
             const getNextIndex = () => {
+                let nextIndex;
                 if (isRandom) {
-                    let nextIndex;
                     do {
                         nextIndex = Math.floor(Math.random() * this.states.photos.length);
-                    } while (nextIndex === this.states.currentIndex && this.states.photos.length > 1);
-                    return nextIndex;
+                    } while (this.states.slideshowPhotoIds.includes(this.states.photos[nextIndex].id)); // 确保不重复
+                    this.states.slideshowPhotoIds.push(this.states.photos[nextIndex].id);
+                    if (this.states.slideshowPhotoIds.length >= this.states.photos.length) {
+                        this.states.slideshowPhotoIds = []; // 如果所有图片都已经播放过，重置
+                    }
+                } else {
+                    nextIndex = (this.states.currentIndex + 1) % this.states.photos.length;
                 }
-                return (this.states.currentIndex + 1) % this.states.photos.length;
+                return nextIndex;
             };
 
             this.states.slideshowInterval = setInterval(() => {
                 this.states.currentIndex = getNextIndex(); 
-                this.navigate(0); 
+                this.navigate(0);
+                this.checkForMorePhotos(); // 检查并加载更多
             }, speed);
         }
-        this.toggleButtonVisibility();
-    },
-
-    stopSlideshow() {
-        clearInterval(this.states.slideshowInterval);
-        this.states.slideshowInterval = null;
         this.toggleButtonVisibility();
     },
 
