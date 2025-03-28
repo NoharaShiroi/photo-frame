@@ -292,7 +292,7 @@ lightbox.addEventListener("mousedown", (event) => {
 },
 checkForMorePhotos() {
         // 检查是否需要加载更多照片
-    if (this.states.loadedCount < 50 && this.states.hasMorePhotos) { // 少于 50 张且有更多照片自动加载
+    if (this.states.loadedCount < 99999999 && this.states.hasMorePhotos) { // 少于 99999999 张且有更多照片自动加载
         this.loadPhotos();
     }
 },
