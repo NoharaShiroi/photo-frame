@@ -348,7 +348,7 @@ lightbox.addEventListener("mousedown", (event) => {
         entries => {
             entries.forEach(entry => {
                 if (entry.isIntersecting && this.states.hasMorePhotos && !this.states.isFetching) {
-                    setTimeout(() => this.loadPhotos(), 1000);  // 延遲1000ms加載，避免過於頻繁的請求
+                    setTimeout(() => this.loadPhotos(), 300);  // 延遲300ms加載，避免過於頻繁的請求
                 }
             });
         },
