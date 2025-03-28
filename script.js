@@ -334,14 +334,14 @@ lightbox.addEventListener("mousedown", (event) => {
                     if (entry.isIntersecting && 
                         this.states.hasMorePhotos &&
                         !this.states.isFetching) {
-                        setTimeout(() => this.loadPhotos(), 1000);
+                        setTimeout(() => this.loadPhotos(), 300);
                     }
                 });
             },
             {
                 root: document.querySelector('#scroll-container'),
                 rootMargin: '400px 0px',
-                threshold: 0.1
+                threshold: 0
             }
         );
 
