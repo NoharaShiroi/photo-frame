@@ -251,16 +251,24 @@ lightbox.addEventListener("mousedown", (event) => {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify(body)
+                await new Promise(resolve => {
+                if (document.hidden) {
+                    requestIdleCallback(resolve, { timeout: 1000 });
+                } else {
+                    setTimeout(resolve, 300);
+                }
             });
-
-            if (!response.ok) throw new Error('照片加載失敗');
-            const data = await response.json();
 
             if (requestId !== this.states.currentRequestId) return;
 
             const existingIds = new Set(this.states.photos.map(p => p.id));
             const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
-
+const batchSize = 50;
+            for (let i = 0; i < newPhotos.length; i += batchSize) {
+                this.states.photos = [...this.states.photos, ...newPhotos.slice(i, i + batchSize)];
+                this.renderPhotos(true);
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
             this.states.photos = [...this.states.photos, ...newPhotos];
             this.states.nextPageToken = data.nextPageToken || null;
             this.states.hasMorePhotos = !!this.states.nextPageToken;
@@ -273,27 +281,45 @@ lightbox.addEventListener("mousedown", (event) => {
             if (requestId === this.states.currentRequestId) {
                 this.states.isFetching = false;
                 document.getElementById("loading-indicator").style.display = "none";
+                this.autoTriggerLoad();
                 this.setupScrollObserver();
             }
         }
     },
 
-    renderPhotos() {
-        const container = document.getElementById("photo-container");
-        container.style.display = "grid";
-        container.innerHTML = this.states.photos.map(photo => `
-            <img class="photo" 
-                 src="${photo.baseUrl}=w150-h150"
-                 data-src="${photo.baseUrl}=w800-h600"
-                 alt="相片" 
-                 data-id="${photo.id}"
-                 onclick="app.openLightbox('${photo.id}')">
-        `).join("");
+    autoTriggerLoad() {
+        if (!this.states.hasMorePhotos || this.states.isFetching) return;
+        
+        const container = document.getElementById('photo-container');
+        const scrollContainer = document.getElementById('scroll-container');
+        if (container.scrollHeight <= scrollContainer.clientHeight * 1.5) {
+            setTimeout(() => this.loadPhotos(), 300);
+        }
+    },
 
-        if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
-            container.insertAdjacentHTML("beforeend", `<p class="empty-state">已無更多相片</p>`);
+    renderPhotos(isPartial = false) {
+        const container = document.getElementById("photo-container");
+        if (!isPartial) {
+            container.style.display = "grid";
+            container.innerHTML = '';
         }
 
+        const fragment = document.createDocumentFragment();
+        this.states.photos.forEach(photo => {
+            const existing = container.querySelector(`[data-id="${photo.id}"]`);
+            if (!existing) {
+                const img = document.createElement('img');
+                img.className = "photo";
+                img.src = `${photo.baseUrl}=w150-h150`;
+                img.dataset.src = `${photo.baseUrl}=w800-h600`;
+                img.alt = "相片";
+                img.dataset.id = photo.id;
+                img.onclick = () => this.openLightbox(photo.id);
+                fragment.appendChild(img);
+            }
+        });
+
+        container.appendChild(fragment);
         this.setupLazyLoad();
         this.setupScrollObserver();
     container.addEventListener('click', () => {
@@ -403,7 +429,13 @@ lightbox.addEventListener("mousedown", (event) => {
             const speed = document.getElementById("slideshow-speed").value * 1000 || 1000;
             const isRandom = document.getElementById("play-mode").value === "random";
 
-            const getNextIndex = () => {
+            const slideshowStep = async () => {
+                // 预加载检查
+                if (this.states.currentIndex >= this.states.photos.length - 3 && this.states.hasMorePhotos) {
+                    await this.loadPhotos();
+                }
+
+                const getNextIndex = () => {
                 if (isRandom) {
                     let nextIndex;
                     do {
@@ -411,23 +443,51 @@ lightbox.addEventListener("mousedown", (event) => {
                     } while (nextIndex === this.states.currentIndex && this.states.photos.length > 1);
                     return nextIndex;
                 }
-                return (this.states.currentIndex + 1) % this.states.photos.length;
+                this.states.currentIndex = getNextIndex();
+                this.navigate(0);
+            };
+const runInterval = () => {
+                this.states.slideshowInterval = setTimeout(async () => {
+                    await slideshowStep();
+                    runInterval();
+                }, speed);
             };
 
-            this.states.slideshowInterval = setInterval(() => {
-                this.states.currentIndex = getNextIndex(); 
-                this.navigate(0); 
-            }, speed);
+            runInterval();
         }
         this.toggleButtonVisibility();
     },
 
     stopSlideshow() {
-        clearInterval(this.states.slideshowInterval);
+        clearTimeout(this.states.slideshowInterval);
         this.states.slideshowInterval = null;
         this.toggleButtonVisibility();
     },
+setupScrollObserver() {
+        if (this.states.observer) this.states.observer.disconnect();
 
+        this.states.observer = new IntersectionObserver(
+            entries => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && 
+                        this.states.hasMorePhotos &&
+                        !this.states.isFetching) {
+                        this.loadPhotos();
+                    }
+                });
+            },
+            {
+                root: document.querySelector('#scroll-container'),
+                rootMargin: '800px 0px',
+                threshold: 0.01
+            }
+        );
+
+        const sentinel = document.createElement('div');
+        sentinel.id = 'scroll-sentinel';
+        document.getElementById('photo-container').appendChild(sentinel);
+        this.states.observer.observe(sentinel);
+    },
     toggleFullscreen() {
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen().catch(err => {
