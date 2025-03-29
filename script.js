@@ -230,8 +230,7 @@ const app = {
     },
 
     async loadPhotos() {
-    // 新增：如果已經沒有更多照片且不是第一次加載，直接返回
-    if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
+        if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
         return;
     }
 
