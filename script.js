@@ -24,7 +24,7 @@ const app = {
             sleepEnd: "07:00",
             classStart: "08:00",
             classEnd: "17:00",
-            isEnabled: true,
+            isEnabled: false,
             useHoliday: true,
         }
     },
@@ -230,117 +230,142 @@ const app = {
     },
 
     async loadPhotos() {
-        if (this.states.isFetching || !this.states.hasMorePhotos) return;
+        如果已經沒有更多照片且不是第一次加載，直接返回
+    if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
+        return;
+    }
 
-        const requestId = ++this.states.currentRequestId;
-        this.states.isFetching = true;
-        document.getElementById("loading-indicator").style.display = "block";
+    if (this.states.isFetching) return;
 
-        try {
-            const body = {
-                pageSize: 100,
-                pageToken: this.states.nextPageToken || undefined
-            };
+    const requestId = ++this.states.currentRequestId;
+    this.states.isFetching = true;
+    document.getElementById("loading-indicator").style.display = "block";
 
-            if (this.states.albumId !== "all") {
-                body.albumId = this.states.albumId;
-            } else {
-                body.filters = { includeArchivedMedia: true };
+    try {
+        const body = {
+            pageSize: 100,
+            pageToken: this.states.nextPageToken || undefined
+        };
+
+        if (this.states.albumId !== "all") {
+            body.albumId = this.states.albumId;
+        } else {
+            body.filters = { includeArchivedMedia: true };
+        }
+
+        const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${this.states.accessToken}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
+        });
+
+        if (!response.ok) {
+            // 修改：只在第一次失敗時顯示錯誤訊息
+            if (this.states.photos.length === 0) {
+                throw new Error('照片加載失敗');
             }
+            return;
+        }
 
-            const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${this.states.accessToken}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(body)
-            });
+        const data = await response.json();
 
-            if (!response.ok) throw new Error('照片加載失敗');
-            const data = await response.json();
+        if (requestId !== this.states.currentRequestId) return;
 
-            if (requestId !== this.states.currentRequestId) return;
+        const existingIds = new Set(this.states.photos.map(p => p.id));
+        const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
 
-            const existingIds = new Set(this.states.photos.map(p => p.id));
-            const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
-
+        // 修改：如果沒有新照片，標記為沒有更多照片
+        if (newPhotos.length === 0 && data.nextPageToken) {
+            this.states.nextPageToken = null;
+            this.states.hasMorePhotos = false;
+        } else {
             this.states.photos = [...this.states.photos, ...newPhotos];
             this.states.nextPageToken = data.nextPageToken || null;
             this.states.hasMorePhotos = !!this.states.nextPageToken;
+        }
 
-            // 新增：檢查是否需要繼續預載
-            const shouldContinuePreloading = this.states.photos.length < this.states.preloadCount && 
-                                           this.states.hasMorePhotos;
-            
-            this.renderPhotos();
+        this.renderPhotos();
 
-            // 新增：如果還沒達到預載數量且有更多照片，繼續加載
-            if (shouldContinuePreloading) {
-                setTimeout(() => this.loadPhotos(), 300);
-            } else {
-                // 預載完成後，設置滾動監聽
-                this.setupScrollObserver();
-            }
+        // 修改：預載邏輯，只在還有照片時繼續加載
+        const shouldContinuePreloading = this.states.hasMorePhotos && 
+                                      this.states.photos.length < this.states.preloadCount;
+        
+        if (shouldContinuePreloading) {
+            setTimeout(() => this.loadPhotos(), 300);
+        }
 
-            // 新增：如果正在幻燈片播放且照片不足，繼續加載
-            if (this.states.slideshowInterval && 
-                this.states.photos.length - this.states.loadedForSlideshow < 50 && 
-                this.states.hasMorePhotos) {
-                setTimeout(() => this.loadPhotos(), 300);
-            }
-        } catch (error) {
+        // 修改：幻燈片加載邏輯，只在還有照片時繼續加載
+        if (this.states.slideshowInterval && 
+            this.states.hasMorePhotos &&
+            this.states.photos.length - this.states.loadedForSlideshow < 50) {
+            setTimeout(() => this.loadPhotos(), 300);
+        }
+    } catch (error) {
+        // 修改：只在第一次失敗時顯示錯誤訊息
+        if (this.states.photos.length === 0) {
             console.error("照片加載失敗:", error);
             this.showMessage("加載失敗，請檢查網路連線");
-        } finally {
-            if (requestId === this.states.currentRequestId) {
-                this.states.isFetching = false;
-                document.getElementById("loading-indicator").style.display = "none";
-            }
         }
-    },
+    } finally {
+        if (requestId === this.states.currentRequestId) {
+            this.states.isFetching = false;
+            document.getElementById("loading-indicator").style.display = "none";
+        }
+    }
+},
 
     renderPhotos() {
         const container = document.getElementById("photo-container");
-        container.style.display = "grid";
-        
-        // 只渲染尚未渲染的照片
-        const startIndex = container.children.length - 
-                         (container.querySelector('.empty-state') ? 1 : 0);
-        
-        const fragment = document.createDocumentFragment();
-        
-        for (let i = startIndex; i < this.states.photos.length; i++) {
-            const photo = this.states.photos[i];
-            const img = document.createElement('img');
-            img.className = 'photo';
-            img.src = `${photo.baseUrl}=w150-h150`;
-            img.dataset.src = `${photo.baseUrl}=w800-h600`;
-            img.alt = '相片';
-            img.dataset.id = photo.id;
-            img.onclick = () => this.openLightbox(photo.id);
-            fragment.appendChild(img);
-        }
+    container.style.display = "grid";
+    
+    // 移除現有的錯誤訊息（如果有的話）
+    const existingError = container.querySelector('.error-state');
+    if (existingError) {
+        container.removeChild(existingError);
+    }
+    
+    // 只渲染尚未渲染的照片
+    const startIndex = container.children.length - 
+                     (container.querySelector('.empty-state') ? 1 : 0);
+    
+    const fragment = document.createDocumentFragment();
+    
+    for (let i = startIndex; i < this.states.photos.length; i++) {
+        const photo = this.states.photos[i];
+        const img = document.createElement('img');
+        img.className = 'photo';
+        img.src = `${photo.baseUrl}=w150-h150`;
+        img.dataset.src = `${photo.baseUrl}=w800-h600`;
+        img.alt = '相片';
+        img.dataset.id = photo.id;
+        img.onclick = () => this.openLightbox(photo.id);
+        fragment.appendChild(img);
+    }
 
-        if (container.querySelector('.empty-state')) {
-            container.removeChild(container.lastChild);
-        }
+    // 移除現有的「已無更多相片」提示（如果有的話）
+    const existingEmptyState = container.querySelector('.empty-state');
+    if (existingEmptyState) {
+        container.removeChild(existingEmptyState);
+    }
 
-        if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
-            const emptyState = document.createElement('p');
-            emptyState.className = 'empty-state';
-            emptyState.textContent = '已無更多相片';
-            fragment.appendChild(emptyState);
-        }
+    // 只在確實沒有更多照片時顯示提示
+    if (!this.states.hasMorePhotos) {
+        const emptyState = document.createElement('p');
+        emptyState.className = 'empty-state';
+        emptyState.textContent = '已無更多相片';
+        fragment.appendChild(emptyState);
+    }
 
-        container.appendChild(fragment);
-        this.setupLazyLoad();
-        
-        // 新增：如果正在幻燈片播放，更新已加載數量
-        if (this.states.slideshowInterval) {
-            this.states.loadedForSlideshow = this.states.photos.length;
-        }
-    },
+    container.appendChild(fragment);
+    this.setupLazyLoad();
+    
+    if (this.states.slideshowInterval) {
+        this.states.loadedForSlideshow = this.states.photos.length;
+    }
+},
 
     setupLazyLoad() {
         const observer = new IntersectionObserver((entries) => {
@@ -542,13 +567,19 @@ const app = {
         }
     },
 
-    showMessage(message) {
-        const container = document.getElementById("photo-container");
-        const messageElement = document.createElement("p");
-        messageElement.className = "empty-state";
-        messageElement.textContent = message;
-        container.appendChild(messageElement);
+    showMessage(message, isError = false) {
+    const container = document.getElementById("photo-container");
+    // 移除現有的訊息
+    const existingMessage = container.querySelector('.empty-state, .error-state');
+    if (existingMessage) {
+        container.removeChild(existingMessage);
     }
+    
+    const messageElement = document.createElement("p");
+    messageElement.className = isError ? 'error-state' : 'empty-state';
+    messageElement.textContent = message;
+    container.appendChild(messageElement);
+}
 };
 
 document.addEventListener("DOMContentLoaded", () => app.init());
