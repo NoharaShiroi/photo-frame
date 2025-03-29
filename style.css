@@ -437,3 +437,25 @@ select, input[type="number"] {
 .close-modal:hover {
     color: #ffffff;
 }
+.error-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #ff6b6b;
+    font-size: 1.2rem;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 8px;
+    background: rgba(255, 0, 0, 0.05);
+    border: 1px solid rgba(255, 0, 0, 0.1);
+}
+
+.empty-state {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #666;
+    font-size: 1.2rem;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+}
