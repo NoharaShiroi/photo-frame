@@ -227,7 +227,6 @@ lightbox.addEventListener("mousedown", (event) => {
 
     async loadPhotos() {
         if (this.states.isFetching || !this.states.hasMorePhotos) return;
-
         const requestId = ++this.states.currentRequestId;
         this.states.isFetching = true;
         document.getElementById("loading-indicator").style.display = "block";
@@ -251,29 +250,29 @@ lightbox.addEventListener("mousedown", (event) => {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify(body)
-                await new Promise(resolve => {
+             });
+await new Promise(resolve => {
                 if (document.hidden) {
                     requestIdleCallback(resolve, { timeout: 1000 });
                 } else {
                     setTimeout(resolve, 300);
                 }
-            });
-
+    });
+            if (!response.ok) throw new Error('照片加載失敗');
+            const data = await response.json();
             if (requestId !== this.states.currentRequestId) return;
 
             const existingIds = new Set(this.states.photos.map(p => p.id));
             const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
-const batchSize = 50;
+            const batchSize = 50;
             for (let i = 0; i < newPhotos.length; i += batchSize) {
                 this.states.photos = [...this.states.photos, ...newPhotos.slice(i, i + batchSize)];
                 this.renderPhotos(true);
                 await new Promise(resolve => setTimeout(resolve, 0));
             }
-            this.states.photos = [...this.states.photos, ...newPhotos];
             this.states.nextPageToken = data.nextPageToken || null;
             this.states.hasMorePhotos = !!this.states.nextPageToken;
 
-            this.renderPhotos();
         } catch (error) {
             console.error("照片加載失敗:", error);
             this.showMessage("加載失敗，請檢查網路連線");
@@ -428,14 +427,7 @@ const batchSize = 50;
         } else {
             const speed = document.getElementById("slideshow-speed").value * 1000 || 1000;
             const isRandom = document.getElementById("play-mode").value === "random";
-
-            const slideshowStep = async () => {
-                // 预加载检查
-                if (this.states.currentIndex >= this.states.photos.length - 3 && this.states.hasMorePhotos) {
-                    await this.loadPhotos();
-                }
-
-                const getNextIndex = () => {
+const getNextIndex = () => {
                 if (isRandom) {
                     let nextIndex;
                     do {
@@ -443,10 +435,20 @@ const batchSize = 50;
                     } while (nextIndex === this.states.currentIndex && this.states.photos.length > 1);
                     return nextIndex;
                 }
+                return (this.states.currentIndex + 1) % this.states.photos.length;
+            };
+
+            const slideshowStep = async () => {
+                // 預加載檢查
+                if (this.states.currentIndex >= this.states.photos.length - 3 && this.states.hasMorePhotos) {
+                    await this.loadPhotos();
+                }
+
                 this.states.currentIndex = getNextIndex();
                 this.navigate(0);
             };
-const runInterval = () => {
+
+            const runInterval = () => {
                 this.states.slideshowInterval = setTimeout(async () => {
                     await slideshowStep();
                     runInterval();
@@ -472,14 +474,14 @@ setupScrollObserver() {
                     if (entry.isIntersecting && 
                         this.states.hasMorePhotos &&
                         !this.states.isFetching) {
-                        this.loadPhotos();
+                        this.loadPhotos(); // 移除 setTimeout
                     }
                 });
             },
             {
                 root: document.querySelector('#scroll-container'),
-                rootMargin: '800px 0px',
-                threshold: 0.01
+                rootMargin: '800px 0px', // 從 400px 調整為 800px
+                threshold: 0.01 // 從 0.1 調整為 0.01
             }
         );
 
@@ -488,6 +490,7 @@ setupScrollObserver() {
         document.getElementById('photo-container').appendChild(sentinel);
         this.states.observer.observe(sentinel);
     },
+
     toggleFullscreen() {
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen().catch(err => {
