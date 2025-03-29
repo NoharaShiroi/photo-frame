@@ -16,8 +16,6 @@ const app = {
         currentRequestId: 0,
         lightboxActive: false,
         isFullscreen: false,
-        maxCachedPhotos: 200,  // 根據記憶體限制調整
-    activePhotoElements: new WeakMap() // 用於追蹤 DOM 元素
         schedule: {
             sleepStart: "22:00",
             sleepEnd: "07:00",
@@ -299,38 +297,29 @@ await new Promise(resolve => {
     },
 
     renderPhotos(isPartial = false) {
-        // 記憶體清理邏輯
-    if (this.states.photos.length > this.states.maxCachedPhotos) {
-        const excess = this.states.photos.length - this.states.maxCachedPhotos;
-        this.states.photos.splice(0, excess);
-    }
+        const container = document.getElementById("photo-container");
+        if (!isPartial) {
+            container.style.display = "grid";
+            container.innerHTML = '';
+        }
 
-    // 改用更輕量的 DOM 操作
-    const container = document.getElementById("photo-container");
-    if (!isPartial) {
-        container.textContent = ''; // 比 innerHTML 更高效
-    }
-
-    // 使用 documentFragment 並限制同時渲染數量
-    const fragment = document.createDocumentFragment();
-    const renderBatch = this.states.photos.slice(-50); // 只渲染最後50張
-    
-    renderBatch.forEach(photo => {
-        if (!this.states.activePhotoElements.has(photo)) {
-            const img = new Image(); // 比 createElement 更高效
-            img.className = "photo";
-            img.loading = "lazy"; // 使用原生 lazy loading
+        const fragment = document.createDocumentFragment();
+        this.states.photos.forEach(photo => {
+            const existing = container.querySelector(`[data-id="${photo.id}"]`);
+            if (!existing) {
+                const img = document.createElement('img');
+                img.className = "photo";
+                img.src = `${photo.baseUrl}=w150-h150`;
                 img.dataset.src = `${photo.baseUrl}=w800-h600`;
                 img.alt = "相片";
                 img.dataset.id = photo.id;
                 img.onclick = () => this.openLightbox(photo.id);
                 fragment.appendChild(img);
-            this.states.activePhotoElements.set(photo, img);
-        }
+            }
         });
 
         container.appendChild(fragment);
-           this.setupLazyLoad();
+        this.setupLazyLoad();
         this.setupScrollObserver();
     container.addEventListener('click', () => {
             if (this.states.slideshowInterval !== null) {
@@ -387,13 +376,13 @@ await new Promise(resolve => {
         this.states.observer.observe(sentinel);
     },
 
-   getImageUrl(photo, width = 1024, height = 768) { // 降低預設解析度
-    if (!photo.baseUrl) return "";
-    
-    // 根據設備像素比調整
-    const dpr = window.devicePixelRatio > 1.5 ? 1.5 : 1;
-    return `${photo.baseUrl}=w${Math.floor(width*dpr)}-h${Math.floor(height*dpr)}`;
-   },
+    getImageUrl(photo, width = 1920, height = 1080) {
+        if (!photo || !photo.baseUrl) {
+            console.error("无效的照片对象:", photo);
+            return "";
+        }
+        return `${photo.baseUrl}=w${width}-h${height}`;
+    },
 
     openLightbox(photoId) {
         this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
