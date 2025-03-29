@@ -30,16 +30,26 @@ const app = {
     },
 
     init() {
-        this.states.accessToken = sessionStorage.getItem("access_token");
-        this.setupEventListeners();
-        if (!this.checkAuth()) {
-            document.getElementById("auth-container").style.display = "flex";
-        } else {
-            this.loadSchedule();
-            this.checkSchedule();
-            setInterval(() => this.checkSchedule(), 60000);
+        this.states.isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+                         !window.MSStream && 
+                         /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
+    
+    this.states.accessToken = sessionStorage.getItem("access_token");
+    this.setupEventListeners();
+    
+    if (!this.checkAuth()) {
+        document.getElementById("auth-container").style.display = "flex";
+        // 舊裝置強制隱藏遮罩
+        if (this.states.isOldiOS) {
+            document.getElementById("screenOverlay").style.display = "none";
         }
-    },
+    } else {
+        this.loadSchedule();
+        this.checkSchedule();
+        // 舊裝置降低排程檢查頻率
+        setInterval(() => this.checkSchedule(), this.states.isOldiOS ? 300000 : 60000);
+    }
+},
 
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
@@ -53,23 +63,31 @@ const app = {
     },
 
     checkSchedule() {
-        const now = new Date();
-        const currentTime = now.getHours() * 60 + now.getMinutes();
-        const sleepStart = this.getTimeInMinutes(this.states.schedule.sleepStart);
-        const sleepEnd = this.getTimeInMinutes(this.states.schedule.sleepEnd);
-        const classStart = this.getTimeInMinutes(this.states.schedule.classStart);
-        const classEnd = this.getTimeInMinutes(this.states.schedule.classEnd);
-        const isSleepTime = this.states.schedule.isEnabled && 
-            ((currentTime >= sleepStart && currentTime < sleepEnd) || 
-             (currentTime >= classStart && currentTime < classEnd));
+        const isOldiPad = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+                     !window.MSStream && 
+                     /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
+    
+    if (isOldiPad) {
+        document.getElementById("screenOverlay").style.display = "none";
+        return;
+    }
 
-        if (isSleepTime || this.isHolidayMode(now)) {
-            this.stopSlideshow();
-            document.getElementById("screenOverlay").style.display = "block";
-        } else {
-            document.getElementById("screenOverlay").style.display = "none";
-        }
-    },
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+    const sleepStart = this.getTimeInMinutes(this.states.schedule.sleepStart);
+    const sleepEnd = this.getTimeInMinutes(this.states.schedule.sleepEnd);
+    const classStart = this.getTimeInMinutes(this.states.schedule.classStart);
+    const classEnd = this.getTimeInMinutes(this.states.schedule.classEnd);
+    
+    // 修改判斷邏輯，確保排程未啟用時不顯示遮罩
+    const shouldShowOverlay = this.states.schedule.isEnabled && 
+                           ((currentTime >= sleepStart && currentTime < sleepEnd) || 
+                            (currentTime >= classStart && currentTime < classEnd) ||
+                            this.isHolidayMode(now));
+    
+    document.getElementById("screenOverlay").style.display = 
+        shouldShowOverlay ? "block" : "none";
+},
 
     isHolidayMode(date) {
         const day = date.getDay();
@@ -114,9 +132,13 @@ const app = {
 
     showApp() {
         document.getElementById("auth-container").style.display = "none";
-        document.getElementById("app-container").style.display = "block";
-        this.fetchAlbums();
-    },
+    document.getElementById("app-container").style.display = "block";
+    // 舊裝置強制解除遮罩
+    if (this.states.isOldiOS) {
+        document.getElementById("screenOverlay").style.display = "none";
+    }
+    this.fetchAlbums();
+},
 
     setupEventListeners() {
         document.getElementById("authorize-btn").addEventListener("click", (e) => {
@@ -147,15 +169,16 @@ const app = {
         });
 
         lightbox.addEventListener("touchend", (event) => {
-            if (shouldCloseLightbox(event)) {
-                const currentTime = new Date().getTime();
-                if (currentTime - lastTouchTime < 500) {
-                    this.closeLightbox();
-                }
-                lastTouchTime = currentTime;
-            }
-        });
-
+    if (shouldCloseLightbox(event)) {
+        const currentTime = new Date().getTime();
+        // 舊裝置增加觸控延遲容錯
+        const delay = this.states.isOldiOS ? 800 : 500;
+        if (currentTime - lastTouchTime < delay) {
+            this.closeLightbox();
+        }
+        lastTouchTime = currentTime;
+    }
+});
         document.getElementById("prev-photo").addEventListener("click", () => this.navigate(-1));
         document.getElementById("next-photo").addEventListener("click", () => this.navigate(1));
         document.getElementById("start-slideshow-btn").addEventListener("click", () => this.toggleSlideshow());
@@ -535,17 +558,35 @@ const app = {
     },
 
     toggleFullscreen() {
-        if (!document.fullscreenElement) {
-            document.documentElement.requestFullscreen().catch(err => {
+        const isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+                    !window.MSStream && 
+                    /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
+    
+    if (isOldiOS) {
+        alert("您的裝置不支援全螢幕模式");
+        return;
+    }
+
+    if (!document.fullscreenElement) {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) {
+            elem.requestFullscreen().catch(err => {
                 console.error('全螢幕錯誤:', err);
             });
-            this.states.isFullscreen = true;
-        } else {
-            document.exitFullscreen();
-            this.states.isFullscreen = false;
+        } else if (elem.webkitRequestFullscreen) { // Safari 專用
+            elem.webkitRequestFullscreen();
         }
-        this.toggleButtonVisibility();
-    },
+        this.states.isFullscreen = true;
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) { // Safari 專用
+            document.webkitExitFullscreen();
+        }
+        this.states.isFullscreen = false;
+    }
+    this.toggleButtonVisibility();
+},
 
     toggleButtonVisibility() {
         const isSlideshowOrFullscreen = this.states.slideshowInterval !== null || this.states.isFullscreen;
