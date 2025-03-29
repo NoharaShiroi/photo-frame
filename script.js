@@ -262,7 +262,7 @@ const app = {
         });
 
         if (!response.ok) {
-            // 修改：只在第一次失敗時顯示錯誤訊息
+            // 只在第一次失敗時顯示錯誤訊息
             if (this.states.photos.length === 0) {
                 throw new Error('照片加載失敗');
             }
@@ -276,7 +276,7 @@ const app = {
         const existingIds = new Set(this.states.photos.map(p => p.id));
         const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
 
-        // 修改：如果沒有新照片，標記為沒有更多照片
+        // 如果沒有新照片，標記為沒有更多照片
         if (newPhotos.length === 0 && data.nextPageToken) {
             this.states.nextPageToken = null;
             this.states.hasMorePhotos = false;
@@ -288,25 +288,29 @@ const app = {
 
         this.renderPhotos();
 
-        // 修改：預載邏輯，只在還有照片時繼續加載
-        const shouldContinuePreloading = this.states.hasMorePhotos && 
-                                      this.states.photos.length < this.states.preloadCount;
-        
-        if (shouldContinuePreloading) {
-            setTimeout(() => this.loadPhotos(), 300);
-        }
-
-        // 修改：幻燈片加載邏輯，只在還有照片時繼續加載
-        if (this.states.slideshowInterval && 
-            this.states.hasMorePhotos &&
-            this.states.photos.length - this.states.loadedForSlideshow < 50) {
-            setTimeout(() => this.loadPhotos(), 300);
+        // 自動加載策略：
+        // 1. 如果還沒達到預載數量，繼續快速加載
+        // 2. 如果已達預載數量，改用較慢速度繼續加載剩餘照片
+        // 3. 如果正在幻燈片播放，確保有足夠緩衝照片
+        if (this.states.hasMorePhotos) {
+            let delay = 300; // 預設加載間隔
+            
+            if (this.states.photos.length >= this.states.preloadCount) {
+                delay = 1000; // 預載完成後改用較慢速度加載
+            }
+            
+            if (this.states.slideshowInterval && 
+                this.states.photos.length - this.states.loadedForSlideshow < 50) {
+                delay = 300; // 幻燈片播放時需要更快加載
+            }
+            
+            setTimeout(() => this.loadPhotos(), delay);
         }
     } catch (error) {
-        // 修改：只在第一次失敗時顯示錯誤訊息
+        // 只在第一次失敗時顯示錯誤訊息
         if (this.states.photos.length === 0) {
             console.error("照片加載失敗:", error);
-            this.showMessage("加載失敗，請檢查網路連線");
+            this.showMessage("加載失敗，請檢查網路連線", true);
         }
     } finally {
         if (requestId === this.states.currentRequestId) {
@@ -317,7 +321,7 @@ const app = {
 },
 
     renderPhotos() {
-        const container = document.getElementById("photo-container");
+       const container = document.getElementById("photo-container");
     container.style.display = "grid";
     
     // 移除現有的錯誤訊息（如果有的話）
@@ -351,7 +355,7 @@ const app = {
     }
 
     // 只在確實沒有更多照片時顯示提示
-    if (!this.states.hasMorePhotos) {
+    if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
         const emptyState = document.createElement('p');
         emptyState.className = 'empty-state';
         emptyState.textContent = '已無更多相片';
@@ -361,9 +365,13 @@ const app = {
     container.appendChild(fragment);
     this.setupLazyLoad();
     
+    // 更新幻燈片已加載數量
     if (this.states.slideshowInterval) {
         this.states.loadedForSlideshow = this.states.photos.length;
     }
+    
+    // 每次渲染後檢查是否需要設置滾動監聽
+    this.setupScrollObserver();
 },
 
     setupLazyLoad() {
@@ -391,13 +399,14 @@ const app = {
     setupScrollObserver() {
         if (this.states.observer) this.states.observer.disconnect();
 
+    // 只有在預載完成後才啟用滾動加載
+    if (this.states.photos.length >= this.states.preloadCount) {
         this.states.observer = new IntersectionObserver(
             entries => {
                 entries.forEach(entry => {
                     if (entry.isIntersecting && 
                         this.states.hasMorePhotos &&
-                        !this.states.isFetching &&
-                        this.states.photos.length >= this.states.preloadCount) { // 只有當預載完成後才啟用滾動加載
+                        !this.states.isFetching) {
                         setTimeout(() => this.loadPhotos(), 300);
                     }
                 });
@@ -413,7 +422,8 @@ const app = {
         sentinel.id = 'scroll-sentinel';
         document.getElementById('photo-container').appendChild(sentinel);
         this.states.observer.observe(sentinel);
-    },
+    }
+},
 
     getImageUrl(photo, width = 1920, height = 1080) {
         if (!photo || !photo.baseUrl) {
