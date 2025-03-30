@@ -19,6 +19,8 @@ const app = {
         preloadCount: 500, // 新增預載照片數量設定
         loadedForSlideshow: 0, // 記錄已為幻燈片加載的照片數量
         playedPhotos: new Set(), // 記錄已播放過的照片ID
+        overlayTimeout: null,      // 儲存計時器ID
+        overlayDisabled: false,   // 記錄遮罩是否被臨時取消
         schedule: {
             sleepStart: "22:00",
             sleepEnd: "07:00",
@@ -64,11 +66,16 @@ const app = {
 
     checkSchedule() {
         const isOldiPad = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
-                     !window.MSStream && 
-                     /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
-    
+                 !window.MSStream && 
+                 /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
+
     if (isOldiPad) {
         document.getElementById("screenOverlay").style.display = "none";
+        return;
+    }
+
+    // 如果遮罩被臨時取消且計時器還在，則不執行後續檢查
+    if (this.states.overlayDisabled && this.states.overlayTimeout) {
         return;
     }
 
@@ -79,14 +86,16 @@ const app = {
     const classStart = this.getTimeInMinutes(this.states.schedule.classStart);
     const classEnd = this.getTimeInMinutes(this.states.schedule.classEnd);
     
-    // 修改判斷邏輯，確保排程未啟用時不顯示遮罩
     const shouldShowOverlay = this.states.schedule.isEnabled && 
                            ((currentTime >= sleepStart && currentTime < sleepEnd) || 
                             (currentTime >= classStart && currentTime < classEnd) ||
                             this.isHolidayMode(now));
     
-    document.getElementById("screenOverlay").style.display = 
-        shouldShowOverlay ? "block" : "none";
+    // 只有當不是被臨時取消時才更新顯示狀態
+    if (!this.states.overlayDisabled) {
+        document.getElementById("screenOverlay").style.display = 
+            shouldShowOverlay ? "block" : "none";
+    }
 },
 
     isHolidayMode(date) {
@@ -151,7 +160,22 @@ const app = {
             this.resetPhotoData();
             this.loadPhotos();
         });
+        document.getElementById("screenOverlay").addEventListener("dblclick", () => {
+        this.temporarilyDisableOverlay();
+    });
 
+    // 手機雙擊觸控支援
+    let lastTouchTime = 0;
+    document.getElementById("screenOverlay").addEventListener("touchend", (e) => {
+        const currentTime = new Date().getTime();
+        if (currentTime - lastTouchTime < 500) { // 500毫秒內算雙擊
+            this.temporarilyDisableOverlay();
+            e.preventDefault(); // 防止觸發其他行為
+        }
+        lastTouchTime = currentTime;
+    });
+
+    });
         let lastTouchTime = 0;
         const lightbox = document.getElementById("lightbox");
         lightbox.addEventListener("mousedown", (event) => {
@@ -631,5 +655,55 @@ const app = {
     container.appendChild(messageElement);
 }
 };
+temporarilyDisableOverlay() {
+    // 只有當遮罩正在顯示時才需要處理
+    if (document.getElementById("screenOverlay").style.display === "block") {
+        // 取消遮罩
+        document.getElementById("screenOverlay").style.display = "none";
+        this.states.overlayDisabled = true;
+        
+        // 清除現有計時器（如果有的話）
+        if (this.states.overlayTimeout) {
+            clearTimeout(this.states.overlayTimeout);
+        }
+        
+        // 設定5分鐘後恢復
+        this.states.overlayTimeout = setTimeout(() => {
+            this.states.overlayDisabled = false;
+            this.states.overlayTimeout = null;
+            this.checkSchedule(); // 重新檢查排程
+        }, 5 * 60 * 1000); // 5分鐘
+        
+        // 顯示提示訊息
+        this.showTemporaryMessage("遮罩已暫時取消，5分鐘後自動恢復");
+    }
+},
 
+showTemporaryMessage(message) {
+    const msgElement = document.createElement("div");
+    msgElement.style.position = "fixed";
+    msgElement.style.bottom = "20px";
+    msgElement.style.left = "50%";
+    msgElement.style.transform = "translateX(-50%)";
+    msgElement.style.backgroundColor = "rgba(0,0,0,0.7)";
+    msgElement.style.color = "white";
+    msgElement.style.padding = "10px 20px";
+    msgElement.style.borderRadius = "5px";
+    msgElement.style.zIndex = "10000";
+    msgElement.textContent = message;
+    document.body.appendChild(msgElement);
+    
+    // 3秒後自動消失
+    setTimeout(() => {
+        document.body.removeChild(msgElement);
+    }, 3000);
+},
+
+resetOverlayState() {
+    this.states.overlayDisabled = false;
+    if (this.states.overlayTimeout) {
+        clearTimeout(this.states.overlayTimeout);
+        this.states.overlayTimeout = null;
+    }
+}
 document.addEventListener("DOMContentLoaded", () => app.init());
