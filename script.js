@@ -49,7 +49,7 @@ const app = {
             this.checkSchedule();
         }, this.states.isOldiOS ? 300000 : 60000); // 5分鐘或1分鐘
     }
-},
+}
 
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
