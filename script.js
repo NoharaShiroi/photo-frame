@@ -40,16 +40,14 @@ const app = {
     this.setupEventListeners();
     
     if (!this.checkAuth()) {
-        document.getElementById("auth-container").style.display = "flex";
-        // 舊裝置強制隱藏遮罩
-        if (this.states.isOldiOS) {
-            document.getElementById("screenOverlay").style.display = "none";
-        }
-    } else {
+    if (this.checkAuth()) {
         this.loadSchedule();
-        this.checkSchedule();
-        // 舊裝置降低排程檢查頻率
-        setInterval(() => this.checkSchedule(), this.states.isOldiOS ? 300000 : 60000);
+        this.checkSchedule(); // 立即檢查一次
+        // 確保定時器有正確設定
+        setInterval(() => {
+            console.log('執行定期排程檢查');
+            this.checkSchedule();
+        }, this.states.isOldiOS ? 300000 : 60000); // 5分鐘或1分鐘
     }
 },
 
@@ -66,12 +64,7 @@ const app = {
     },
 
     checkSchedule() {
-        if (this.states.isOldiOS) {  // 改用已經儲存的狀態
-        document.getElementById("screenOverlay").style.display = "none";
-        return;
-    }
-
-    if (isOldiPad) {
+        if (this.states.isOldiOS) {
         document.getElementById("screenOverlay").style.display = "none";
         return;
     }
@@ -88,17 +81,31 @@ const app = {
     const classStart = this.getTimeInMinutes(this.states.schedule.classStart);
     const classEnd = this.getTimeInMinutes(this.states.schedule.classEnd);
     
-    const shouldShowOverlay = this.states.schedule.isEnabled && 
-                           ((currentTime >= sleepStart && currentTime < sleepEnd) || 
-                            (currentTime >= classStart && currentTime < classEnd) ||
-                            this.isHolidayMode(now));
+    // 修正跨午夜的時間比較
+    const isSleepTime = sleepStart < sleepEnd 
+        ? (currentTime >= sleepStart && currentTime < sleepEnd)
+        : (currentTime >= sleepStart || currentTime < sleepEnd);
     
+    const isClassTime = currentTime >= classStart && currentTime < classEnd;
+    const isHoliday = this.isHolidayMode(now);
+    
+    const shouldShowOverlay = this.states.schedule.isEnabled && 
+                           (isSleepTime || isClassTime || isHoliday);
+    
+    console.log('排程檢查結果:', {
+        currentTime: `${now.getHours()}:${now.getMinutes()}`,
+        isSleepTime,
+        isClassTime,
+        isHoliday,
+        shouldShowOverlay
+    });
+
     // 只有當不是被臨時取消時才更新顯示狀態
     if (!this.states.overlayDisabled) {
         document.getElementById("screenOverlay").style.display = 
             shouldShowOverlay ? "block" : "none";
     }
-},
+    },
 
     isHolidayMode(date) {
         const day = date.getDay();
