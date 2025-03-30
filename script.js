@@ -160,23 +160,22 @@ const app = {
             this.resetPhotoData();
             this.loadPhotos();
         });
-        document.getElementById("screenOverlay").addEventListener("dblclick", () => {
+       document.getElementById("screenOverlay").addEventListener("dblclick", () => {
         this.temporarilyDisableOverlay();
     });
 
-    // 手機雙擊觸控支援
-    let lastTouchTime = 0;
+    // 手機雙擊觸控支援 (使用統一的 lastTouchTime 變數)
+    let lastTouchTime = 0; // <-- 只保留這一個宣告
     document.getElementById("screenOverlay").addEventListener("touchend", (e) => {
         const currentTime = new Date().getTime();
-        if (currentTime - lastTouchTime < 500) { // 500毫秒內算雙擊
+        if (currentTime - lastTouchTime < 500) {
             this.temporarilyDisableOverlay();
-            e.preventDefault(); // 防止觸發其他行為
+            e.preventDefault();
         }
         lastTouchTime = currentTime;
     });
 
-    });
-        let lastTouchTime = 0;
+    }
         const lightbox = document.getElementById("lightbox");
         lightbox.addEventListener("mousedown", (event) => {
             event.preventDefault();
@@ -653,8 +652,7 @@ const app = {
     messageElement.className = isError ? 'error-state' : 'empty-state';
     messageElement.textContent = message;
     container.appendChild(messageElement);
-}
-};
+   },
 temporarilyDisableOverlay() {
     // 只有當遮罩正在顯示時才需要處理
     if (document.getElementById("screenOverlay").style.display === "block") {
@@ -698,6 +696,7 @@ showTemporaryMessage(message) {
         document.body.removeChild(msgElement);
     }, 3000);
 },
+};
 
 resetOverlayState() {
     this.states.overlayDisabled = false;
