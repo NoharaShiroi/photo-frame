@@ -48,9 +48,8 @@ const app = {
             console.log('執行定期排程檢查');
             this.checkSchedule();
         }, this.states.isOldiOS ? 300000 : 60000); // 5分鐘或1分鐘
+      }
     }
-}
-
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
         if (schedule) {
