@@ -234,16 +234,10 @@ select, input[type="number"] {
     border: 5px solid rgba(255, 255, 255, 0.1);
 }
 /* 新增OUGH	cancel 按鈕樣式 */
-#schedule-modal button {
-    padding: 12px 20px;
-    margin: 5px;
-    background: linear-gradient(135deg, #1976d2, #4a148c);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(4px);
+#schedule-modal .styled-button {
+    margin: 10px auto; /* 居中並保留間距 */
+    display: block; /* 讓按鈕獨佔一行 */
+    width: 90%; /* 適當寬度 */
 }
 
 #schedule-modal button:hover {
@@ -377,14 +371,18 @@ select, input[type="number"] {
 }
 
 .modal-content {
-    background-color: #1a1a1a;
-    padding: 20px;
-    border-radius: 8px;
-    width: 300px;
-    text-align: center;
-    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+   width: 90%;
+    max-width: 320px; /* 響應式調整 */
+    max-height: 90vh; /* 限制高度 */
+    overflow-y: auto; /* 允許捲動 */
+    padding: 20px 15px; /* 調整內距 */
 }
-
+.modal-content > div:last-child {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
 .modal-content label {
     display: block;
     margin: 15px 0 5px;
