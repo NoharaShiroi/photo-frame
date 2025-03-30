@@ -173,12 +173,6 @@ let lastTouchTime = 0;
             }
             lastTouchTime = currentTime;
         });
-
-       const lightbox = document.getElementById("lightbox");
-        lightbox.addEventListener("mousedown", (event) => {
-            event.preventDefault();
-        });
-
         function shouldCloseLightbox(event) {
             return !event.target.closest('.nav-button') && !event.target.closest('img');
         }
