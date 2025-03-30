@@ -66,9 +66,10 @@ const app = {
     },
 
     checkSchedule() {
-        const isOldiPad = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
-                 !window.MSStream && 
-                 /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
+        if (this.states.isOldiOS) {  // 改用已經儲存的狀態
+        document.getElementById("screenOverlay").style.display = "none";
+        return;
+    }
 
     if (isOldiPad) {
         document.getElementById("screenOverlay").style.display = "none";
@@ -142,13 +143,12 @@ const app = {
 
     showApp() {
         document.getElementById("auth-container").style.display = "none";
-    document.getElementById("app-container").style.display = "block";
-    // 舊裝置強制解除遮罩
-    if (this.states.isOldiOS) {
+        document.getElementById("app-container").style.display = "block";
+        if (this.states.isOldiOS) {
         document.getElementById("screenOverlay").style.display = "none";
-    }
-    this.fetchAlbums();
-},
+     }
+     this.fetchAlbums();
+     },
 
     setupEventListeners() {
         document.getElementById("authorize-btn").addEventListener("click", (e) => {
@@ -184,10 +184,14 @@ let lastTouchTime = 0;
         }
 
         lightbox.addEventListener("dblclick", (event) => {
-            if (shouldCloseLightbox(event)) {
-                this.closeLightbox();
-            }
-        });
+            const shouldCloseLightbox = (event) => {
+        return !event.target.closest('.nav-button') && !event.target.closest('img');
+    };
+    
+    if (shouldCloseLightbox(event)) {
+        this.closeLightbox();
+    }
+});
 
         lightbox.addEventListener("touchend", (event) => {
     if (shouldCloseLightbox(event)) {
