@@ -62,6 +62,7 @@ const app = {
 
     saveSchedule() {
         localStorage.setItem("schedule", JSON.stringify(this.states.schedule));
+        this.resetOverlayState(); // 新增這行
     },
 
     checkSchedule() {
@@ -163,20 +164,17 @@ const app = {
        document.getElementById("screenOverlay").addEventListener("dblclick", () => {
         this.temporarilyDisableOverlay();
     });
+let lastTouchTime = 0;
+        document.getElementById("screenOverlay").addEventListener("touchend", (e) => {
+            const currentTime = new Date().getTime();
+            if (currentTime - lastTouchTime < 500) {
+                this.temporarilyDisableOverlay();
+                e.preventDefault();
+            }
+            lastTouchTime = currentTime;
+        });
 
-    // 手機雙擊觸控支援 (使用統一的 lastTouchTime 變數)
-    let lastTouchTime = 0; // <-- 只保留這一個宣告
-    document.getElementById("screenOverlay").addEventListener("touchend", (e) => {
-        const currentTime = new Date().getTime();
-        if (currentTime - lastTouchTime < 500) {
-            this.temporarilyDisableOverlay();
-            e.preventDefault();
-        }
-        lastTouchTime = currentTime;
-    });
-
-    }
-        const lightbox = document.getElementById("lightbox");
+       const lightbox = document.getElementById("lightbox");
         lightbox.addEventListener("mousedown", (event) => {
             event.preventDefault();
         });
@@ -250,8 +248,57 @@ const app = {
             this.checkSchedule();
         });
     },
+    temporarilyDisableOverlay() {
+        if (document.getElementById("screenOverlay").style.display === "block") {
+            // 1. 隱藏遮罩
+            document.getElementById("screenOverlay").style.display = "none";
+            this.states.overlayDisabled = true;
+            
+            // 2. 清除現有計時器
+            if (this.states.overlayTimeout) {
+                clearTimeout(this.states.overlayTimeout);
+            }
+            
+            // 3. 設定5分鐘後自動恢復
+            this.states.overlayTimeout = setTimeout(() => {
+                this.states.overlayDisabled = false;
+                this.states.overlayTimeout = null;
+                this.checkSchedule(); // 重新檢查排程
+            }, 5 * 60 * 1000); // 5分鐘
+            
+            // 4. 顯示提示訊息
+            this.showTemporaryMessage("遮罩已暫時取消，5分鐘後自動恢復");
+        }
+    },
 
-    async fetchAlbums() {
+    showTemporaryMessage(message) {
+        const msgElement = document.createElement("div");
+        msgElement.style.position = "fixed";
+        msgElement.style.bottom = "20px";
+        msgElement.style.left = "50%";
+        msgElement.style.transform = "translateX(-50%)";
+        msgElement.style.backgroundColor = "rgba(0,0,0,0.7)";
+        msgElement.style.color = "white";
+        msgElement.style.padding = "10px 20px";
+        msgElement.style.borderRadius = "5px";
+        msgElement.style.zIndex = "10000";
+        msgElement.textContent = message;
+        document.body.appendChild(msgElement);
+        
+        setTimeout(() => {
+            document.body.removeChild(msgElement);
+        }, 3000);
+    }, // <-- 這裡必須加上逗號
+   
+    resetOverlayState() {
+        this.states.overlayDisabled = false;
+        if (this.states.overlayTimeout) {
+            clearTimeout(this.states.overlayTimeout);
+            this.states.overlayTimeout = null;
+        }
+    }, // <-- 這裡必須加上逗號
+
+        async fetchAlbums() {
         try {
             const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
                 headers: { "Authorization": `Bearer ${this.states.accessToken}` }
@@ -648,63 +695,11 @@ const app = {
     if (existingMessage) {
         container.removeChild(existingMessage);
     }
-    
     const messageElement = document.createElement("p");
     messageElement.className = isError ? 'error-state' : 'empty-state';
     messageElement.textContent = message;
     container.appendChild(messageElement);
- 
-temporarilyDisableOverlay() {
-    // 只有當遮罩正在顯示時才需要處理
-    if (document.getElementById("screenOverlay").style.display === "block") {
-        // 取消遮罩
-        document.getElementById("screenOverlay").style.display = "none";
-        this.states.overlayDisabled = true;
-        
-        // 清除現有計時器（如果有的話）
-        if (this.states.overlayTimeout) {
-            clearTimeout(this.states.overlayTimeout);
-        }
-        
-        // 設定5分鐘後恢復
-        this.states.overlayTimeout = setTimeout(() => {
-            this.states.overlayDisabled = false;
-            this.states.overlayTimeout = null;
-            this.checkSchedule(); // 重新檢查排程
-        }, 5 * 60 * 1000); // 5分鐘
-        
-        // 顯示提示訊息
-        this.showTemporaryMessage("遮罩已暫時取消，5分鐘後自動恢復");
-    }
-},
-    };
-
-showTemporaryMessage(message) {
-    const msgElement = document.createElement("div");
-    msgElement.style.position = "fixed";
-    msgElement.style.bottom = "20px";
-    msgElement.style.left = "50%";
-    msgElement.style.transform = "translateX(-50%)";
-    msgElement.style.backgroundColor = "rgba(0,0,0,0.7)";
-    msgElement.style.color = "white";
-    msgElement.style.padding = "10px 20px";
-    msgElement.style.borderRadius = "5px";
-    msgElement.style.zIndex = "10000";
-    msgElement.textContent = message;
-    document.body.appendChild(msgElement);
-    
-    // 3秒後自動消失
-    setTimeout(() => {
-        document.body.removeChild(msgElement);
-    }, 3000);
-},
+ }
 };
 
-resetOverlayState() {
-    this.states.overlayDisabled = false;
-    if (this.states.overlayTimeout) {
-        clearTimeout(this.states.overlayTimeout);
-        this.states.overlayTimeout = null;
-    }
-}
 document.addEventListener("DOMContentLoaded", () => app.init());
