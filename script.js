@@ -202,6 +202,7 @@ const app = {
         lastTouchTime = currentTime;
     }
 });
+
         document.getElementById("prev-photo").addEventListener("click", () => this.navigate(-1));
         document.getElementById("next-photo").addEventListener("click", () => this.navigate(1));
         document.getElementById("start-slideshow-btn").addEventListener("click", () => this.toggleSlideshow());
@@ -652,7 +653,7 @@ const app = {
     messageElement.className = isError ? 'error-state' : 'empty-state';
     messageElement.textContent = message;
     container.appendChild(messageElement);
-   },
+ 
 temporarilyDisableOverlay() {
     // 只有當遮罩正在顯示時才需要處理
     if (document.getElementById("screenOverlay").style.display === "block") {
@@ -676,6 +677,7 @@ temporarilyDisableOverlay() {
         this.showTemporaryMessage("遮罩已暫時取消，5分鐘後自動恢復");
     }
 },
+    };
 
 showTemporaryMessage(message) {
     const msgElement = document.createElement("div");
