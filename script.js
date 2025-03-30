@@ -32,30 +32,29 @@ const app = {
     },
 
     init() {
-        this.states.isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
-                         !window.MSStream && 
-                         /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
-    
+    this.states.isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+                     !window.MSStream && 
+                     /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
+
     this.states.accessToken = sessionStorage.getItem("access_token");
     this.setupEventListeners();
     
     if (!this.checkAuth()) {
-    if (this.checkAuth()) {
+        // 未授權：顯示登入介面
+        document.getElementById("auth-container").style.display = "flex";
+        if (this.states.isOldiOS) {
+            document.getElementById("screenOverlay").style.display = "none";
+        }
+    } else {
+        // 已授權：初始化應用程式
         this.loadSchedule();
-        this.checkSchedule(); // 立即檢查一次
-        // 確保定時器有正確設定
+        this.checkSchedule();
         setInterval(() => {
             console.log('執行定期排程檢查');
             this.checkSchedule();
-        }, this.states.isOldiOS ? 300000 : 60000); // 5分鐘或1分鐘
-      }
+        }, this.states.isOldiOS ? 300000 : 60000);
     }
-    loadSchedule() {
-        const schedule = JSON.parse(localStorage.getItem("schedule"));
-        if (schedule) {
-            this.states.schedule = schedule;
-        }
-    },
+},
 
     saveSchedule() {
         localStorage.setItem("schedule", JSON.stringify(this.states.schedule));
