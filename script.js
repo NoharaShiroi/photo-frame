@@ -105,7 +105,6 @@ calculateReturnTime() {
     }
 
     document.getElementById("class-end").value = `${String(returnHours).padStart(2, '0')}:${String(returnMinutes).padStart(2, '0')}`;
-},
 
 // 當就寢時間更改時，更新醒寤時間
 document.getElementById("sleep-start").addEventListener("input", () => {
@@ -116,6 +115,7 @@ document.getElementById("sleep-start").addEventListener("input", () => {
 document.getElementById("class-start").addEventListener("input", () => {
     this.calculateReturnTime();
 }),
+    },
 
 
     checkSchedule() {
