@@ -183,6 +183,20 @@ formatTime(minutes) {
             this.resetPhotoData();
             this.loadPhotos();
         });
+        // 新增的事件：當就寢時間更動時，醒寤時間自動設為8小時後
+    document.getElementById("sleep-start").addEventListener("input", () => {
+        let sleepStart = document.getElementById("sleep-start").value;
+        let sleepStartTime = this.getTimeInMinutes(sleepStart);
+        let sleepEndTime = sleepStartTime + 8 * 60; // 計算醒寤時間
+        document.getElementById("sleep-end").value = this.formatTime(sleepEndTime);
+    });
+        // 新增的事件：當外出時間更動時，返家時間自動設為3小時後
+    document.getElementById("class-start").addEventListener("input", () => {
+        let classStart = document.getElementById("class-start").value;
+        let classStartTime = this.getTimeInMinutes(classStart);
+        let classEndTime = classStartTime + 3 * 60; // 計算返家時間
+        document.getElementById("class-end").value = this.formatTime(classEndTime);
+    });
        document.getElementById("screenOverlay").addEventListener("dblclick", () => {
         this.temporarilyDisableOverlay();
     });
@@ -195,6 +209,32 @@ let lastTouchTime = 0;
             }
             lastTouchTime = currentTime;
         });
+        // 開關排程設置的彈窗
+    document.getElementById("schedule-settings-btn").addEventListener("click", () => {
+        document.getElementById("schedule-modal").style.display = "block";
+    });
+
+    // 關閉排程設置彈窗
+    document.querySelector(".close-modal").addEventListener("click", () => {
+        document.getElementById("schedule-modal").style.display = "none";
+    });
+
+    document.getElementById("cancel-schedule").addEventListener("click", () => {
+        document.getElementById("schedule-modal").style.display = "none";
+    });
+
+    document.getElementById("save-schedule").addEventListener("click", () => {
+        this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
+        this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
+        this.states.schedule.classStart = document.getElementById("class-start").value;
+        this.states.schedule.classEnd = document.getElementById("class-end").value;
+        this.states.schedule.isEnabled = document.getElementById("is-enabled").checked;
+        this.states.schedule.useHoliday = document.getElementById("use-holiday").checked;
+        this.saveSchedule();
+        document.getElementById("schedule-modal").style.display = "none";
+        this.checkSchedule();
+    });
+
         function shouldCloseLightbox(event) {
             return !event.target.closest('.nav-button') && !event.target.closest('img');
         }
