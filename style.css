@@ -45,7 +45,7 @@ body {
 
 /* 主界面 */
 #app-container {
-    display: block;
+    display: none;
     padding: 20px;
     max-width: 1200px;
     margin: 0 auto;
@@ -123,12 +123,13 @@ select, input[type="number"] {
 
 /* 滾動容器 */
 #scroll-container {
+    display: none; /* Hide until the app is loaded */
     height: calc(100vh - 150px);
     overflow-y: auto;
     padding: 20px 0;
     margin: 0 -20px;
     box-sizing: border-box;
-    scrollbar-width: 8px;
+    scrollbar-width: 15px;
 }
 
 #scroll-container::-webkit-scrollbar {
