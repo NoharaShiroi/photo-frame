@@ -1,6 +1,6 @@
 /* 基础样式 */
 body {
-    background-image: url('https://raw.githubusercontent.com/noharashiroi/photo-frame/main/assets/background.png');
+    background-image: url('https://raw.githubusercontent.com/noharashiroi/photo-frame/main/background.png');
     background-size: cover; /* 使背景圖COVER整個容器 */
     background-position: center; /* 圖片中央對齊 */
     background-repeat: no-repeat; /* 圖片不重複 */
