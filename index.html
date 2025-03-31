@@ -73,38 +73,36 @@
     <!-- 閒置遮罩 -->
     <div id="screenOverlay" style="display: none;"></div>
 
-
-   <!-- 時間排程設定彈窗 -->
-<div id="schedule-modal" class="modal">
-    <div class="modal-content">
-        <span class="close-modal">&times;</span>
-        <h2>設定暫停時段</h2>
-        <div>
-            <label for="sleep-start">就寢時間:</label>
-            <input type="time" id="sleep-start" value="22:00">
+    <!-- 時間排程設定彈窗 -->
+    <div id="schedule-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h2>設定暫停時段</h2>
+            <div>
+                <label for="sleep-start">就寢時間:</label>
+                <input type="time" id="sleep-start" value="22:00">
+            </div>
+            <div>
+                <label for="sleep-end">醒寤時間:</label>
+                <input type="time" id="sleep-end" value="07:00">
+            </div>
+            <div>
+                <label for="class-start">外出時間:</label>
+                <input type="time" id="class-start" value="08:00">
+            </div>
+            <div>
+                <label for="class-end">返家時間:</label>
+                <input type="time" id="class-end" value="17:00">
+            </div>
+            <div>
+                <label><input type="checkbox" id="is-enabled"> 啟用暫停時段</label>
+                <br>
+                <label><input type="checkbox" id="use-holiday"> 假日自動停用</label>
+            </div>
+            <button id="save-schedule" class="styled-button">儲存設定</button>
+            <button id="cancel-schedule" class="styled-button">關閉</button>
         </div>
-        <div>
-            <label for="sleep-end">醒寤時間:</label>
-            <input type="time" id="sleep-end" value="07:00">
-        </div>
-        <div>
-            <label for="class-start">外出時間:</label>
-            <input type="time" id="class-start" value="08:00">
-        </div>
-        <div>
-            <label for="class-end">返家時間:</label>
-            <input type="time" id="class-end" value="17:00">
-        </div>
-        <div>
-            <label><input type="checkbox" id="is-enabled"> 啟用暫停時段</label>
-            <br>
-            <label><input type="checkbox" id="use-holiday"> 假日自動停用</label>
-        </div>
-        <button id="save-schedule" class="styled-button">儲存設定</button>
-        <button id="cancel-schedule" class="styled-button">關閉</button>
     </div>
-</div>
-
     
     <script src="script.js"></script>
 </body>
