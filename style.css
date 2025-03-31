@@ -6,9 +6,8 @@ body {
     background: url('https://raw.githubusercontent.com/NoharaShiroi/photo-frame/main/background.png') no-repeat center center fixed;
     background-size: cover;
     color: #ffffff;
-    overflow: hidden;
-    position: relative;
 }
+
 
 /* 授权页面 */
 #auth-container {
@@ -50,7 +49,7 @@ body {
     padding: 20px;
     max-width: 1200px;
     margin: 0 auto;
-    background-color: #1a1a1a;
+    background-color: transparent; /* 避免黑色背景覆蓋 */
 }
 .lightbox-loading {
     position: fixed;
