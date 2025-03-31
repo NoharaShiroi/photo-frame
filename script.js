@@ -687,7 +687,7 @@ let lastTouchTime = 0;
             window.location.reload();
         } else {
             document.getElementById("auth-container").style.display = "flex";
-            document.getElementById("app-container").style.display = "none";
+            document.getElementById("app-container").style.display = "block";
         }
     },
 
