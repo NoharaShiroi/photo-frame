@@ -5,7 +5,7 @@ body {
     background-position: center; /* 圖片中央對齊 */
     background-repeat: no-repeat; /* 圖片不重複 */
 }
-https://github.com/NoharaShiroi/photo-frame/blob/main/background.png
+
 /* 授权页面 */
 #auth-container {
     display: flex;
