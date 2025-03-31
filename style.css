@@ -1,11 +1,13 @@
 /* 基础样式 */
 body {
-    background-image: url('https://github.com/NoharaShiroi/photo-frame/blob/main/background.png?raw=true');
-    background-size: cover; /* 使背景圖COVER整個容器 */
-    background-position: center; /* 圖片中央對齊 */
-    background-repeat: no-repeat; /* 圖片不重複 */
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #121212;
+    color: #ffffff;
+    overflow: hidden;
 }
-https://github.com/NoharaShiroi/photo-frame/blob/main/background.png?raw=true
+
 /* 授权页面 */
 #auth-container {
     display: flex;
