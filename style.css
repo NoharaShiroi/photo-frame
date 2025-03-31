@@ -45,7 +45,7 @@ body {
 
 /* 主界面 */
 #app-container {
-    display: none;
+    display: block;
     padding: 20px;
     max-width: 1200px;
     margin: 0 auto;
