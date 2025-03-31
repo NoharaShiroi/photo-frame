@@ -56,10 +56,67 @@ const app = {
     }
 },
 
-    saveSchedule() {
-        localStorage.setItem("schedule", JSON.stringify(this.states.schedule));
-        this.resetOverlayState(); // 新增這行
-    },
+    // 儲存排程並更新醒寤時間和返家時間
+saveSchedule() {
+    this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
+    this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
+    this.states.schedule.classStart = document.getElementById("class-start").value;
+    this.states.schedule.classEnd = document.getElementById("class-end").value;
+    this.states.schedule.isEnabled = document.getElementById("is-enabled").checked;
+    this.states.schedule.useHoliday = document.getElementById("use-holiday").checked;
+    this.saveSchedule();
+    this.checkSchedule();
+    document.getElementById("schedule-modal").style.display = "none";
+},
+
+// 計算醒寤時間 (就寢時間 + 8小時)
+calculateWakeUpTime() {
+    const sleepStart = document.getElementById("sleep-start").value;
+    const [hours, minutes] = sleepStart.split(":").map(Number);
+    const wakeUpTime = new Date();
+    wakeUpTime.setHours(hours + 8);  // 加 8 小時
+    wakeUpTime.setMinutes(minutes);
+
+    let wakeUpHours = wakeUpTime.getHours();
+    let wakeUpMinutes = wakeUpTime.getMinutes();
+
+    // 處理跨日情況
+    if (wakeUpHours < hours) {
+        wakeUpHours += 24; // 超過午夜後加 24 小時
+    }
+
+    document.getElementById("sleep-end").value = `${String(wakeUpHours).padStart(2, '0')}:${String(wakeUpMinutes).padStart(2, '0')}`;
+},
+
+// 計算返家時間 (外出時間 + 3小時)
+calculateReturnTime() {
+    const classStart = document.getElementById("class-start").value;
+    const [hours, minutes] = classStart.split(":").map(Number);
+    const returnTime = new Date();
+    returnTime.setHours(hours + 3);  // 加 3 小時
+    returnTime.setMinutes(minutes);
+
+    let returnHours = returnTime.getHours();
+    let returnMinutes = returnTime.getMinutes();
+
+    // 處理跨日情況
+    if (returnHours < hours) {
+        returnHours += 24; // 超過午夜後加 24 小時
+    }
+
+    document.getElementById("class-end").value = `${String(returnHours).padStart(2, '0')}:${String(returnMinutes).padStart(2, '0')}`;
+},
+
+// 當就寢時間更改時，更新醒寤時間
+document.getElementById("sleep-start").addEventListener("input", () => {
+    this.calculateWakeUpTime();
+});
+
+// 當外出時間更改時，更新返家時間
+document.getElementById("class-start").addEventListener("input", () => {
+    this.calculateReturnTime();
+}),
+
 
     checkSchedule() {
         if (this.states.isOldiOS) {
