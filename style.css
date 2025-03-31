@@ -3,9 +3,22 @@ body {
     font-family: 'Roboto', sans-serif;
     margin: 0;
     padding: 0;
-    background-color: #121212;
+    background: url('https://github.com/NoharaShiroi/photo-frame/blob/main/background.png?raw=true') no-repeat center center fixed;
+    background-size: cover;
     color: #ffffff;
     overflow: hidden;
+    position: relative;
+}
+
+body::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: -1;
 }
 
 /* 授权页面 */
