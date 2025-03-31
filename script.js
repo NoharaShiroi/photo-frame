@@ -57,29 +57,36 @@ const app = {
 },
 
     saveSchedule() {
-        localStorage.setItem("schedule", JSON.stringify(this.states.schedule));
-        this.resetOverlayState(); // 新增這行
-    },
+  
+    // 將自動計算時間邏輯整合進來
+    this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
+    let sleepStartTime = this.getTimeInMinutes(this.states.schedule.sleepStart);
+    
+    // 計算醒寤時間，默認為8小時後，並加上跨日判斷
+    let sleepEndTime = sleepStartTime + 8 * 60; // 8小時後
+    this.states.schedule.sleepEnd = this.formatTime(sleepEndTime);
+
+    // 設定外出時間與返家時間
+    this.states.schedule.classStart = document.getElementById("class-start").value;
+    let classStartTime = this.getTimeInMinutes(this.states.schedule.classStart);
+    
+    let classEndTime = classStartTime + 3 * 60; // 3小時後
+    this.states.schedule.classEnd = this.formatTime(classEndTime);
+    
+    this.states.schedule.isEnabled = document.getElementById("is-enabled").checked;
+    this.states.schedule.useHoliday = document.getElementById("use-holiday").checked;
+    this.saveScheduleToLocalStorage();
+    this.checkSchedule();
+},
 
     checkSchedule() {
-        if (this.states.isOldiOS) {
-        document.getElementById("screenOverlay").style.display = "none";
-        return;
-    }
-
-    // 如果遮罩被臨時取消且計時器還在，則不執行後續檢查
-    if (this.states.overlayDisabled && this.states.overlayTimeout) {
-        return;
-    }
-
-    const now = new Date();
+        const now = new Date();
     const currentTime = now.getHours() * 60 + now.getMinutes();
     const sleepStart = this.getTimeInMinutes(this.states.schedule.sleepStart);
     const sleepEnd = this.getTimeInMinutes(this.states.schedule.sleepEnd);
     const classStart = this.getTimeInMinutes(this.states.schedule.classStart);
     const classEnd = this.getTimeInMinutes(this.states.schedule.classEnd);
     
-    // 修正跨午夜的時間比較
     const isSleepTime = sleepStart < sleepEnd 
         ? (currentTime >= sleepStart && currentTime < sleepEnd)
         : (currentTime >= sleepStart || currentTime < sleepEnd);
@@ -98,12 +105,11 @@ const app = {
         shouldShowOverlay
     });
 
-    // 只有當不是被臨時取消時才更新顯示狀態
     if (!this.states.overlayDisabled) {
         document.getElementById("screenOverlay").style.display = 
             shouldShowOverlay ? "block" : "none";
     }
-    },
+},
 
     isHolidayMode(date) {
         const day = date.getDay();
@@ -115,11 +121,22 @@ const app = {
         return day !== 0 && day !== 6;
     },
 
-    getTimeInMinutes(time) {
-        const [hours, minutes] = time.split(":").map(Number);
-        return hours * 60 + minutes;
-    },
-
+   getTimeInMinutes(time) {
+    const [hours, minutes] = time.split(":").map(Number);
+    return hours * 60 + minutes;
+},
+// 格式化時間，輸出成"hh:mm"格式
+formatTime(minutes) {
+    let hours = Math.floor(minutes / 60);
+    let mins = minutes % 60;
+    if (hours >= 24) {
+        hours -= 24;  // 處理跨日情況
+    }
+    return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+},
+    saveScheduleToLocalStorage() {
+    localStorage.setItem("schedule", JSON.stringify(this.states.schedule));
+},
     handleAuthFlow() {
         const authEndpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
         const params = {
