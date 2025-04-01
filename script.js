@@ -56,7 +56,15 @@ const app = {
         }, this.states.isOldiOS ? 300000 : 60000);
     }
 },
-
+// 加載排程設定
+    loadSchedule() {
+        const schedule = JSON.parse(localStorage.getItem("schedule"));
+        if (schedule) {
+            this.states.schedule = schedule;
+        }
+        console.log("排程已加載:", this.states.schedule);
+    },
+    
     saveSchedule() {
         localStorage.setItem("schedule", JSON.stringify(this.states.schedule));
         this.resetOverlayState(); // 新增這行
