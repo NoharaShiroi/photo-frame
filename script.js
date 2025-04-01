@@ -277,7 +277,7 @@ let lastTouchTime = 0;
                 clearTimeout(this.states.overlayTimeout);
             }
             
-            // 3. 設定5分鐘後自動恢復
+            // 3. 設定遮罩5分鐘後自動恢復
             this.states.overlayTimeout = setTimeout(() => {
                 this.states.overlayDisabled = false;
                 this.states.overlayTimeout = null;
