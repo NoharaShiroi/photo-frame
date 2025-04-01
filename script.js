@@ -16,7 +16,7 @@ const app = {
         currentRequestId: 0,
         lightboxActive: false,
         isFullscreen: false,
-        preloadCount: 500, // 新增預載照片數量設定
+        preloadCount: 250, // 新增預載照片數量設定
         loadedForSlideshow: 0, // 記錄已為幻燈片加載的照片數量
         playedPhotos: new Set(), // 記錄已播放過的照片ID
         overlayTimeout: null,      // 儲存計時器ID
@@ -200,6 +200,8 @@ let lastTouchTime = 0;
     
     if (shouldCloseLightbox(event)) {
         this.closeLightbox();
+        document.getElementById("screenOverlay").style.display = "none";
+        // 關閉 lightbox 時立即隱藏 #screenOverlay
     }
 });
 
@@ -210,6 +212,8 @@ let lastTouchTime = 0;
         const delay = this.states.isOldiOS ? 800 : 500;
         if (currentTime - lastTouchTime < delay) {
             this.closeLightbox();
+            document.getElementById("screenOverlay").style.display = "none";
+        // 關閉 lightbox 時立即隱藏 #screenOverlay
         }
         lastTouchTime = currentTime;
     }
@@ -404,12 +408,12 @@ let lastTouchTime = 0;
             let delay = 300; // 預設加載間隔
             
             if (this.states.photos.length >= this.states.preloadCount) {
-                delay = 1000; // 預載完成後改用較慢速度加載
+                delay = 3000; // 預載完成後改用較慢速度加載
             }
             
             if (this.states.slideshowInterval && 
-                this.states.photos.length - this.states.loadedForSlideshow < 50) {
-                delay = 300; // 幻燈片播放時需要更快加載
+                this.states.photos.length - this.states.loadedForSlideshow < 20) {
+                delay = 800; // 幻燈片播放時需要更快加載
             }
             
             setTimeout(() => this.loadPhotos(), delay);
