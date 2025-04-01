@@ -42,6 +42,7 @@ const app = {
     if (!this.checkAuth()) {
         // 未授權：顯示登入介面
         document.getElementById("auth-container").style.display = "flex";
+        document.getElementById("app-container").style.display = "none"; // Hide the app container initially
         if (this.states.isOldiOS) {
             document.getElementById("screenOverlay").style.display = "none";
         }
@@ -146,10 +147,12 @@ const app = {
         return false;
     },
 
-    showApp() {
-        document.getElementById("auth-container").style.display = "none";
-        document.getElementById("app-container").style.display = "block";
-        if (this.states.isOldiOS) {
+    showApp() {// When logged in, hide the auth container and show the app container
+    document.getElementById("auth-container").style.display = "none";
+    document.getElementById("app-container").style.display = "block"; 
+    document.getElementById("scroll-container").style.display = "block"; // Ensure scroll container is shown after login
+
+    if (this.states.isOldiOS) {
         document.getElementById("screenOverlay").style.display = "none";
      }
      this.fetchAlbums();
