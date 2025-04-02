@@ -189,6 +189,11 @@ let lastTouchTime = 0;
             }
             lastTouchTime = currentTime;
         });
+        document.getElementById("lightbox").addEventListener("dblclick", (event) => {
+        if (!event.target.closest('.nav-button') && !event.target.closest('img')) {
+            this.closeLightbox();
+        }
+    });
         function shouldCloseLightbox(event) {
             return !event.target.closest('.nav-button') && !event.target.closest('img');
         }
