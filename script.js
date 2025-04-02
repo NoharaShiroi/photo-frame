@@ -405,7 +405,7 @@ let lastTouchTime = 0;
         // 2. 如果已達預載數量，改用較慢速度繼續加載剩餘照片
         // 3. 如果正在幻燈片播放，確保有足夠緩衝照片
         if (this.states.hasMorePhotos) {
-            let delay = 800; // 預設加載間隔
+            let delay = 300; // 預設加載間隔
             
             if (this.states.photos.length >= this.states.preloadCount) {
                 delay = 3000; // 預載完成後改用較慢速度加載
@@ -413,7 +413,7 @@ let lastTouchTime = 0;
             
             if (this.states.slideshowInterval && 
                 this.states.photos.length - this.states.loadedForSlideshow < 20) {
-                delay = 1000; // 幻燈片播放時需要更快加載
+                delay = 800; // 幻燈片播放時需要更快加載
             }
             
             setTimeout(() => this.loadPhotos(), delay);
@@ -633,53 +633,8 @@ let lastTouchTime = 0;
             };
 
             this.states.slideshowInterval = setInterval(() => {
-                const nextIndex = getNextIndex();
-                this.states.currentIndex = nextIndex;
-                
-                // 判斷照片方向並更新幻燈片內容
-                const photo = this.states.photos[nextIndex];
-                const isPortrait = photo.width < photo.height;
-                
-                const lightbox = document.getElementById("lightbox");
-                const imageContainer = document.createElement("div");
-                imageContainer.className = "slide";
-                
-                if (isPortrait) {
-                    // 如果是直向照片，查找下一張非直向照片作為配對
-                    let pairedIndex = (nextIndex + 1) % this.states.photos.length;
-                    const pairedPhoto = this.states.photos[pairedIndex];
-                    
-                    if (pairedPhoto.width >= pairedPhoto.height) {
-                        imageContainer.className = "slide multi-photos";
-                        const img1 = document.createElement("img");
-                        img1.src = this.getImageUrl(photo);
-                        const img2 = document.createElement("img");
-                        img2.src = this.getImageUrl(pairedPhoto);
-                        imageContainer.appendChild(img1);
-                        imageContainer.appendChild(img2);
-                    } else {
-                        imageContainer.className = "slide single-photo";
-                        const img = document.createElement("img");
-                        img.src = this.getImageUrl(photo);
-                        imageContainer.appendChild(img);
-                    }
-                } else {
-                    imageContainer.className = "slide single-photo";
-                    const img = document.createElement("img");
-                    img.src = this.getImageUrl(photo);
-                    imageContainer.appendChild(img);
-                }
-                
-                lightbox.innerHTML = '';
-                lightbox.appendChild(imageContainer);
-                
-                // 保留原始切換效果
-                lightbox.style.opacity = 0;
-                setTimeout(() => {
-                    lightbox.style.opacity = 1;
-                }, 10);
-                
-                this.toggleButtonVisibility();
+                this.states.currentIndex = getNextIndex(); 
+                this.navigate(0); 
             }, speed);
         }
         this.toggleButtonVisibility();
