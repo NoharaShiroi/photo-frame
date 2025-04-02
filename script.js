@@ -546,36 +546,39 @@ let lastTouchTime = 0;
     },
 
     openLightbox(photoId) {
-        this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
-        const lightbox = document.getElementById("lightbox");
-        const image = document.getElementById("lightbox-image");
-        
-        image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
-        document.getElementById("screenOverlay").style.display = "none"; //開啟lightbox時隱藏遮罩層
-        image.onload = () => {
-            const isSlideshowActive = this.states.slideshowInterval !== null;
-            image.style.maxWidth = isSlideshowActive ? '99%' : '90%';
-            image.style.maxHeight = isSlideshowActive ? '99%' : '90%';
-            lightbox.style.display = "flex";
-            setTimeout(() => {
-                lightbox.style.opacity = 1;
-                this.states.lightboxActive = true;
-                this.toggleButtonVisibility();
-            }, 10);
-        };
+    this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
+    const lightbox = document.getElementById("lightbox");
+    const image = document.getElementById("lightbox-image");
+
+    image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
+
+    image.onload = () => {
+        const isSlideshowActive = this.states.slideshowInterval !== null;
+        image.style.maxWidth = isSlideshowActive ? '99%' : '90%';
+        image.style.maxHeight = isSlideshowActive ? '99%' : '90%';
+        lightbox.style.display = "flex";
+        setTimeout(() => {
+            lightbox.style.opacity = 1;
+            this.states.lightboxActive = true;
+            this.toggleButtonVisibility();
+            // 显示透明膜
+            document.getElementById("screenOverlay").style.display = "block";
+        }, 10);
+    };
     },
 
     closeLightbox() {
-        const lightbox = document.getElementById("lightbox");
-        lightbox.style.opacity = 0;
-        setTimeout(() => {
-            lightbox.style.display = "none";
-            document.getElementById("screenOverlay").style.display = "block";
-            this.states.lightboxActive = false;
-            this.toggleButtonVisibility();
-        }, 300);
-        this.stopSlideshow();
-    },
+    const lightbox = document.getElementById("lightbox");
+    lightbox.style.opacity = 0;
+    setTimeout(() => {
+        lightbox.style.display = "none";
+        this.states.lightboxActive = false;
+        this.toggleButtonVisibility();
+        // 关闭时立即隐藏透明膜
+        document.getElementById("screenOverlay").style.display = "none";
+    }, 300);
+    this.stopSlideshow();
+},
 
     navigate(direction) {
         this.states.currentIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
