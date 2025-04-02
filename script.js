@@ -574,9 +574,6 @@ let lastTouchTime = 0;
             this.toggleButtonVisibility();
         }, 300);
         this.stopSlideshow();
-        if (document.getElementById("screenOverlay")) {
-        document.getElementById("screenOverlay").style.display = "none";
-    }
     },
 
     navigate(direction) {
