@@ -570,6 +570,7 @@ let lastTouchTime = 0;
         lightbox.style.opacity = 0;
         setTimeout(() => {
             lightbox.style.display = "none";
+            screenOverlay.style.display = "none";  // 確保關閉時隱藏遮罩
             this.states.lightboxActive = false;
             this.toggleButtonVisibility();
         // 在此處隱藏遮罩
