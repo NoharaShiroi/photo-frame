@@ -433,21 +433,21 @@ let lastTouchTime = 0;
 },
 
     renderPhotos() {
-       const container = document.getElementById("photo-container");
+    const container = document.getElementById("photo-container");
     container.style.display = "grid";
-    
+
     // 移除現有的錯誤訊息（如果有的話）
     const existingError = container.querySelector('.error-state');
     if (existingError) {
         container.removeChild(existingError);
     }
-    
+
     // 只渲染尚未渲染的照片
     const startIndex = container.children.length - 
                      (container.querySelector('.empty-state') ? 1 : 0);
-    
+
     const fragment = document.createDocumentFragment();
-    
+
     for (let i = startIndex; i < this.states.photos.length; i++) {
         const photo = this.states.photos[i];
         const img = document.createElement('img');
@@ -457,6 +457,17 @@ let lastTouchTime = 0;
         img.alt = '相片';
         img.dataset.id = photo.id;
         img.onclick = () => this.openLightbox(photo.id);
+
+        // 根據照片的比例來決定顯示方式
+        const aspectRatio = photo.mediaMetadata.width / photo.mediaMetadata.height;
+        if (aspectRatio > 1) {
+            // 橫向照片，單獨顯示
+            img.classList.add("landscape");
+        } else {
+            // 直向照片，並排顯示兩張
+            img.classList.add("portrait");
+        }
+
         fragment.appendChild(img);
     }
 
@@ -474,17 +485,19 @@ let lastTouchTime = 0;
         fragment.appendChild(emptyState);
     }
 
+    // 在容器中添加渲染的圖片
     container.appendChild(fragment);
     this.setupLazyLoad();
-    
+
     // 更新幻燈片已加載數量
     if (this.states.slideshowInterval) {
         this.states.loadedForSlideshow = this.states.photos.length;
     }
-    
+
     // 每次渲染後檢查是否需要設置滾動監聽
     this.setupScrollObserver();
 },
+
 
     setupLazyLoad() {
         const observer = new IntersectionObserver((entries) => {
