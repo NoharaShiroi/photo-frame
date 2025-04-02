@@ -156,20 +156,29 @@ select, input[type="number"] {
 #photo-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 15px;
+    gap: 10px;
     padding: 15px 20px;
     margin-top: 20px;
 }
 
 .photo {
-       width: 100%;
+    width: 100%;
     aspect-ratio: 1;
     object-fit: cover;
     border-radius: 8px;
     cursor: pointer;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0, 1);
-    background: none; /* 移除黑色背景 */
+    background: none;
     border: 2px solid rgba(255, 255, 255, 0.1);
+}
+.photo.landscape {
+    grid-column: span 1;  /* 橫向照片占據一列 */
+    object-fit: cover;
+}
+
+.photo.portrait {
+    grid-column: span 2;  /* 直向照片並排顯示，占據兩列 */
+    object-fit: cover;
 }
 
 .photo:hover {
