@@ -179,14 +179,12 @@ const app = {
         });
        document.getElementById("screenOverlay").addEventListener("dblclick", () => {
         this.temporarilyDisableOverlay();
-        document.getElementById("screenOverlay").style.display = "none";   
     });
 let lastTouchTime = 0;
         document.getElementById("screenOverlay").addEventListener("touchend", (e) => {
             const currentTime = new Date().getTime();
             if (currentTime - lastTouchTime < 500) {
                 this.temporarilyDisableOverlay();
-                document.getElementById("screenOverlay").style.display = "none";  // 觸控結束時隱藏遮罩
                 e.preventDefault();
             }
             lastTouchTime = currentTime;
@@ -407,15 +405,15 @@ let lastTouchTime = 0;
         // 2. 如果已達預載數量，改用較慢速度繼續加載剩餘照片
         // 3. 如果正在幻燈片播放，確保有足夠緩衝照片
         if (this.states.hasMorePhotos) {
-            let delay = 5000; // 調整預載間隔時間為 5 秒
+            let delay = 300; // 預設加載間隔
             
             if (this.states.photos.length >= this.states.preloadCount) {
-                delay = 7000; // 預載完成後改用更長的間隔時間
+                delay = 3000; // 預載完成後改用較慢速度加載
             }
             
             if (this.states.slideshowInterval && 
                 this.states.photos.length - this.states.loadedForSlideshow < 20) {
-                delay = 1000; // 幻燈片播放時保持較短的間隔
+                delay = 800; // 幻燈片播放時需要更快加載
             }
             
             setTimeout(() => this.loadPhotos(), delay);
@@ -572,13 +570,10 @@ let lastTouchTime = 0;
         lightbox.style.opacity = 0;
         setTimeout(() => {
             lightbox.style.display = "none";
-            screenOverlay.style.display = "none";  // 確保關閉時隱藏遮罩
             this.states.lightboxActive = false;
             this.toggleButtonVisibility();
-        // 在此處隱藏遮罩
-        document.getElementById("screenOverlay").style.display = "none";
-    }, 300);  // 延遲與淡出動畫保持一致
-    this.stopSlideshow();
+        }, 300);
+        this.stopSlideshow();
     },
 
     navigate(direction) {
