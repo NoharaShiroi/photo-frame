@@ -26,7 +26,7 @@ const app = {
             sleepEnd: "07:00",
             classStart: "08:00",
             classEnd: "17:00",
-            isEnabled: false,
+            isEnabled: true,
             useHoliday: true,
         }
     },
