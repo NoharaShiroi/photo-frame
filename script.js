@@ -408,7 +408,7 @@ let lastTouchTime = 0;
             let delay = 300; // 預設加載間隔
             
             if (this.states.photos.length >= this.states.preloadCount) {
-                delay = 3000; // 預載完成後改用較慢速度加載
+                delay = 1000; // 預載完成後改用較慢速度加載
             }
             
             if (this.states.slideshowInterval && 
@@ -570,6 +570,7 @@ let lastTouchTime = 0;
         lightbox.style.opacity = 0;
         setTimeout(() => {
             lightbox.style.display = "none";
+            document.getElementById("screenOverlay").style.display = "block";
             this.states.lightboxActive = false;
             this.toggleButtonVisibility();
         }, 300);
