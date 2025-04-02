@@ -179,12 +179,14 @@ const app = {
         });
        document.getElementById("screenOverlay").addEventListener("dblclick", () => {
         this.temporarilyDisableOverlay();
+        document.getElementById("screenOverlay").style.display = "none";   
     });
 let lastTouchTime = 0;
         document.getElementById("screenOverlay").addEventListener("touchend", (e) => {
             const currentTime = new Date().getTime();
             if (currentTime - lastTouchTime < 500) {
                 this.temporarilyDisableOverlay();
+                document.getElementById("screenOverlay").style.display = "none";  // 觸控結束時隱藏遮罩
                 e.preventDefault();
             }
             lastTouchTime = currentTime;
