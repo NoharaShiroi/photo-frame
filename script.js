@@ -549,7 +549,7 @@ let lastTouchTime = 0;
         this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
         const lightbox = document.getElementById("lightbox");
         const image = document.getElementById("lightbox-image");
-        
+        document.getElementById("screenOverlay").style.display = "none";// 立即隐藏遮罩
         image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
 
         image.onload = () => {
@@ -567,6 +567,16 @@ let lastTouchTime = 0;
 
     closeLightbox() {
         const lightbox = document.getElementById("lightbox");
+        const image = document.getElementById("lightbox-image");
+    
+         // 清除图片的maxWidth和maxHeight
+        image.style.maxWidth = '';
+        image.style.maxHeight = '';
+            // 清除其他可能的样式
+        image.style.position = '';
+        image.style.zIndex = '';
+        image.style.boxShadow = '';
+        image.style.border = '';
         lightbox.style.opacity = 0;
         setTimeout(() => {
             lightbox.style.display = "none";
