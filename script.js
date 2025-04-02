@@ -588,14 +588,14 @@ let lastTouchTime = 0;
 
     navigate(direction) {
         this.states.currentIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
-        document.getElementById("lightbox-image").src = 
-            this.getImageUrl(this.states.photos[this.states.currentIndex]);
-        
-        // 新增：記錄已播放的照片
-        if (this.states.slideshowInterval) {
-            this.states.playedPhotos.add(this.states.photos[this.states.currentIndex].id);
-        }
-    },
+    const lightboxImage = document.getElementById("lightbox-image");
+    lightboxImage.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
+    // 确保动画在图片加载完成后应用
+    lightboxImage.onload = () => {
+    // 新增：应用Ken Burns Effect
+    this.applyKenBurnsEffect(lightboxImage);
+    };
+},
 
     toggleSlideshow() {
         if (this.states.slideshowInterval) {
@@ -655,6 +655,41 @@ let lastTouchTime = 0;
         this.states.slideshowInterval = null;
         this.toggleButtonVisibility();
     },
+
+    applyKenBurnsEffect(image) {
+    // 移除现有的动画
+    image.style.animation = '';
+    void image.offsetWidth; // 触发重绘以重置动画
+
+    // 生成随机参数
+    const startScale = 1;
+    const endScale = 1 + Math.random() * 0.2; // 随机缩放 1~1.2 倍
+    const moveX = (Math.random() - 0.5) * 20; // 随机水平位移 -10%~10%
+    const moveY = (Math.random() - 0.5) * 20; // 随机垂直位移 -10%~10%
+
+    // 创建唯一动画名称
+    const animationName = `kenburns-${Date.now()}`;
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes ${animationName} {
+            0% {
+                transform: scale(${startScale}) translate(0, 0);
+            }
+            100% {
+                transform: scale(${endScale}) translate(${moveX}%, ${moveY}%);
+            }
+        }
+    `;
+    document.head.appendChild(style);
+
+    // 获取当前幻灯片切换速度
+    const speed = document.getElementById("slideshow-speed").value * 1000 || 1000;
+    const duration = speed / 1000;
+
+    // 应用动画
+    image.style.animation = `${animationName} ${duration}s linear forwards`;
+},
+
 
     toggleFullscreen() {
         const isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
