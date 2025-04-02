@@ -551,7 +551,7 @@ let lastTouchTime = 0;
         const image = document.getElementById("lightbox-image");
         
         image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
-
+        document.getElementById("screenOverlay").style.display = "none"; //開啟lightbox時隱藏遮罩層
         image.onload = () => {
             const isSlideshowActive = this.states.slideshowInterval !== null;
             image.style.maxWidth = isSlideshowActive ? '99%' : '90%';
