@@ -206,7 +206,7 @@ select, input[type="number"] {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba((0, 0, 0, 0.95); /* 黑色背景 */
+    background: rgba(0, 0, 0, 0.95);
     display: none;
     justify-content: center;
     align-items: center;
@@ -235,8 +235,6 @@ select, input[type="number"] {
     box-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
     border: 5px solid rgba(255, 255, 255, 0.1);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    transform-origin: center center; /* 确保缩放基于图片中心 */
-    will-change: transform; /* 告訴瀏覽器啟用GPU加速 */
 }
 /* 新增OUGH	cancel 按鈕樣式 */
 #schedule-modal .styled-button {
