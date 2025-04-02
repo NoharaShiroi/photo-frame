@@ -26,7 +26,7 @@ const app = {
             sleepEnd: "07:00",
             classStart: "08:00",
             classEnd: "17:00",
-            isEnabled: true,
+            isEnabled: false,
             useHoliday: true,
         }
     },
@@ -189,11 +189,6 @@ let lastTouchTime = 0;
             }
             lastTouchTime = currentTime;
         });
-        document.getElementById("lightbox").addEventListener("dblclick", (event) => {
-        if (!event.target.closest('.nav-button') && !event.target.closest('img')) {
-            this.closeLightbox();
-        }
-    });
         function shouldCloseLightbox(event) {
             return !event.target.closest('.nav-button') && !event.target.closest('img');
         }
@@ -413,7 +408,7 @@ let lastTouchTime = 0;
             let delay = 300; // 預設加載間隔
             
             if (this.states.photos.length >= this.states.preloadCount) {
-                delay = 1000; // 預載完成後改用較慢速度加載
+                delay = 3000; // 預載完成後改用較慢速度加載
             }
             
             if (this.states.slideshowInterval && 
@@ -551,39 +546,35 @@ let lastTouchTime = 0;
     },
 
     openLightbox(photoId) {
-    this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
-    const lightbox = document.getElementById("lightbox");
-    const image = document.getElementById("lightbox-image");
+        this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
+        const lightbox = document.getElementById("lightbox");
+        const image = document.getElementById("lightbox-image");
+        
+        image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
 
-    image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
-
-    image.onload = () => {
-        const isSlideshowActive = this.states.slideshowInterval !== null;
-        image.style.maxWidth = isSlideshowActive ? '99%' : '90%';
-        image.style.maxHeight = isSlideshowActive ? '99%' : '90%';
-        lightbox.style.display = "flex";
-        setTimeout(() => {
-            lightbox.style.opacity = 1;
-            this.states.lightboxActive = true;
-            this.toggleButtonVisibility();
-            // 显示透明膜
-            document.getElementById("screenOverlay").style.display = "block";
-        }, 10);
-    };
+        image.onload = () => {
+            const isSlideshowActive = this.states.slideshowInterval !== null;
+            image.style.maxWidth = isSlideshowActive ? '99%' : '90%';
+            image.style.maxHeight = isSlideshowActive ? '99%' : '90%';
+            lightbox.style.display = "flex";
+            setTimeout(() => {
+                lightbox.style.opacity = 1;
+                this.states.lightboxActive = true;
+                this.toggleButtonVisibility();
+            }, 10);
+        };
     },
 
     closeLightbox() {
-    const lightbox = document.getElementById("lightbox");
-    lightbox.style.opacity = 0;
-    setTimeout(() => {
-        lightbox.style.display = "none";
-        this.states.lightboxActive = false;
-        this.toggleButtonVisibility();
-        // 关闭时立即隐藏透明膜
-        document.getElementById("screenOverlay").style.display = "none";
-    }, 300);
-    this.stopSlideshow();
-},
+        const lightbox = document.getElementById("lightbox");
+        lightbox.style.opacity = 0;
+        setTimeout(() => {
+            lightbox.style.display = "none";
+            this.states.lightboxActive = false;
+            this.toggleButtonVisibility();
+        }, 300);
+        this.stopSlideshow();
+    },
 
     navigate(direction) {
         this.states.currentIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
