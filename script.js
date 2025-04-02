@@ -572,8 +572,10 @@ let lastTouchTime = 0;
             lightbox.style.display = "none";
             this.states.lightboxActive = false;
             this.toggleButtonVisibility();
-        }, 300);
-        this.stopSlideshow();
+        // 在此處隱藏遮罩
+        document.getElementById("screenOverlay").style.display = "none";
+    }, 300);  // 延遲與淡出動畫保持一致
+    this.stopSlideshow();
     },
 
     navigate(direction) {
