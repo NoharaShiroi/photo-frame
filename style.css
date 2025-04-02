@@ -234,6 +234,7 @@ select, input[type="number"] {
     border-radius: 8px;
     box-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
     border: 5px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 /* 新增OUGH	cancel 按鈕樣式 */
 #schedule-modal .styled-button {
