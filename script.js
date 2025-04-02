@@ -405,7 +405,7 @@ let lastTouchTime = 0;
         // 2. 如果已達預載數量，改用較慢速度繼續加載剩餘照片
         // 3. 如果正在幻燈片播放，確保有足夠緩衝照片
         if (this.states.hasMorePhotos) {
-            let delay = 300; // 預設加載間隔
+            let delay = 800; // 預設加載間隔
             
             if (this.states.photos.length >= this.states.preloadCount) {
                 delay = 3000; // 預載完成後改用較慢速度加載
@@ -413,7 +413,7 @@ let lastTouchTime = 0;
             
             if (this.states.slideshowInterval && 
                 this.states.photos.length - this.states.loadedForSlideshow < 20) {
-                delay = 800; // 幻燈片播放時需要更快加載
+                delay = 1000; // 幻燈片播放時需要更快加載
             }
             
             setTimeout(() => this.loadPhotos(), delay);
