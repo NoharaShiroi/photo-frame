@@ -413,7 +413,7 @@ const app = {
         }
 
         this.renderPhotos();
-
+        
         // 自動加載策略
         if (this.states.hasMorePhotos) {
             let delay = 300; // 預設加載間隔
@@ -440,6 +440,8 @@ const app = {
             document.getElementById("loading-indicator").style.display = "none";
         }
     }
+    },
+
 updatePreloadPriorities() {
     // 重置優先級
     this.states.preloadPriorities = {};
@@ -465,7 +467,7 @@ updatePreloadPriorities() {
             this.states.preloadPriorities[photo.id] = 1;
         }
     });
-}
+},
  schedulePreload() {
     // 如果用戶正在滾動，延遲預載
     if (this.states.isUserScrolling) {
@@ -486,15 +488,15 @@ updatePreloadPriorities() {
             this.preloadHighResImage(photo);
         }
     });
-}
+},
+    
 preloadHighResImage(photo) {
     const img = new Image();
     img.src = this.getImageUrl(photo, 800, 600);
     img.onload = () => {
         this.states.highResCache[photo.id] = img.src;
     };
-}
-    },
+ },
     renderPhotos() {
        const container = document.getElementById("photo-container");
     container.style.display = "grid";
@@ -640,15 +642,14 @@ updateViewportPhotos() {
 
     openLightbox(photoId) {
         this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
-        image.src = `${photo.baseUrl}=w300-h300`;
+        const photo = this.states.photos[this.states.currentIndex]; // 正確定義 photo
         const lightbox = document.getElementById("lightbox");
         const image = document.getElementById("lightbox-image");
-        document.getElementById("screenOverlay").style.display = "none";// 立即隐藏遮罩
-        // 新增方向檢測
+        document.getElementById("screenOverlay").style.display = "none";
+        
         this.setupOrientationDetection();
-        image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
-       
-    
+        image.src = `${photo.baseUrl}=w300-h300`;
+           
     // 檢查是否有預載的高解析度圖
     if (this.states.highResCache[photoId]) {
         image.src = this.states.highResCache[photoId];
@@ -660,6 +661,7 @@ updateViewportPhotos() {
             image.src = hiResImg.src;
             this.states.highResCache[photoId] = hiResImg.src;
         };
+    }
         image.onload = () => {
             const isSlideshowActive = this.states.slideshowInterval !== null;
             image.style.maxWidth = isSlideshowActive ? '99%' : '90%';
@@ -672,7 +674,6 @@ updateViewportPhotos() {
                 this.toggleButtonVisibility();
             }, 10);
         };
-    }
     },
     setupOrientationDetection() {
         const updateOrientation = () => {
