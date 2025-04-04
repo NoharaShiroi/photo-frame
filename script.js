@@ -356,11 +356,12 @@ const app = {
     },
 
     async loadPhotos() {
-        if (!this.states.hasMorePhotos && this.states.photos.length > 0) return;
+    if (!this.states.hasMorePhotos && this.states.photos.length > 0) return;
     if (this.states.isFetching) return;
 
     const requestId = ++this.states.currentRequestId;
     this.states.isFetching = true;
+    document.getElementById("loading-indicator").style.display = "block";
 
     try {
         const body = {
@@ -384,7 +385,6 @@ const app = {
         });
 
         if (!response.ok) {
-            // 只在第一次失敗時顯示錯誤訊息
             if (this.states.photos.length === 0) {
                 throw new Error('照片加載失敗');
             }
@@ -406,14 +406,15 @@ const app = {
             this.states.photos = [...this.states.photos, ...newPhotos];
             this.states.nextPageToken = data.nextPageToken || null;
             this.states.hasMorePhotos = !!this.states.nextPageToken;
+            
+            // 新增智能預載邏輯
+            this.updatePreloadPriorities();
+            this.schedulePreload();
         }
 
         this.renderPhotos();
 
-        // 自動加載策略：
-        // 1. 如果還沒達到預載數量，繼續快速加載
-        // 2. 如果已達預載數量，改用較慢速度繼續加載剩餘照片
-        // 3. 如果正在幻燈片播放，確保有足夠緩衝照片
+        // 自動加載策略
         if (this.states.hasMorePhotos) {
             let delay = 300; // 預設加載間隔
             
@@ -428,14 +429,7 @@ const app = {
             
             setTimeout(() => this.loadPhotos(), delay);
         }
-        const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
-        this.states.photos = [...this.states.photos, ...newPhotos];
-        
-        // 新增智能預載邏輯
-        this.updatePreloadPriorities();
-        this.schedulePreload();
     } catch (error) {
-        // 只在第一次失敗時顯示錯誤訊息
         if (this.states.photos.length === 0) {
             console.error("照片加載失敗:", error);
             this.showMessage("加載失敗，請檢查網路連線", true);
@@ -446,7 +440,6 @@ const app = {
             document.getElementById("loading-indicator").style.display = "none";
         }
     }
-},
 updatePreloadPriorities() {
     // 重置優先級
     this.states.preloadPriorities = {};
@@ -472,7 +465,7 @@ updatePreloadPriorities() {
             this.states.preloadPriorities[photo.id] = 1;
         }
     });
-},
+}
  schedulePreload() {
     // 如果用戶正在滾動，延遲預載
     if (this.states.isUserScrolling) {
@@ -494,14 +487,14 @@ updatePreloadPriorities() {
         }
     });
 }
-
 preloadHighResImage(photo) {
     const img = new Image();
     img.src = this.getImageUrl(photo, 800, 600);
     img.onload = () => {
         this.states.highResCache[photo.id] = img.src;
     };
-},  
+}
+    },
     renderPhotos() {
        const container = document.getElementById("photo-container");
     container.style.display = "grid";
@@ -647,13 +640,14 @@ updateViewportPhotos() {
 
     openLightbox(photoId) {
         this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
+        image.src = `${photo.baseUrl}=w300-h300`;
         const lightbox = document.getElementById("lightbox");
         const image = document.getElementById("lightbox-image");
         document.getElementById("screenOverlay").style.display = "none";// 立即隐藏遮罩
         // 新增方向檢測
         this.setupOrientationDetection();
         image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
-        image.src = `${photo.baseUrl}=w300-h300`;
+       
     
     // 檢查是否有預載的高解析度圖
     if (this.states.highResCache[photoId]) {
@@ -678,9 +672,8 @@ updateViewportPhotos() {
                 this.toggleButtonVisibility();
             }, 10);
         };
+    }
     },
-    
-    // 新增方向檢測函數
     setupOrientationDetection() {
         const updateOrientation = () => {
             this.states.orientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
@@ -709,7 +702,6 @@ updateViewportPhotos() {
             image.style.maxHeight = '90%';
         }
     },
-    
     closeLightbox() {
         const lightbox = document.getElementById("lightbox");
         const image = document.getElementById("lightbox-image");
