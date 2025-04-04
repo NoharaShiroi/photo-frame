@@ -803,7 +803,7 @@ applyKenBurnsEffect(image) {
 
     // 生成随机缩放参数
     const startScale = 1;
-    const endScale = 1 + Math.random() * 0.5; // 随機縮放 1~1.5 倍
+    const endScale = 1 + Math.random() * 0.3; // 随機縮放 1~1.3 倍
 
     // 创建唯一动画名稱
     const animationName = `kenburns-${Date.now()}`;
