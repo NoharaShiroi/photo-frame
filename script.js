@@ -28,9 +28,10 @@ const app = {
             classEnd: "17:00",
             isEnabled: true,
             useHoliday: true,
+            orientation: 'landscape', // 新增方向狀態
         }
     },
-
+    
     init() {
     this.states.isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
                      !window.MSStream && 
@@ -167,105 +168,112 @@ const app = {
      },
 
     setupEventListeners() {
-        document.getElementById("authorize-btn").addEventListener("click", (e) => {
-            e.preventDefault();
-            this.handleAuthFlow();
-        });
+    document.getElementById("authorize-btn").addEventListener("click", (e) => {
+        e.preventDefault();
+        this.handleAuthFlow();
+    });
 
-        document.getElementById("album-select").addEventListener("change", (e) => {
-            this.states.albumId = e.target.value;
-            this.resetPhotoData();
-            this.loadPhotos();
-        });
-       document.getElementById("screenOverlay").addEventListener("dblclick", () => {
+    document.getElementById("album-select").addEventListener("change", (e) => {
+        this.states.albumId = e.target.value;
+        this.resetPhotoData();
+        this.loadPhotos();
+    });
+
+    // 修改後的 screenOverlay 雙擊/觸控事件
+    document.getElementById("screenOverlay").addEventListener("dblclick", () => {
         this.temporarilyDisableOverlay();
     });
-let lastTouchTime = 0;
-        document.getElementById("screenOverlay").addEventListener("touchend", (e) => {
-            const currentTime = new Date().getTime();
-            if (currentTime - lastTouchTime < 500) {
-                this.temporarilyDisableOverlay();
-                e.preventDefault();
-            }
-            lastTouchTime = currentTime;
-        });
-        function shouldCloseLightbox(event) {
-            return !event.target.closest('.nav-button') && !event.target.closest('img');
-        }
 
-        lightbox.addEventListener("dblclick", (event) => {
-            const shouldCloseLightbox = (event) => {
-        return !event.target.closest('.nav-button') && !event.target.closest('img');
-    };
-    
-    if (shouldCloseLightbox(event)) {
-        this.closeLightbox();
-        document.getElementById("screenOverlay").style.display = "none";
-        // 關閉 lightbox 時立即隱藏 #screenOverlay
-    }
-});
-
-        lightbox.addEventListener("touchend", (event) => {
-    if (shouldCloseLightbox(event)) {
+    let lastOverlayTouchTime = 0;
+    document.getElementById("screenOverlay").addEventListener("touchend", (e) => {
         const currentTime = new Date().getTime();
-        // 舊裝置增加觸控延遲容錯
-        const delay = this.states.isOldiOS ? 800 : 500;
-        if (currentTime - lastTouchTime < delay) {
+        if (currentTime - lastOverlayTouchTime < 500) {
+            this.temporarilyDisableOverlay();
+            e.preventDefault();
+        }
+        lastOverlayTouchTime = currentTime;
+    });
+
+    // 修改後的 lightbox 雙擊/觸控事件
+    const lightbox = document.getElementById("lightbox");
+    let lastLightboxTouchTime = 0;
+
+    function shouldCloseLightbox(event) {
+        return !event.target.closest('.nav-button') && !event.target.closest('img');
+    }
+
+    // 雙擊滑鼠關閉
+    lightbox.addEventListener("dblclick", (event) => {
+        if (shouldCloseLightbox(event)) {
             this.closeLightbox();
             document.getElementById("screenOverlay").style.display = "none";
-        // 關閉 lightbox 時立即隱藏 #screenOverlay
         }
-        lastTouchTime = currentTime;
-    }
-});
+    });
 
-        document.getElementById("prev-photo").addEventListener("click", () => this.navigate(-1));
-        document.getElementById("next-photo").addEventListener("click", () => this.navigate(1));
-        document.getElementById("start-slideshow-btn").addEventListener("click", () => this.toggleSlideshow());
-        document.getElementById("fullscreen-toggle-btn").addEventListener("click", () => this.toggleFullscreen());
+    // 雙擊觸控關閉 (iPad Mini 2 專用)
+    lightbox.addEventListener("touchend", (event) => {
+        if (shouldCloseLightbox(event)) {
+            const currentTime = new Date().getTime();
+            const delay = this.states.isOldiOS ? 800 : 500;
+            
+            if (currentTime - lastLightboxTouchTime < delay) {
+                this.closeLightbox();
+                document.getElementById("screenOverlay").style.display = "none";
+                event.preventDefault();
+            }
+            lastLightboxTouchTime = currentTime;
+        }
+    });
 
-        document.getElementById("play-mode").addEventListener("change", (e) => {
+    // 保留原有其他事件監聽
+    document.getElementById("prev-photo").addEventListener("click", () => this.navigate(-1));
+    document.getElementById("next-photo").addEventListener("click", () => this.navigate(1));
+    document.getElementById("start-slideshow-btn").addEventListener("click", () => this.toggleSlideshow());
+    document.getElementById("fullscreen-toggle-btn").addEventListener("click", () => this.toggleFullscreen());
+
+    document.getElementById("play-mode").addEventListener("change", (e) => {
+        if (this.states.slideshowInterval) {
+            this.toggleSlideshow();
+            this.toggleSlideshow();
+        }
+    });
+
+    let speedTimeout;
+    document.getElementById("slideshow-speed").addEventListener("input", (e) => {
+        clearTimeout(speedTimeout);
+        speedTimeout = setTimeout(() => {
             if (this.states.slideshowInterval) {
                 this.toggleSlideshow();
                 this.toggleSlideshow();
             }
-        });
+        }, 500);
+    });
 
-        let speedTimeout;
-        document.getElementById("slideshow-speed").addEventListener("input", (e) => {
-            clearTimeout(speedTimeout);
-            speedTimeout = setTimeout(() => {
-                if (this.states.slideshowInterval) {
-                    this.toggleSlideshow();
-                    this.toggleSlideshow();
-                }
-            }, 500);
-        });
+    document.getElementById("schedule-settings-btn").addEventListener("click", () => {
+        document.getElementById("schedule-modal").style.display = "block";
+    });
 
-        document.getElementById("schedule-settings-btn").addEventListener("click", () => {
-            document.getElementById("schedule-modal").style.display = "block";
-        });
+    document.querySelector(".close-modal").addEventListener("click", () => {
+        document.getElementById("schedule-modal").style.display = "none";
+    });
 
-        document.querySelector(".close-modal").addEventListener("click", () => {
-            document.getElementById("schedule-modal").style.display = "none";
-        });
+    document.getElementById("cancel-schedule").addEventListener("click", () => {
+        document.getElementById("schedule-modal").style.display = "none";
+    });
 
-        document.getElementById("cancel-schedule").addEventListener("click", () => {
-            document.getElementById("schedule-modal").style.display = "none";
-        });
-
-        document.getElementById("save-schedule").addEventListener("click", () => {
-            this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
-            this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
-            this.states.schedule.classStart = document.getElementById("class-start").value;
-            this.states.schedule.classEnd = document.getElementById("class-end").value;
-            this.states.schedule.isEnabled = document.getElementById("is-enabled").checked;
-            this.states.schedule.useHoliday = document.getElementById("use-holiday").checked;
-            this.saveSchedule();
-            document.getElementById("schedule-modal").style.display = "none";
-            this.checkSchedule();
-        });
-    },
+    document.getElementById("save-schedule").addEventListener("click", () => {
+        this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
+        this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
+        this.states.schedule.classStart = document.getElementById("class-start").value;
+        this.states.schedule.classEnd = document.getElementById("class-end").value;
+        this.states.schedule.isEnabled = document.getElementById("is-enabled").checked;
+        this.states.schedule.useHoliday = document.getElementById("use-holiday").checked;
+        this.saveSchedule();
+        document.getElementById("schedule-modal").style.display = "none";
+        this.checkSchedule();
+    });
+},
+    
     temporarilyDisableOverlay() {
         if (document.getElementById("screenOverlay").style.display === "block") {
             // 1. 隱藏遮罩
@@ -306,7 +314,7 @@ let lastTouchTime = 0;
         setTimeout(() => {
             document.body.removeChild(msgElement);
         }, 3000);
-    }, // <-- 這裡必須加上逗號
+    }, 
    
     resetOverlayState() {
         this.states.overlayDisabled = false;
@@ -550,12 +558,16 @@ let lastTouchTime = 0;
         const lightbox = document.getElementById("lightbox");
         const image = document.getElementById("lightbox-image");
         document.getElementById("screenOverlay").style.display = "none";// 立即隐藏遮罩
+        // 新增方向檢測
+        this.setupOrientationDetection();
+        
         image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
 
         image.onload = () => {
             const isSlideshowActive = this.states.slideshowInterval !== null;
             image.style.maxWidth = isSlideshowActive ? '99%' : '90%';
-            image.style.maxHeight = isSlideshowActive ? '99%' : '90%';
+            this.adjustPhotoDisplay(); // 根據方向調整顯示
+            
             lightbox.style.display = "flex";
             setTimeout(() => {
                 lightbox.style.opacity = 1;
@@ -564,7 +576,37 @@ let lastTouchTime = 0;
             }, 10);
         };
     },
+    
+    // 新增方向檢測函數
+    setupOrientationDetection() {
+        const updateOrientation = () => {
+            this.states.orientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
+            this.adjustPhotoDisplay();
+        };
+        
+        window.addEventListener('resize', updateOrientation);
+        updateOrientation(); // 初始檢測
+    },
 
+    // 調整照片顯示方式
+    adjustPhotoDisplay() {
+        if (!this.states.lightboxActive) return;
+        
+        const lightbox = document.getElementById("lightbox");
+        const image = document.getElementById("lightbox-image");
+        const isPortrait = this.states.orientation === 'portrait';
+        
+        if (isPortrait) {
+            // 直立模式下的特殊處理
+            lightbox.style.flexDirection = 'column';
+            image.style.maxHeight = '45%'; // 讓兩張照片可以垂直排列
+        } else {
+            // 橫向模式保持原樣
+            lightbox.style.flexDirection = 'row';
+            image.style.maxHeight = '90%';
+        }
+    },
+    
     closeLightbox() {
         const lightbox = document.getElementById("lightbox");
         const image = document.getElementById("lightbox-image");
