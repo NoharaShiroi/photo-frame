@@ -656,33 +656,14 @@ let lastTouchTime = 0;
         this.toggleButtonVisibility();
     },
 
-    applyKenBurnsEffect(image) {
+applyKenBurnsEffect(image) {
     // 移除现有的动画
     image.style.animation = '';
     void image.offsetWidth; // 触发重繪以重置動畫
 
-    // 获取lightbox和圖片的尺寸
-    const lightbox = image.parentElement;
-    const lightboxWidth = lightbox.clientWidth;
-    const lightboxHeight = lightbox.clientHeight;
-    const imageWidth = image.naturalWidth;
-    const imageHeight = image.naturalHeight;
-
-    // 計算可移動的範圍，確保圖片始終在lightbox內
-    const maxTranslateX = Math.min(
-        (lightboxWidth - imageWidth * 0.9) / 2,
-        (lightboxWidth - imageWidth * 0.8) / 2
-    );
-    const maxTranslateY = Math.min(
-        (lightboxHeight - imageHeight * 0.9) / 2,
-        (lightboxHeight - imageHeight * 0.8) / 2
-    );
-
-    // 生成随机参数，但限制平移範圍
+    // 生成随机缩放参数
     const startScale = 1;
-    const endScale = 1 + Math.random() * 0.3; // 随機縮放 1~1.2 倍
-    const moveX = (Math.random() - 0.5) * maxTranslateX; // 水平位移限制在可移動範圍內
-    const moveY = (Math.random() - 0.5) * maxTranslateY; // 垂直位移限制在可移動範圍內
+    const endScale = 1 + Math.random() * 0.5; // 随機縮放 1~1.5 倍
 
     // 创建唯一动画名稱
     const animationName = `kenburns-${Date.now()}`;
@@ -690,10 +671,10 @@ let lastTouchTime = 0;
     style.textContent = `
         @keyframes ${animationName} {
             0% {
-                transform: scale(${startScale}) translate(0, 0);
+                transform: scale(${startScale});
             }
             100% {
-                transform: scale(${endScale}) translate(${moveX}px, ${moveY}px);
+                transform: scale(${endScale});
             }
         }
     `;
