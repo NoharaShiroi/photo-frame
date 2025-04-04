@@ -21,6 +21,12 @@ const app = {
         playedPhotos: new Set(), // 記錄已播放過的照片ID
         overlayTimeout: null,      // 儲存計時器ID
         overlayDisabled: false,   // 記錄遮罩是否被臨時取消
+        preloadPriorities: {},      // 圖片預載優先級記錄
+        viewportPhotos: [],         // 當前可見區域照片ID
+        activePreload: 5,           // 同時預載的圖片數量
+        highResCache: {},           // 高解析度圖片緩存
+        isUserScrolling: false,     // 是否正在滾動
+        lastScrollTime: 0           // 最後滾動時間戳
         schedule: {
             sleepStart: "22:00",
             sleepEnd: "07:00",
@@ -350,15 +356,11 @@ const app = {
     },
 
     async loadPhotos() {
-        if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
-        return;
-    }
-
+        if (!this.states.hasMorePhotos && this.states.photos.length > 0) return;
     if (this.states.isFetching) return;
 
     const requestId = ++this.states.currentRequestId;
     this.states.isFetching = true;
-    document.getElementById("loading-indicator").style.display = "block";
 
     try {
         const body = {
@@ -426,6 +428,12 @@ const app = {
             
             setTimeout(() => this.loadPhotos(), delay);
         }
+        const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
+        this.states.photos = [...this.states.photos, ...newPhotos];
+        
+        // 新增智能預載邏輯
+        this.updatePreloadPriorities();
+        this.schedulePreload();
     } catch (error) {
         // 只在第一次失敗時顯示錯誤訊息
         if (this.states.photos.length === 0) {
@@ -439,7 +447,61 @@ const app = {
         }
     }
 },
+updatePreloadPriorities() {
+    // 重置優先級
+    this.states.preloadPriorities = {};
+    
+    // 當前可見區域照片高優先級
+    this.states.viewportPhotos.forEach(id => {
+        this.states.preloadPriorities[id] = 3; // 最高優先級
+    });
+    
+    // 附近照片中等優先級
+    const nearbyRange = 10;
+    this.states.photos.forEach((photo, index) => {
+        if (Math.abs(index - this.states.currentIndex) <= nearbyRange) {
+            if (!this.states.preloadPriorities[photo.id] || this.states.preloadPriorities[photo.id] < 2) {
+                this.states.preloadPriorities[photo.id] = 2;
+            }
+        }
+    });
+    
+    // 其他照片低優先級
+    this.states.photos.forEach(photo => {
+        if (!this.states.preloadPriorities[photo.id]) {
+            this.states.preloadPriorities[photo.id] = 1;
+        }
+    });
+},
+ schedulePreload() {
+    // 如果用戶正在滾動，延遲預載
+    if (this.states.isUserScrolling) {
+        setTimeout(() => this.schedulePreload(), 500);
+        return;
+    }
+    
+    // 按優先級排序照片
+    const photosToPreload = [...this.states.photos]
+        .sort((a, b) => this.states.preloadPriorities[b.id] - this.states.preloadPriorities[a.id])
+        .filter(photo => !this.states.highResCache[photo.id]);
+    
+    // 限制同時預載數量
+    const toLoad = photosToPreload.slice(0, this.states.activePreload);
+    
+    toLoad.forEach(photo => {
+        if (!this.states.highResCache[photo.id]) {
+            this.preloadHighResImage(photo);
+        }
+    });
+}
 
+preloadHighResImage(photo) {
+    const img = new Image();
+    img.src = this.getImageUrl(photo, 800, 600);
+    img.onload = () => {
+        this.states.highResCache[photo.id] = img.src;
+    };
+},  
     renderPhotos() {
        const container = document.getElementById("photo-container");
     container.style.display = "grid";
@@ -543,6 +605,36 @@ const app = {
         document.getElementById('photo-container').appendChild(sentinel);
         this.states.observer.observe(sentinel);
     }
+    let scrollTimeout;
+    const container = document.getElementById('scroll-container');
+    
+    container.addEventListener('scroll', () => {
+        this.states.isUserScrolling = true;
+        this.states.lastScrollTime = Date.now();
+        
+        clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(() => {
+            this.states.isUserScrolling = false;
+            this.updateViewportPhotos();
+            this.schedulePreload();
+        }, 200);
+    });
+}
+
+updateViewportPhotos() {
+    const container = document.getElementById('photo-container');
+    const photos = Array.from(container.querySelectorAll('.photo'));
+    const viewportHeight = window.innerHeight;
+    
+    this.states.viewportPhotos = photos
+        .filter(img => {
+            const rect = img.getBoundingClientRect();
+            return rect.top < viewportHeight && rect.bottom > 0;
+        })
+        .map(img => img.dataset.id);
+    
+    this.updatePreloadPriorities();
+}    
 },
 
     getImageUrl(photo, width = 1920, height = 1080) {
@@ -560,9 +652,20 @@ const app = {
         document.getElementById("screenOverlay").style.display = "none";// 立即隐藏遮罩
         // 新增方向檢測
         this.setupOrientationDetection();
-        
         image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
-
+        image.src = `${photo.baseUrl}=w300-h300`;
+    
+    // 檢查是否有預載的高解析度圖
+    if (this.states.highResCache[photoId]) {
+        image.src = this.states.highResCache[photoId];
+    } else {
+        // 立即加載高解析度圖
+        const hiResImg = new Image();
+        hiResImg.src = this.getImageUrl(photo, 1920, 1080);
+        hiResImg.onload = () => {
+            image.src = hiResImg.src;
+            this.states.highResCache[photoId] = hiResImg.src;
+        };
         image.onload = () => {
             const isSlideshowActive = this.states.slideshowInterval !== null;
             image.style.maxWidth = isSlideshowActive ? '99%' : '90%';
