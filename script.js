@@ -26,7 +26,8 @@ const app = {
         activePreload: 5,           // 同時預載的圖片數量
         highResCache: {},           // 高解析度圖片緩存
         isUserScrolling: false,     // 是否正在滾動
-        lastScrollTime: 0           // 最後滾動時間戳
+        lastScrollTime: 0,           // 最後滾動時間戳
+        orientation: 'landscape', // 新增方向狀態   
         schedule: {
             sleepStart: "22:00",
             sleepEnd: "07:00",
@@ -34,8 +35,7 @@ const app = {
             classEnd: "17:00",
             isEnabled: true,
             useHoliday: true,
-            orientation: 'landscape', // 新增方向狀態
-        }
+       }
     },
     
     init() {
