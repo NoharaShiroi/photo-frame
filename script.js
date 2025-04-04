@@ -614,7 +614,7 @@ preloadHighResImage(photo) {
             this.schedulePreload();
         }, 200);
     });
-}
+},
 
 updateViewportPhotos() {
     const container = document.getElementById('photo-container');
@@ -628,8 +628,7 @@ updateViewportPhotos() {
         })
         .map(img => img.dataset.id);
     
-    this.updatePreloadPriorities();
-}    
+    this.updatePreloadPriorities();  
 },
 
     getImageUrl(photo, width = 1920, height = 1080) {
