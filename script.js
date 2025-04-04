@@ -496,7 +496,7 @@ preloadHighResImage(photo) {
     img.onload = () => {
         this.states.highResCache[photo.id] = img.src;
     };
- },
+ }
     renderPhotos() {
        const container = document.getElementById("photo-container");
     container.style.display = "grid";
@@ -640,20 +640,22 @@ updateViewportPhotos() {
     },
 
     openLightbox(photoId) {
-        this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
-        const photo = this.states.photos[this.states.currentIndex]; // 正確定義 photo
-        const lightbox = document.getElementById("lightbox");
-        const image = document.getElementById("lightbox-image");
-        document.getElementById("screenOverlay").style.display = "none";
-        
-        this.setupOrientationDetection();
-        image.src = `${photo.baseUrl}=w300-h300`;
-           
-    // 檢查是否有預載的高解析度圖
+    this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
+    const photo = this.states.photos[this.states.currentIndex];
+    const lightbox = document.getElementById("lightbox");
+    const image = document.getElementById("lightbox-image");
+    document.getElementById("screenOverlay").style.display = "none";
+    
+    this.setupOrientationDetection();
+    
+    // 先檢查是否有緩存的高解析度圖片
     if (this.states.highResCache[photoId]) {
         image.src = this.states.highResCache[photoId];
     } else {
-        // 立即加載高解析度圖
+        // 先顯示低解析度預覽
+        image.src = `${photo.baseUrl}=w300-h300`;
+        
+        // 後台加載高解析度圖片
         const hiResImg = new Image();
         hiResImg.src = this.getImageUrl(photo, 1920, 1080);
         hiResImg.onload = () => {
@@ -661,19 +663,20 @@ updateViewportPhotos() {
             this.states.highResCache[photoId] = hiResImg.src;
         };
     }
-        image.onload = () => {
-            const isSlideshowActive = this.states.slideshowInterval !== null;
-            image.style.maxWidth = isSlideshowActive ? '99%' : '90%';
-            this.adjustPhotoDisplay(); // 根據方向調整顯示
-            
-            lightbox.style.display = "flex";
-            setTimeout(() => {
-                lightbox.style.opacity = 1;
-                this.states.lightboxActive = true;
-                this.toggleButtonVisibility();
-            }, 10);
-        };
-    },
+
+    image.onload = () => {
+        const isSlideshowActive = this.states.slideshowInterval !== null;
+        image.style.maxWidth = isSlideshowActive ? '99%' : '90%';
+        this.adjustPhotoDisplay();
+        
+        lightbox.style.display = "flex";
+        setTimeout(() => {
+            lightbox.style.opacity = 1;
+            this.states.lightboxActive = true;
+            this.toggleButtonVisibility();
+        }, 10);
+    };
+},
     setupOrientationDetection() {
         const updateOrientation = () => {
             this.states.orientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
