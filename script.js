@@ -496,7 +496,7 @@ preloadHighResImage(photo) {
     img.onload = () => {
         this.states.highResCache[photo.id] = img.src;
     };
- }
+ },
     renderPhotos() {
        const container = document.getElementById("photo-container");
     container.style.display = "grid";
