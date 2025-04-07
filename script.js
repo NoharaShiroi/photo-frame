@@ -19,8 +19,7 @@ const app = {
         preloadCount: 200, // 新增預載照片數量設定
         loadedForSlideshow: 0, // 記錄已為幻燈片加載的照片數量
         playedPhotos: new Set(), // 記錄已播放過的照片ID
-        overlayAlwaysOff: false, //遮照長時取消
-        overlayTimeout: null,      // 儲存計時器ID
+                overlayTimeout: null,      // 儲存計時器ID
         overlayDisabled: false,   // 記錄遮罩是否被臨時取消
            schedule: {
             sleepStart: "22:00",
@@ -29,6 +28,7 @@ const app = {
             classEnd: "17:00",
             isEnabled: false,
             useHoliday: true,
+            overlayAlwaysOff: false, //遮罩長時取消   
         }
     },
 
