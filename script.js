@@ -481,6 +481,7 @@ let lastTouchTime = 0;
         img.className = 'photo';
         img.src = `${photo.baseUrl}=w150-h150`;
         img.dataset.src = `${photo.baseUrl}=w800-h600`;
+        img.loading = 'lazy';
         img.alt = '相片';
         img.dataset.id = photo.id;
         img.onclick = () => this.openLightbox(photo.id);
@@ -600,7 +601,7 @@ let lastTouchTime = 0;
     let added = 0;
     let index = startIndex;
 
-    while (index < this.states.photos.length && added < 3) {
+    while (index < this.states.photos.length && added < 2) {
         const photo = this.states.photos[index];
         if (this.isPortrait(photo)) {
             const img = document.createElement("img");
