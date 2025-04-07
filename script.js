@@ -16,7 +16,7 @@ const app = {
         currentRequestId: 0,
         lightboxActive: false,
         isFullscreen: false,
-        preloadCount: 500, // 新增預載照片數量設定
+        preloadCount: 300, // 新增預載照片數量設定
         loadedForSlideshow: 0, // 記錄已為幻燈片加載的照片數量
         playedPhotos: new Set(), // 記錄已播放過的照片ID
         overlayTimeout: null,      // 儲存計時器ID
@@ -291,7 +291,7 @@ let lastTouchTime = 0;
         setTimeout(() => {
             document.body.removeChild(msgElement);
         }, 3000);
-    }, // <-- 這裡必須加上逗號
+    }, 
    
     resetOverlayState() {
         this.states.overlayDisabled = false;
@@ -299,7 +299,7 @@ let lastTouchTime = 0;
             clearTimeout(this.states.overlayTimeout);
             this.states.overlayTimeout = null;
         }
-    }, // <-- 這裡必須加上逗號
+    }, 
 
         async fetchAlbums() {
         try {
