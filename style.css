@@ -215,6 +215,27 @@ select, input[type="number"] {
     outline: none;
     -webkit-tap-highlight-color: transparent;
 }
+.lightbox-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.portrait-collage {
+  display: flex;
+  flex-direction: row;
+  gap: 5px;
+  max-width: 90%;
+  max-height: 90%;
+  justify-content: center;
+  align-items: center;
+}
+
+.portrait-collage img {
+  width: 48%;
+  height: auto;
+  object-fit: contain;
+}
 #lightbox.fade-in {
         opacity: 1;
    }
