@@ -19,9 +19,10 @@ const app = {
         preloadCount: 200, // 新增預載照片數量設定
         loadedForSlideshow: 0, // 記錄已為幻燈片加載的照片數量
         playedPhotos: new Set(), // 記錄已播放過的照片ID
+        overlayAlwaysOff: false //遮照長時取消
         overlayTimeout: null,      // 儲存計時器ID
         overlayDisabled: false,   // 記錄遮罩是否被臨時取消
-        schedule: {
+                schedule: {
             sleepStart: "22:00",
             sleepEnd: "07:00",
             classStart: "08:00",
@@ -32,79 +33,103 @@ const app = {
     },
 
     init() {
-    this.states.isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
-                     !window.MSStream && 
-                     /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
+        this.states.isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+                         !window.MSStream && 
+                         /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
 
-    this.states.accessToken = sessionStorage.getItem("access_token");
-    this.setupEventListeners();
-    
-    if (!this.checkAuth()) {
-        // 未授權：顯示登入介面
-        document.getElementById("auth-container").style.display = "flex";
-        if (this.states.isOldiOS) {
-            document.getElementById("screenOverlay").style.display = "none";
-        }
-    } else {
-        // 已授權：初始化應用程式
-        this.loadSchedule();
-        this.checkSchedule();
-        setInterval(() => {
-            console.log('執行定期排程檢查');
+        this.states.accessToken = sessionStorage.getItem("access_token");
+        this.setupEventListeners();
+
+        if (!this.checkAuth()) {
+            document.getElementById("auth-container").style.display = "flex";
+            if (this.states.isOldiOS) {
+                document.getElementById("screenOverlay").style.display = "none";
+            }
+        } else {
+            this.loadSchedule();
+            if (document.getElementById("overlay-toggle")) {
+                document.getElementById("overlay-toggle").checked = this.states.schedule.overlayAlwaysOff;
+            }
             this.checkSchedule();
-        }, this.states.isOldiOS ? 300000 : 60000);
-    }
-},
+            setInterval(() => {
+                console.log('執行定期排程檢查');
+                this.checkSchedule();
+            }, this.states.isOldiOS ? 300000 : 60000);
+        }
+    },
 
     saveSchedule() {
-        localStorage.setItem("schedule", JSON.stringify(this.states.schedule));
-        this.resetOverlayState(); 
+        this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
+        this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
+        this.states.schedule.classStart = document.getElementById("class-start").value;
+        this.states.schedule.classEnd = document.getElementById("class-end").value;
+        this.states.schedule.isEnabled = document.getElementById("is-enabled").checked;
+        this.states.schedule.useHoliday = document.getElementById("use-holiday").checked;
         this.states.schedule.overlayAlwaysOff = document.getElementById("overlay-toggle").checked;
+        localStorage.setItem("schedule", JSON.stringify(this.states.schedule));
+        this.resetOverlayState();
+    },
+
+    loadSchedule() {
+        const saved = localStorage.getItem("schedule");
+        if (saved) {
+            try {
+                const parsed = JSON.parse(saved);
+                Object.assign(this.states.schedule, parsed);
+            } catch (e) {
+                console.warn("排程載入失敗", e);
+            }
+        }
     },
 
     checkSchedule() {
         if (this.states.isOldiOS) {
-        document.getElementById("screenOverlay").style.display = "none";
-        return;
-    }
+            document.getElementById("screenOverlay").style.display = "none";
+            return;
+        }
 
-    // 如果遮罩被臨時取消且計時器還在，則不執行後續檢查
-    if (this.states.overlayDisabled && this.states.overlayTimeout) {
-        return;
-    }
+        if (this.states.schedule.overlayAlwaysOff) {
+            document.getElementById("screenOverlay").style.display = "none";
+            return;
+        }
 
-    const now = new Date();
-    const currentTime = now.getHours() * 60 + now.getMinutes();
-    const sleepStart = this.getTimeInMinutes(this.states.schedule.sleepStart);
-    const sleepEnd = this.getTimeInMinutes(this.states.schedule.sleepEnd);
-    const classStart = this.getTimeInMinutes(this.states.schedule.classStart);
-    const classEnd = this.getTimeInMinutes(this.states.schedule.classEnd);
-    
-    // 修正跨午夜的時間比較
-    const isSleepTime = sleepStart < sleepEnd 
-        ? (currentTime >= sleepStart && currentTime < sleepEnd)
-        : (currentTime >= sleepStart || currentTime < sleepEnd);
-    
-    const isClassTime = currentTime >= classStart && currentTime < classEnd;
-    const isHoliday = this.isHolidayMode(now);
-    
-    const shouldShowOverlay = this.states.schedule.isEnabled && 
-                           (isSleepTime || isClassTime || isHoliday);
-    
-    console.log('排程檢查結果:', {
-        currentTime: `${now.getHours()}:${now.getMinutes()}`,
-        isSleepTime,
-        isClassTime,
-        isHoliday,
-        shouldShowOverlay
-    });
+        if (this.states.overlayDisabled && this.states.overlayTimeout) {
+            return;
+        }
 
-    // 只有當不是被臨時取消時才更新顯示狀態
-    if (!this.states.overlayDisabled) {
-        document.getElementById("screenOverlay").style.display = 
-            shouldShowOverlay ? "block" : "none";
-    }
+        const now = new Date();
+        const currentTime = now.getHours() * 60 + now.getMinutes();
+        const sleepStart = this.getTimeInMinutes(this.states.schedule.sleepStart);
+        const sleepEnd = this.getTimeInMinutes(this.states.schedule.sleepEnd);
+        const classStart = this.getTimeInMinutes(this.states.schedule.classStart);
+        const classEnd = this.getTimeInMinutes(this.states.schedule.classEnd);
+
+        const isSleepTime = sleepStart < sleepEnd 
+            ? (currentTime >= sleepStart && currentTime < sleepEnd)
+            : (currentTime >= sleepStart || currentTime < sleepEnd);
+
+        const isClassTime = currentTime >= classStart && currentTime < classEnd;
+        const isHoliday = this.isHolidayMode(now);
+
+        const shouldShowOverlay = this.states.schedule.isEnabled && 
+                               (isSleepTime || isClassTime || isHoliday);
+
+        console.log('排程檢查結果:', {
+            currentTime: `${now.getHours()}:${now.getMinutes()}`,
+            isSleepTime,
+            isClassTime,
+            isHoliday,
+            shouldShowOverlay
+        });
+
+        if (!this.states.overlayDisabled && !this.states.schedule.overlayAlwaysOff) {
+            document.getElementById("screenOverlay").style.display = 
+                shouldShowOverlay ? "block" : "none";
+        } else if (this.states.schedule.overlayAlwaysOff) {
+            document.getElementById("screenOverlay").style.display = "none";
+        }
     },
+
 
     isHolidayMode(date) {
         const day = date.getDay();
@@ -135,18 +160,6 @@ const app = {
         window.location.href = authEndpoint + '?' + new URLSearchParams(params);
     },
     
-    loadSchedule() {
-    const saved = localStorage.getItem("schedule");
-    if (saved) {
-        try {
-            const parsed = JSON.parse(saved);
-            Object.assign(this.states.schedule, parsed);
-        } catch (e) {
-            console.warn("排程載入失敗", e);
-        }
-    }
-},
-
     checkAuth() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         if (hashParams.has("access_token")) {
@@ -265,30 +278,33 @@ let lastTouchTime = 0;
         });
     },
     temporarilyDisableOverlay() {
+        if (document.getElementById("overlay-toggle")?.checked) {
+            this.states.overlayDisabled = true;
+            this.states.overlayTimeout = null;
+            this.showTemporaryMessage("已永久停用遮罩");
+            return;
+        }
+
         if (document.getElementById("screenOverlay").style.display === "block") {
-            // 1. 隱藏遮罩
             document.getElementById("screenOverlay").style.display = "none";
             this.states.overlayDisabled = true;
-            
-            // 2. 清除現有計時器
+
             if (this.states.overlayTimeout) {
                 clearTimeout(this.states.overlayTimeout);
             }
-            
-            // 3. 設定5分鐘後自動恢復
+
             this.states.overlayTimeout = setTimeout(() => {
                 this.states.overlayDisabled = false;
                 this.states.overlayTimeout = null;
-                this.checkSchedule(); // 重新檢查排程
-            }, 5 * 60 * 1000); // 5分鐘
-            
-            // 4. 顯示提示訊息
+                this.checkSchedule();
+            }, 5 * 60 * 1000);
+
             this.showTemporaryMessage("遮罩已暫時取消，5分鐘後自動恢復");
         }
-        if (document.getElementById("overlay-toggle").checked) {
+            if (document.getElementById("overlay-toggle").checked) {
            this.states.overlayDisabled = true;
            this.states.overlayTimeout = null;
-           this.showTemporaryMessage("已永久停用遮罩");
+           this.showTemporaryMessage("已長時停用遮罩");
                  return; // 直接跳過計時器
           }
     },
