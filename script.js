@@ -617,8 +617,52 @@ let lastTouchTime = 0;
     }
 
     lightbox.appendChild(collage);
+    const collage = document.createElement("div");
+collage.id = "portrait-collage";
+collage.style.display = "flex";
+collage.style.flexDirection = "row";
+collage.style.gap = "10px";
+collage.style.maxHeight = "95vh";
+collage.style.maxWidth = "95vw";
+
+const loadPromises = [];
+
+while (index < this.states.photos.length && added < 2) {
+    const photo = this.states.photos[index];
+    if (this.isPortrait(photo)) {
+        const img = document.createElement("img");
+        img.src = this.getImageUrl(photo);
+        img.style.maxHeight = "95vh";
+        img.style.objectFit = "contain";
+        img.style.borderRadius = "8px";
+        img.style.flex = "1 1 0";
+        collage.appendChild(img);
+        
+        loadPromises.push(new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve; // 即使錯也算載入完，避免永遠不顯示
+        }));
+
+        added++;
+    }
+    index++;
+}
+
+// 等待所有拼貼圖載入後再顯示
+Promise.all(loadPromises).then(() => {
+    const lightbox = document.getElementById("lightbox");
+    const oldCollage = document.getElementById("portrait-collage");
+    const image = document.getElementById("lightbox-image");
+
+    if (oldCollage) oldCollage.remove();
+    image.style.display = "none";
+
+    lightbox.appendChild(collage);
     lightbox.style.display = "flex";
     lightbox.style.opacity = 1;
+    this.states.lightboxActive = true;
+    this.toggleButtonVisibility();
+});
     this.states.lightboxActive = true;
     this.toggleButtonVisibility();
    },
