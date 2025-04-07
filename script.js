@@ -16,7 +16,7 @@ const app = {
         currentRequestId: 0,
         lightboxActive: false,
         isFullscreen: false,
-        preloadCount: 500, // 新增預載照片數量設定
+        preloadCount: 200, // 新增預載照片數量設定
         loadedForSlideshow: 0, // 記錄已為幻燈片加載的照片數量
         playedPhotos: new Set(), // 記錄已播放過的照片ID
         overlayTimeout: null,      // 儲存計時器ID
@@ -58,7 +58,8 @@ const app = {
 
     saveSchedule() {
         localStorage.setItem("schedule", JSON.stringify(this.states.schedule));
-        this.resetOverlayState(); // 新增這行
+        this.resetOverlayState(); 
+        this.states.schedule.overlayAlwaysOff = document.getElementById("overlay-toggle").checked;
     },
 
     checkSchedule() {
@@ -284,6 +285,12 @@ let lastTouchTime = 0;
             // 4. 顯示提示訊息
             this.showTemporaryMessage("遮罩已暫時取消，5分鐘後自動恢復");
         }
+        if (document.getElementById("overlay-toggle").checked) {
+           this.states.overlayDisabled = true;
+           this.states.overlayTimeout = null;
+           this.showTemporaryMessage("已永久停用遮罩");
+                 return; // 直接跳過計時器
+          }
     },
 
     showTemporaryMessage(message) {
@@ -402,19 +409,26 @@ let lastTouchTime = 0;
         // 2. 如果已達預載數量，改用較慢速度繼續加載剩餘照片
         // 3. 如果正在幻燈片播放，確保有足夠緩衝照片
         if (this.states.hasMorePhotos) {
-            let delay = 300; // 預設加載間隔
-            
-            if (this.states.photos.length >= this.states.preloadCount) {
-                delay = 1000; // 預載完成後改用較慢速度加載
-            }
-            
-            if (this.states.slideshowInterval && 
-                this.states.photos.length - this.states.loadedForSlideshow < 50) {
-                delay = 300; // 幻燈片播放時需要更快加載
-            }
-            
-            setTimeout(() => this.loadPhotos(), delay);
-        }
+            let delay = 300;
+
+    if (this.states.photos.length >= this.states.preloadCount) {
+        delay = 1000;
+    }
+
+    if (this.states.slideshowInterval &&
+        this.states.photos.length - this.states.loadedForSlideshow < 50) {
+        delay = 300;
+    }
+
+    if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => {
+            this.loadPhotos();
+        }, { timeout: delay });
+    } else {
+        // 備援：不支援的瀏覽器仍使用 setTimeout
+        setTimeout(() => this.loadPhotos(), delay);
+    }
+     }       
     } catch (error) {
         // 只在第一次失敗時顯示錯誤訊息
         if (this.states.photos.length === 0) {
