@@ -27,8 +27,7 @@ const app = {
         highResCache: {},           // 高解析度圖片緩存
         isUserScrolling: false,     // 是否正在滾動
         lastScrollTime: 0,           // 最後滾動時間戳
-        orientation: 'landscape', // 新增方向狀態   
-        schedule: {
+          schedule: {
             sleepStart: "22:00",
             sleepEnd: "07:00",
             classStart: "08:00",
@@ -646,9 +645,6 @@ updateViewportPhotos() {
     const image = document.getElementById("lightbox-image");
     document.getElementById("screenOverlay").style.display = "none";
     
-    this.setupOrientationDetection();
-    
-    // 先檢查是否有緩存的高解析度圖片
     if (this.states.highResCache[photoId]) {
         image.src = this.states.highResCache[photoId];
     } else {
@@ -677,17 +673,7 @@ updateViewportPhotos() {
         }, 10);
     };
 },
-    setupOrientationDetection() {
-        const updateOrientation = () => {
-            this.states.orientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait';
-            this.adjustPhotoDisplay();
-        };
-        
-        window.addEventListener('resize', updateOrientation);
-        updateOrientation(); // 初始檢測
-    },
-
-    // 調整照片顯示方式
+        // 調整照片顯示方式
     adjustPhotoDisplay() {
         if (!this.states.lightboxActive) return;
         
@@ -731,10 +717,7 @@ updateViewportPhotos() {
     const lightboxImage = document.getElementById("lightbox-image");
     lightboxImage.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
     // 确保动画在图片加载完成后应用
-    lightboxImage.onload = () => {
-    // 新增：应用Ken Burns Effect
-    this.applyKenBurnsEffect(lightboxImage);
-    };
+    
 },
 
     toggleSlideshow() {
