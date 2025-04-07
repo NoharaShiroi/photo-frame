@@ -291,15 +291,15 @@ let lastTouchTime = 0;
         setTimeout(() => {
             document.body.removeChild(msgElement);
         }, 3000);
-    }, // <-- 這裡必須加上逗號
-   
+    }, 
+    
     resetOverlayState() {
         this.states.overlayDisabled = false;
         if (this.states.overlayTimeout) {
             clearTimeout(this.states.overlayTimeout);
             this.states.overlayTimeout = null;
         }
-    }, // <-- 這裡必須加上逗號
+    }, 
 
         async fetchAlbums() {
         try {
@@ -529,6 +529,56 @@ let lastTouchTime = 0;
         }
         return `${photo.baseUrl}=w${width}-h${height}`;
     },
+   
+    isPortrait(photo) {
+    const metadata = photo.mediaMetadata;
+    if (metadata && metadata.width && metadata.height) {
+        return parseInt(metadata.width, 10) < parseInt(metadata.height, 10);
+    }
+    return false;
+    }, 
+
+    displayPortraitCollage(startIndex) {
+    const lightbox = document.getElementById("lightbox");
+    const image = document.getElementById("lightbox-image");
+
+    image.style.display = "none";
+
+    const oldCollage = document.getElementById("portrait-collage");
+    if (oldCollage) oldCollage.remove();
+
+    const collage = document.createElement("div");
+    collage.id = "portrait-collage";
+    collage.style.display = "flex";
+    collage.style.flexDirection = "row";
+    collage.style.gap = "10px";
+    collage.style.maxHeight = "95vh";
+    collage.style.maxWidth = "95vw";
+
+    let added = 0;
+    let index = startIndex;
+
+    while (index < this.states.photos.length && added < 3) {
+        const photo = this.states.photos[index];
+        if (this.isPortrait(photo)) {
+            const img = document.createElement("img");
+            img.src = this.getImageUrl(photo);
+            img.style.maxHeight = "95vh";
+            img.style.objectFit = "contain";
+            img.style.borderRadius = "8px";
+            img.style.flex = "1 1 0";
+            collage.appendChild(img);
+            added++;
+        }
+        index++;
+    }
+
+    lightbox.appendChild(collage);
+    lightbox.style.display = "flex";
+    lightbox.style.opacity = 1;
+    this.states.lightboxActive = true;
+    this.toggleButtonVisibility();
+   },
 
     openLightbox(photoId) {
         this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
@@ -562,15 +612,38 @@ let lastTouchTime = 0;
     },
 
     navigate(direction) {
-        this.states.currentIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
-        document.getElementById("lightbox-image").src = 
-            this.getImageUrl(this.states.photos[this.states.currentIndex]);
-        
-        // 新增：記錄已播放的照片
-        if (this.states.slideshowInterval) {
-            this.states.playedPhotos.add(this.states.photos[this.states.currentIndex].id);
-        }
-    },
+    const nextIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
+    const nextPhoto = this.states.photos[nextIndex];
+
+    if (this.isPortrait(nextPhoto)) {
+        this.states.currentIndex = nextIndex;
+        this.displayPortraitCollage(nextIndex);
+    } else {
+        this.states.currentIndex = nextIndex;
+        const lightbox = document.getElementById("lightbox");
+        const image = document.getElementById("lightbox-image");
+        const oldCollage = document.getElementById("portrait-collage");
+        if (oldCollage) oldCollage.remove();
+
+        image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
+        image.style.display = "block";
+
+        image.onload = () => {
+            const imgWidth = image.naturalWidth;
+            const imgHeight = image.naturalHeight;
+            image.classList.remove("portrait-mode", "landscape-mode");
+            if (imgHeight > imgWidth) {
+                image.classList.add("portrait-mode");
+            } else {
+                image.classList.add("landscape-mode");
+            }
+        };
+    }
+
+    if (this.states.slideshowInterval) {
+        this.states.playedPhotos.add(this.states.photos[this.states.currentIndex].id);
+    }
+},
 
     toggleSlideshow() {
         if (this.states.slideshowInterval) {
@@ -618,11 +691,19 @@ let lastTouchTime = 0;
             };
 
             this.states.slideshowInterval = setInterval(() => {
-                this.states.currentIndex = getNextIndex(); 
-                this.navigate(0); 
-            }, speed);
-        }
-        this.toggleButtonVisibility();
+                const nextIndex = getNextIndex();
+                const nextPhoto = this.states.photos[nextIndex];
+
+                 if (this.isPortrait(nextPhoto)) {
+                 this.states.currentIndex = nextIndex;
+                 this.displayPortraitCollage(nextIndex);
+               } else {
+                        this.states.currentIndex = nextIndex;
+                     this.navigate(0);
+                     }
+},            speed);
+            }
+                this.toggleButtonVisibility();
     },
 
     stopSlideshow() {
