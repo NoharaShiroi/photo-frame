@@ -16,7 +16,7 @@ const app = {
         currentRequestId: 0,
         lightboxActive: false,
         isFullscreen: false,
-        preloadCount: 300, // 新增預載照片數量設定
+        preloadCount: 500, // 新增預載照片數量設定
         loadedForSlideshow: 0, // 記錄已為幻燈片加載的照片數量
         playedPhotos: new Set(), // 記錄已播放過的照片ID
         overlayTimeout: null,      // 儲存計時器ID
@@ -291,7 +291,7 @@ let lastTouchTime = 0;
         setTimeout(() => {
             document.body.removeChild(msgElement);
         }, 3000);
-    }, 
+    }, // <-- 這裡必須加上逗號
    
     resetOverlayState() {
         this.states.overlayDisabled = false;
@@ -299,7 +299,7 @@ let lastTouchTime = 0;
             clearTimeout(this.states.overlayTimeout);
             this.states.overlayTimeout = null;
         }
-    }, 
+    }, // <-- 這裡必須加上逗號
 
         async fetchAlbums() {
         try {
@@ -530,48 +530,25 @@ let lastTouchTime = 0;
         return `${photo.baseUrl}=w${width}-h${height}`;
     },
 
-openLightbox(photoId) {
-    const container = document.getElementById("lightbox");
-    container.innerHTML = ""; // 清空 Lightbox
+    openLightbox(photoId) {
+        this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
+        const lightbox = document.getElementById("lightbox");
+        const image = document.getElementById("lightbox-image");
+        
+        image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
 
-    const currentIndex = this.states.photos.findIndex(p => p.id === photoId);
-    const currentPhoto = this.states.photos[currentIndex];
-    const nextPhoto = this.states.photos[(currentIndex + 1) % this.states.photos.length];
-
-    const img1 = document.createElement("img");
-    img1.src = this.getImageUrl(currentPhoto);
-    img1.className = "lightbox-img";
-
-    img1.onload = () => {
-        const isPortrait1 = img1.naturalHeight / img1.naturalWidth > 1.3;
-
-        const img2 = document.createElement("img");
-        img2.src = this.getImageUrl(nextPhoto);
-        img2.className = "lightbox-img";
-
-        img2.onload = () => {
-            const isPortrait2 = img2.naturalHeight / img2.naturalWidth > 1.3;
-
-            if (isPortrait1 && isPortrait2) {
-                const collage = document.createElement("div");
-                collage.className = "portrait-collage";
-                collage.appendChild(img1);
-                collage.appendChild(img2);
-                container.appendChild(collage);
-            } else {
-                container.appendChild(img1);
-            }
-
-            container.style.display = "flex";
+        image.onload = () => {
+            const isSlideshowActive = this.states.slideshowInterval !== null;
+            image.style.maxWidth = isSlideshowActive ? '99%' : '90%';
+            image.style.maxHeight = isSlideshowActive ? '99%' : '90%';
+            lightbox.style.display = "flex";
             setTimeout(() => {
-                container.style.opacity = 1;
+                lightbox.style.opacity = 1;
                 this.states.lightboxActive = true;
-                this.states.currentIndex = currentIndex;
                 this.toggleButtonVisibility();
             }, 10);
         };
-    };
-},
+    },
 
     closeLightbox() {
         const lightbox = document.getElementById("lightbox");
