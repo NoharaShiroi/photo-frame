@@ -796,39 +796,6 @@ updateViewportPhotos() {
         this.toggleButtonVisibility();
     },
 
-applyKenBurnsEffect(image) {
-    // 移除现有的动画
-    image.style.animation = '';
-    void image.offsetWidth; // 触发重繪以重置動畫
-
-    // 生成随机缩放参数
-    const startScale = 1;
-    const endScale = 1 + Math.random() * 0.3; // 随機縮放 1~1.3 倍
-
-    // 创建唯一动画名稱
-    const animationName = `kenburns-${Date.now()}`;
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes ${animationName} {
-            0% {
-                transform: scale(${startScale});
-            }
-            100% {
-                transform: scale(${endScale});
-            }
-        }
-    `;
-    document.head.appendChild(style);
-
-    // 获取当前幻灯片切換速度
-    const speed = document.getElementById("slideshow-speed").value * 1000 || 1000;
-    const duration = speed / 1000;
-
-    // 应用動畫
-    image.style.animation = `${animationName} ${duration}s linear forwards`;
-},
-
-
 
     toggleFullscreen() {
         const isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
