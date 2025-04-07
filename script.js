@@ -133,6 +133,18 @@ const app = {
         };
         window.location.href = authEndpoint + '?' + new URLSearchParams(params);
     },
+    
+    loadSchedule() {
+    const saved = localStorage.getItem("schedule");
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved);
+            Object.assign(this.states.schedule, parsed);
+        } catch (e) {
+            console.warn("排程載入失敗", e);
+        }
+    }
+},
 
     checkAuth() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
