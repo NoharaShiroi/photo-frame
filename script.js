@@ -617,7 +617,6 @@ let lastTouchTime = 0;
     }
 
     lightbox.appendChild(collage);
-    const collage = document.createElement("div");
 collage.id = "portrait-collage";
 collage.style.display = "flex";
 collage.style.flexDirection = "row";
