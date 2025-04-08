@@ -15,34 +15,35 @@
                    frame-src https://accounts.google.com;">
     <title>Google 相簿數位相框</title>
    <script>
-  const issues = [];
+  window.addEventListener('DOMContentLoaded', () => {
+    const issues = [];
 
-  try {
-    new Function("(async () => {})");
-  } catch (e) {
-    issues.push("❌ async/await 不支援");
-  }
+    try {
+      new Function("(async () => {})");
+    } catch (e) {
+      issues.push("❌ async/await 不支援");
+    }
 
-  if (!window.fetch) {
-    issues.push("❌ fetch 不支援");
-  }
+    if (!window.fetch) {
+      issues.push("❌ fetch 不支援");
+    }
 
-  if (!window.Promise) {
-    issues.push("❌ Promise 不支援");
-  }
+    if (!window.Promise) {
+      issues.push("❌ Promise 不支援");
+    }
 
-  if (issues.length > 0) {
-    document.body.innerHTML = `
-      <div style="padding: 2em; font-size: 1.2em; color: white; background: #222;">
-        <p>⚠️ 您的裝置不支援以下功能：</p>
-        <ul>${issues.map(i => '<li>' + i + '</li>').join('')}</ul>
-        <p>請使用較新裝置（建議 iOS 12+）</p>
-      </div>
-    `;
-    throw new Error("裝置不支援，停止執行 script");
-  }
+    if (issues.length > 0) {
+      document.body.innerHTML = `
+        <div style="padding: 2em; font-size: 1.2em; color: white; background: #222;">
+          <p>⚠️ 您的裝置不支援以下功能：</p>
+          <ul>${issues.map(i => '<li>' + i + '</li>').join('')}</ul>
+          <p>請使用較新裝置（建議 iOS 12+）</p>
+        </div>
+      `;
+      throw new Error("裝置不支援，停止執行 script");
+    }
+  });
 </script>
-
 
     <link rel="stylesheet" href="style.css">
 </head>
