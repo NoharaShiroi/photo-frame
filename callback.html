@@ -2,27 +2,24 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>登入中轉頁面</title>
+  <title>授權完成</title>
   <style>
     body { font-family: sans-serif; text-align: center; padding: 2em; }
   </style>
 </head>
 <body>
-  <h2>正在登入，請稍候…</h2>
+  <h2>授權完成，正在返回主頁...</h2>
   <script>
     (function () {
       const hash = window.location.hash.substring(1);
       const params = new URLSearchParams(hash);
       const token = params.get("access_token");
 
-      if (token) {
-        // 儲存 token 至 localStorage（主頁會自動讀取）
-        localStorage.setItem("access_token", token);
-
-        // 回到主頁
-        window.location.href = "index.html"; // 或 index.htm / photo-frame/index.html 視你部署情況調整
+      if (token && window.opener) {
+        window.opener.postMessage({ access_token: token }, window.location.origin);
+        window.close(); // 自動關閉 popup 視窗
       } else {
-        document.body.innerHTML = "<h2>登入失敗，請重新操作</h2>";
+        document.body.innerHTML = "<h2>授權失敗，請重新登入</h2>";
       }
     })();
   </script>
