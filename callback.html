@@ -2,24 +2,22 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <title>授權完成</title>
-  <style>
-    body { font-family: sans-serif; text-align: center; padding: 2em; }
-  </style>
+  <title>登入完成</title>
 </head>
 <body>
-  <h2>授權完成，正在返回主頁...</h2>
+  <h2>登入完成，正在載入您的相簿...</h2>
   <script>
     (function () {
       const hash = window.location.hash.substring(1);
       const params = new URLSearchParams(hash);
       const token = params.get("access_token");
 
-      if (token && window.opener) {
-        window.opener.postMessage({ access_token: token }, window.location.origin);
-        window.close(); // 自動關閉 popup 視窗
+      if (token) {
+        localStorage.setItem("access_token", token);
+        // ✅ 自動導回你的主頁
+        window.location.href = "https://noharashiroi.github.io/photo-frame/";
       } else {
-        document.body.innerHTML = "<h2>授權失敗，請重新登入</h2>";
+        document.body.innerHTML = "<h2>登入失敗，請重新再試一次</h2>";
       }
     })();
   </script>
