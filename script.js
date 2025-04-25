@@ -207,12 +207,49 @@ const app = {
      }
      this.fetchAlbums();
      },
+    startAuthPopup() {
+    const authEndpoint = "https://accounts.google.com/o/oauth2/v2/auth";
+    const params = {
+        client_id: this.CLIENT_ID,
+        redirect_uri: this.REDIRECT_URI,
+        response_type: "token",
+        scope: this.SCOPES,
+        include_granted_scopes: "true",
+        state: "popup",
+        prompt: "consent"
+    };
+
+    const authUrl = authEndpoint + "?" + new URLSearchParams(params);
+
+    // ✅ 在使用者點擊當下執行 window.open
+    const popup = window.open(authUrl, "_blank", "width=500,height=600");
+
+    if (!popup) {
+        alert("授權視窗被瀏覽器阻擋，請允許彈出視窗");
+        return;
+    }
+
+    // ✅ 立即監聽 popup 回傳的 token
+    window.addEventListener("message", (event) => {
+        if (event.origin !== window.location.origin) return;
+
+        const token = event.data?.access_token;
+        if (token) {
+            sessionStorage.setItem("access_token", token);
+            localStorage.setItem("access_token", token);
+            this.states.accessToken = token;
+            this.showApp();
+            this.loadSchedule();
+            this.checkSchedule();
+        }
+    }, { once: true });
+},
 
     setupEventListeners() {
         document.getElementById("authorize-btn").addEventListener("click", (e) => {
-            e.preventDefault();
-            this.handleAuthFlow();
-        });
+    e.preventDefault();
+    app.startAuthPopup(); // 確保在 click 中呼叫 window.open
+});
 
         document.getElementById("album-select").addEventListener("change", (e) => {
             this.states.albumId = e.target.value;
