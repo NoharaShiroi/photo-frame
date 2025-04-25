@@ -1,0 +1,8 @@
+<script>
+  const hash = window.location.hash.substring(1);
+  if (hash.includes("access_token")) {
+    // 將 token 傳回 main 頁面
+    localStorage.setItem("access_token", new URLSearchParams(hash).get("access_token"));
+    window.location.href = "index.html"; // 回到主頁
+  }
+</script>
