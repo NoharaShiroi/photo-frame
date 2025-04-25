@@ -33,14 +33,16 @@ const app = {
     },
 
     init() {
-    this.states.accessToken = sessionStorage.getItem("access_token") || localStorage.getItem("access_token");
+    // 這裡移除 hash 的處理，改為單純使用 localStorage
+    const token = localStorage.getItem("access_token");
+    this.states.accessToken = token;
 
     this.setupEventListeners();
 
-    if (!this.states.accessToken) {
+    if (!token) {
         document.getElementById("auth-container").style.display = "flex";
     } else {
-        sessionStorage.setItem("access_token", this.states.accessToken);
+        sessionStorage.setItem("access_token", token); // 可選
         this.showApp();
         this.loadSchedule();
         this.checkSchedule();
@@ -139,19 +141,15 @@ const app = {
     const authEndpoint = "https://accounts.google.com/o/oauth2/v2/auth";
     const params = {
         client_id: this.CLIENT_ID,
-        redirect_uri: this.REDIRECT_URI, // = callback.html
+        redirect_uri: this.REDIRECT_URI,
         response_type: "token",
         scope: this.SCOPES,
         include_granted_scopes: "true",
-        state: "redirect",
         prompt: "consent"
     };
 
-    // ✅ 改為主頁直接跳轉（非開 popup）
     window.location.href = authEndpoint + "?" + new URLSearchParams(params);
 },
-
-    
     
     checkAuth() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
