@@ -33,30 +33,46 @@ const app = {
     },
 
     init() {
-        this.states.isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
-                         !window.MSStream && 
-                         /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
+        t// 判斷是否為舊 iOS Safari（影響 OAuth 流程）
+    this.states.isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+                           !window.MSStream &&
+                           /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
 
-        this.states.accessToken = sessionStorage.getItem("access_token");
-        this.setupEventListeners();
+    // 嘗試取得 access token（先從 sessionStorage，再 fallback 到 localStorage）
+    this.states.accessToken = sessionStorage.getItem("access_token") || localStorage.getItem("access_token");
 
-        if (!this.checkAuth()) {
-            document.getElementById("auth-container").style.display = "flex";
-            if (this.states.isOldiOS) {
-                document.getElementById("screenOverlay").style.display = "none";
-            }
-        } else {
-            this.loadSchedule();
-            if (document.getElementById("overlay-toggle")) {
-                document.getElementById("overlay-toggle").checked = this.states.schedule.overlayAlwaysOff;
-            }
-            this.checkSchedule();
-            setInterval(() => {
-                console.log('執行定期排程檢查');
-                this.checkSchedule();
-            }, this.states.isOldiOS ? 300000 : 60000);
+    // 如果 URL 帶有 #access_token，就解析並儲存（適用於 OAuth 回傳）
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    if (hashParams.has("access_token")) {
+        this.states.accessToken = hashParams.get("access_token");
+        sessionStorage.setItem("access_token", this.states.accessToken);
+        localStorage.setItem("access_token", this.states.accessToken); // 多加一層保險
+        window.history.replaceState({}, "", window.location.pathname); // 移除 hash
+    }
+
+    this.setupEventListeners();
+
+    if (!this.states.accessToken) {
+        // 尚未登入，顯示登入按鈕區塊
+        document.getElementById("auth-container").style.display = "flex";
+        if (this.states.isOldiOS) {
+            document.getElementById("screenOverlay").style.display = "none";
         }
-    },
+    } else {
+        // 已登入，進入主功能頁面
+        this.showApp();
+        this.loadSchedule();
+        if (document.getElementById("overlay-toggle")) {
+            document.getElementById("overlay-toggle").checked = this.states.schedule.overlayAlwaysOff;
+        }
+        this.checkSchedule();
+
+        setInterval(() => {
+            console.log("執行定期排程檢查");
+            this.checkSchedule();
+        }, this.states.isOldiOS ? 300000 : 60000);
+    }
+},
 
     saveSchedule() {
         this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
