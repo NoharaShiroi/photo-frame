@@ -33,40 +33,29 @@ const app = {
     },
 
     init() {
-        t// 判斷是否為舊 iOS Safari（影響 OAuth 流程）
-    this.states.isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+       this.states.isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) &&
                            !window.MSStream &&
                            /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
 
-    // 嘗試取得 access token（先從 sessionStorage，再 fallback 到 localStorage）
+    // 從 sessionStorage 或 localStorage 取得 access_token
     this.states.accessToken = sessionStorage.getItem("access_token") || localStorage.getItem("access_token");
-
-    // 如果 URL 帶有 #access_token，就解析並儲存（適用於 OAuth 回傳）
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    if (hashParams.has("access_token")) {
-        this.states.accessToken = hashParams.get("access_token");
-        sessionStorage.setItem("access_token", this.states.accessToken);
-        localStorage.setItem("access_token", this.states.accessToken); // 多加一層保險
-        window.history.replaceState({}, "", window.location.pathname); // 移除 hash
-    }
 
     this.setupEventListeners();
 
     if (!this.states.accessToken) {
-        // 尚未登入，顯示登入按鈕區塊
         document.getElementById("auth-container").style.display = "flex";
         if (this.states.isOldiOS) {
             document.getElementById("screenOverlay").style.display = "none";
         }
     } else {
-        // 已登入，進入主功能頁面
+        // 將 localStorage 的 token 同步進 sessionStorage
+        sessionStorage.setItem("access_token", this.states.accessToken);
         this.showApp();
         this.loadSchedule();
         if (document.getElementById("overlay-toggle")) {
             document.getElementById("overlay-toggle").checked = this.states.schedule.overlayAlwaysOff;
         }
         this.checkSchedule();
-
         setInterval(() => {
             console.log("執行定期排程檢查");
             this.checkSchedule();
@@ -164,17 +153,21 @@ const app = {
 
     handleAuthFlow() {
         const authEndpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
-        const params = {
-            client_id: this.CLIENT_ID,
-            redirect_uri: this.REDIRECT_URI,
-            response_type: 'token',
-            scope: this.SCOPES,
-            include_granted_scopes: 'true',
-            state: 'pass-through-value',
-            prompt: 'consent'
-        };
-        window.location.href = authEndpoint + '?' + new URLSearchParams(params);
-    },
+    const params = {
+        client_id: this.CLIENT_ID,
+        redirect_uri: "https://noharashiroi.github.io/photo-frame/callback.html", // 改為 callback.html
+        response_type: 'token',
+        scope: this.SCOPES,
+        include_granted_scopes: 'true',
+        state: 'pass-through-value',
+        prompt: 'consent'
+    };
+    const authUrl = authEndpoint + '?' + new URLSearchParams(params);
+
+    // 改用彈出視窗以防止舊 Safari 遺失 hash
+    const win = window.open(authUrl, "_blank", "width=500,height=600");
+    if (!win) alert("請允許彈出視窗以完成登入");
+},
     
     checkAuth() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
