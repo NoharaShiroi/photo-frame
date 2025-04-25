@@ -152,21 +152,39 @@ const app = {
     },
 
     handleAuthFlow() {
-        const authEndpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
+    const authEndpoint = "https://accounts.google.com/o/oauth2/v2/auth";
     const params = {
         client_id: this.CLIENT_ID,
-        redirect_uri: "https://noharashiroi.github.io/photo-frame/callback.html", // 改為 callback.html
-        response_type: 'token',
+        redirect_uri: this.REDIRECT_URI,
+        response_type: "token",
         scope: this.SCOPES,
-        include_granted_scopes: 'true',
-        state: 'pass-through-value',
-        prompt: 'consent'
+        include_granted_scopes: "true",
+        state: "popup",
+        prompt: "consent"
     };
-    const authUrl = authEndpoint + '?' + new URLSearchParams(params);
+    const authUrl = authEndpoint + "?" + new URLSearchParams(params);
 
-    // 改用彈出視窗以防止舊 Safari 遺失 hash
-    const win = window.open(authUrl, "_blank", "width=500,height=600");
-    if (!win) alert("請允許彈出視窗以完成登入");
+    const popup = window.open(authUrl, "_blank", "width=500,height=600");
+
+    if (!popup) {
+        alert("請允許彈出視窗以完成登入");
+        return;
+    }
+
+    // 監聽 popup 傳來的訊息
+    window.addEventListener("message", (event) => {
+        if (event.origin !== window.location.origin) return; // 安全起見，確保是同源
+
+        const token = event.data?.access_token;
+        if (token) {
+            sessionStorage.setItem("access_token", token);
+            localStorage.setItem("access_token", token);
+            this.states.accessToken = token;
+            this.showApp();
+            this.loadSchedule();
+            this.checkSchedule();
+        }
+    }, { once: true }); // 只監聽一次
 },
     
     checkAuth() {
