@@ -1,8 +1,30 @@
-<script>
-  const hash = window.location.hash.substring(1);
-  if (hash.includes("access_token")) {
-    // 將 token 傳回 main 頁面
-    localStorage.setItem("access_token", new URLSearchParams(hash).get("access_token"));
-    window.location.href = "index.html"; // 回到主頁
-  }
-</script>
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>登入中轉頁面</title>
+  <style>
+    body { font-family: sans-serif; text-align: center; padding: 2em; }
+  </style>
+</head>
+<body>
+  <h2>正在登入，請稍候…</h2>
+  <script>
+    (function () {
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+      const token = params.get("access_token");
+
+      if (token) {
+        // 儲存 token 至 localStorage（主頁會自動讀取）
+        localStorage.setItem("access_token", token);
+
+        // 回到主頁
+        window.location.href = "index.html"; // 或 index.htm / photo-frame/index.html 視你部署情況調整
+      } else {
+        document.body.innerHTML = "<h2>登入失敗，請重新操作</h2>";
+      }
+    })();
+  </script>
+</body>
+</html>
