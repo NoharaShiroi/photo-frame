@@ -173,10 +173,11 @@ const app = {
      },
     
     setupEventListeners() {
-        document.getElementById("authorize-btn").addEventListener("click", (e) => {
-    e.preventDefault();
-    app.startAuthPopup(); // 確保在 click 中呼叫 window.open
-});
+        const authBtn = document.getElementById("authorize-btn");
+        authBtn.addEventListener("click", (e) => {
+            e.preventDefault();
+            this.handleAuthFlow();
+        });
 
         document.getElementById("album-select").addEventListener("change", (e) => {
             this.states.albumId = e.target.value;
