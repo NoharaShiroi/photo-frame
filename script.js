@@ -155,37 +155,19 @@ const app = {
     const authEndpoint = "https://accounts.google.com/o/oauth2/v2/auth";
     const params = {
         client_id: this.CLIENT_ID,
-        redirect_uri: this.REDIRECT_URI,
+        redirect_uri: this.REDIRECT_URI, // = callback.html
         response_type: "token",
         scope: this.SCOPES,
         include_granted_scopes: "true",
-        state: "popup",
+        state: "redirect",
         prompt: "consent"
     };
-    const authUrl = authEndpoint + "?" + new URLSearchParams(params);
 
-    const popup = window.open(authUrl, "_blank", "width=500,height=600");
-
-    if (!popup) {
-        alert("請允許彈出視窗以完成登入");
-        return;
-    }
-
-    // 監聽 popup 傳來的訊息
-    window.addEventListener("message", (event) => {
-        if (event.origin !== window.location.origin) return; // 安全起見，確保是同源
-
-        const token = event.data?.access_token;
-        if (token) {
-            sessionStorage.setItem("access_token", token);
-            localStorage.setItem("access_token", token);
-            this.states.accessToken = token;
-            this.showApp();
-            this.loadSchedule();
-            this.checkSchedule();
-        }
-    }, { once: true }); // 只監聽一次
+    // ✅ 改為主頁直接跳轉（非開 popup）
+    window.location.href = authEndpoint + "?" + new URLSearchParams(params);
 },
+
+    
     
     checkAuth() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
