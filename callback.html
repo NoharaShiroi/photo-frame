@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <title>登入完成</title>
+  <meta charset="UTF-8">
+  <title>授權中</title>
 </head>
 <body>
-  <h2>登入完成，正在載入您的相簿...</h2>
+  <h2>登入成功，正在導向主頁...</h2>
   <script>
     (function () {
       const hash = window.location.hash.substring(1);
@@ -14,10 +14,9 @@
 
       if (token) {
         localStorage.setItem("access_token", token);
-        // ✅ 自動導回你的主頁
         window.location.href = "https://noharashiroi.github.io/photo-frame/";
       } else {
-        document.body.innerHTML = "<h2>登入失敗，請重新再試一次</h2>";
+        document.body.innerHTML = "<h2>登入失敗，請重新操作</h2>";
       }
     })();
   </script>
