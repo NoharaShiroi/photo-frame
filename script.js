@@ -33,33 +33,17 @@ const app = {
     },
 
     init() {
-       this.states.isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) &&
-                           !window.MSStream &&
-                           /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
-
-    // 從 sessionStorage 或 localStorage 取得 access_token
     this.states.accessToken = sessionStorage.getItem("access_token") || localStorage.getItem("access_token");
 
     this.setupEventListeners();
 
     if (!this.states.accessToken) {
         document.getElementById("auth-container").style.display = "flex";
-        if (this.states.isOldiOS) {
-            document.getElementById("screenOverlay").style.display = "none";
-        }
     } else {
-        // 將 localStorage 的 token 同步進 sessionStorage
         sessionStorage.setItem("access_token", this.states.accessToken);
         this.showApp();
         this.loadSchedule();
-        if (document.getElementById("overlay-toggle")) {
-            document.getElementById("overlay-toggle").checked = this.states.schedule.overlayAlwaysOff;
-        }
         this.checkSchedule();
-        setInterval(() => {
-            console.log("執行定期排程檢查");
-            this.checkSchedule();
-        }, this.states.isOldiOS ? 300000 : 60000);
     }
 },
 
