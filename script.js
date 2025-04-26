@@ -147,8 +147,13 @@ const app = {
         include_granted_scopes: "true",
         prompt: "consent"
     };
-
-    window.location.href = authEndpoint + "?" + new URLSearchParams(params);
+    const authUrl = authEndpoint + "?" + new URLSearchParams(params).toString();
+     //改成 window.open，確保在舊iOS也能跳轉
+    const newWindow = window.open(authUrl, "_blank");
+    if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+        //  如果阻擋了，強制改回 window.location.href
+        window.location.href = authUrl;
+    }
 },
     
     checkAuth() {
