@@ -225,7 +225,7 @@ showAuthUI() {
     // 强制页面跳转（最可靠方式）
     setTimeout(() => {
         window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
-    }, 100);
+    }, 900);
 },
     
     checkAuth() {
