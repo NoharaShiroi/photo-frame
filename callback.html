@@ -1,24 +1,31 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <title>授權中</title>
+    <title>Callback</title>
+    <script>
+        function handleAuthCallback() {
+            const hash = window.location.hash.substring(1);
+            const params = new URLSearchParams(hash);
+            const accessToken = params.get('access_token');
+
+            if (accessToken) {
+                // 回傳 token 給父視窗（原頁面）
+                if (window.opener) {
+                    window.opener.postMessage({
+                        type: 'oauth-callback',
+                        accessToken: accessToken
+                    }, '*');
+                }
+                // 關閉此視窗（僅限彈出視窗模式）
+                window.close();
+            } else {
+                console.error('未取得 access_token');
+            }
+        }
+        window.addEventListener('load', handleAuthCallback);
+    </script>
 </head>
 <body>
-  <h2>登入成功，正在導向主頁...</h2>
-  <script>
-    (function () {
-      const hash = window.location.hash.substring(1);
-      const params = new URLSearchParams(hash);
-      const token = params.get("access_token");
-
-      if (token) {
-        localStorage.setItem("access_token", token);
-        window.location.href = "https://noharashiroi.github.io/photo-frame/";
-      } else {
-        document.body.innerHTML = "<h2>登入失敗，請重新操作</h2>";
-      }
-    })();
-  </script>
+    <p>處理登入中，請稍候...</p>
 </body>
 </html>
