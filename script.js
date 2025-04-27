@@ -33,31 +33,82 @@ const app = {
     },
 
     init() {
-    // 這裡移除 hash 的處理，改為單純使用 localStorage
-    const token = localStorage.getItem("access_token");
-    this.states.accessToken = token;
-
-    this.setupEventListeners();
-
-    if (!token) {
-        document.getElementById("auth-container").style.display = "flex";
-    } else {
-        sessionStorage.setItem("access_token", token); // 可選
-        this.showApp();
-        this.loadSchedule();
-        this.checkSchedule();
-    }
-        try {
+        this.states.isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+                     !window.MSStream && 
+                     /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
+    // 1. 先檢查 localStorage 是否可用
+    let storageAvailable = true;
+    try {
         localStorage.setItem("test", "test");
         localStorage.removeItem("test");
     } catch (e) {
         console.warn("localStorage 不可用，改用 sessionStorage");
-        this.states.accessToken = sessionStorage.getItem("access_token");
-        this.showApp();
-        return;
+        storageAvailable = false;
     }
+
+    // 2. 檢查當前 URL 是否有 hash 參數 (OAuth 回調)
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    const urlAccessToken = hashParams.get('access_token');
+    
+    if (urlAccessToken) {
+        // 從 URL 獲取 token 並存儲
+        this.states.accessToken = urlAccessToken;
+        if (storageAvailable) {
+            localStorage.setItem("access_token", urlAccessToken);
+        } else {
+            sessionStorage.setItem("access_token", urlAccessToken);
+        }
+        // 清除 URL 中的 hash 避免洩露
+        window.history.replaceState({}, "", window.location.pathname);
+    } else {
+        // 從存儲中獲取 token
+        this.states.accessToken = storageAvailable 
+            ? localStorage.getItem("access_token") 
+            : sessionStorage.getItem("access_token");
+    }
+
+    // 3. 監聽來自 callback.html 的消息 (彈出窗口模式)
+    window.addEventListener('message', (event) => {
+        // 安全性檢查：確保來源是我們自己的域名
+        const allowedOrigin = new URL(this.REDIRECT_URI).origin;
+        if (event.origin !== allowedOrigin) return;
+        
+        if (event.data.type === 'oauth-callback' && event.data.accessToken) {
+            this.states.accessToken = event.data.accessToken;
+            if (storageAvailable) {
+                localStorage.setItem("access_token", event.data.accessToken);
+            } else {
+                sessionStorage.setItem("access_token", event.data.accessToken);
+            }
+            this.showApp();
+        }
+    });
+
+    // 4. 設置事件監聽器
+    this.setupEventListeners();
+
+    // 5. 根據認證狀態顯示界面
+    if (!this.states.accessToken) {
+        document.getElementById("auth-container").style.display = "flex";
+    } else {
+        this.showApp();
+        this.loadSchedule();
+        this.checkSchedule();
+    }
+
+    // 6. 添加 iOS 特定檢查
+    this.checkOldiOS();
 },
 
+// 新增方法：檢查是否為舊版 iOS
+checkOldiOS() {
+    this.states.isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+                         !window.MSStream && 
+                         /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
+    if (this.states.isOldiOS) {
+        console.log("檢測到舊版 iOS 設備，啟用兼容模式");
+    }
+},
     saveSchedule() {
         this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
         this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
@@ -147,28 +198,117 @@ const app = {
     },
 
    handleAuthFlow() {
+    const authBtn = document.getElementById("authorize-btn");
+    
     try {
-        const authBtn = document.getElementById("authorize-btn");
+        // 立即更新按鈕狀態提供視覺反饋
         authBtn.disabled = true;
-        authBtn.textContent = "正在導向...";
+        authBtn.textContent = "正在準備登入...";
         
-        const authUrl = "https://accounts.google.com/o/oauth2/v2/auth?" + new URLSearchParams({
+        // 構建授權 URL（添加隨機 state 參數防止 CSRF）
+        const stateToken = Math.random().toString(36).substring(2);
+        const authParams = {
             client_id: this.CLIENT_ID,
             redirect_uri: this.REDIRECT_URI,
             response_type: "token",
             scope: this.SCOPES,
+            state: stateToken,
             include_granted_scopes: "true",
             prompt: "consent"
-        }).toString();
+        };
         
-        // 強制使用當前視窗導航（最可靠的方法）
-        window.location.href = authUrl;
+        const authUrl = "https://accounts.google.com/o/oauth2/v2/auth?" + 
+                      new URLSearchParams(authParams).toString();
+
+        // 根據設備類型選擇導航策略
+        if (this.states.isOldiOS) {
+            // 舊版 iOS 特殊處理：使用當前窗口 + 備用方案
+            authBtn.textContent = "正在跳轉到 Google...";
+            
+            // 嘗試使用 iframe 作為備用方案
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = authUrl;
+            document.body.appendChild(iframe);
+            
+            // 主方案仍使用當前窗口導航
+            setTimeout(() => {
+                window.location.href = authUrl;
+            }, 300);
+        } else {
+            // 現代瀏覽器：先嘗試彈出窗口，失敗後降級
+            authBtn.textContent = "正在開啟登入窗口...";
+            
+            const popup = window.open('', 'google_auth', 
+                'width=500,height=600,top=100,left=100');
+            
+            if (popup) {
+                try {
+                    popup.location.href = authUrl;
+                    // 監聽彈出窗口關閉事件
+                    const timer = setInterval(() => {
+                        if (popup.closed) {
+                            clearInterval(timer);
+                            this.checkAuthFromStorage();
+                        }
+                    }, 500);
+                } catch (e) {
+                    // 彈出窗口被阻止，改用當前窗口
+                    window.location.href = authUrl;
+                }
+            } else {
+                window.location.href = authUrl;
+            }
+        }
         
     } catch (error) {
-        console.error("登入錯誤:", error);
-        alert("無法開啟登入頁面，請手動訪問：\n" + authUrl);
-        document.getElementById("authorize-btn").disabled = false;
-        document.getElementById("authorize-btn").textContent = "使用 Google 帳號登入";
+        console.error("授權流程錯誤:", error);
+        
+        // 提供用戶可操作的恢復選項
+        const authUrl = "https://accounts.google.com/o/oauth2/v2/auth?" + 
+                       new URLSearchParams({
+                           client_id: this.CLIENT_ID,
+                           redirect_uri: this.REDIRECT_URI,
+                           response_type: "token",
+                           scope: this.SCOPES,
+                           prompt: "select_account"
+                       }).toString();
+        
+        const shouldRetry = confirm(
+            "登入流程出現問題。\n" +
+            "選擇「確定」將再次嘗試，或「取消」手動複製登入鏈接。\n" +
+            "錯誤詳情: " + (error.message || error)
+        );
+        
+        if (shouldRetry) {
+            this.handleAuthFlow();
+        } else {
+            prompt("請複製此鏈接到瀏覽器地址欄:", authUrl);
+        }
+        
+        // 重置按鈕狀態
+        authBtn.disabled = false;
+        authBtn.textContent = "使用 Google 帳號登入";
+    }
+},
+
+// 新增輔助方法：檢查存儲中的認證狀態
+checkAuthFromStorage() {
+    const token = localStorage.getItem("access_token") || 
+                 sessionStorage.getItem("access_token");
+    
+    if (token) {
+        this.states.accessToken = token;
+        this.showApp();
+    } else {
+        // 顯示重新登入提示
+        const authBtn = document.getElementById("authorize-btn");
+        authBtn.disabled = false;
+        authBtn.textContent = "登入失敗，請重試";
+        
+        setTimeout(() => {
+            authBtn.textContent = "使用 Google 帳號登入";
+        }, 2000);
     }
 },
     
