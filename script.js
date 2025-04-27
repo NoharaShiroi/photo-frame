@@ -47,6 +47,15 @@ const app = {
         this.loadSchedule();
         this.checkSchedule();
     }
+        try {
+        localStorage.setItem("test", "test");
+        localStorage.removeItem("test");
+    } catch (e) {
+        console.warn("localStorage 不可用，改用 sessionStorage");
+        this.states.accessToken = sessionStorage.getItem("access_token");
+        this.showApp();
+        return;
+    }
 },
 
     saveSchedule() {
@@ -137,22 +146,49 @@ const app = {
         return hours * 60 + minutes;
     },
 
-    handleAuthFlow() {
-    const authEndpoint = "https://accounts.google.com/o/oauth2/v2/auth";
-    const params = {
-        client_id: this.CLIENT_ID,
-        redirect_uri: this.REDIRECT_URI,
-        response_type: "token",
-        scope: this.SCOPES,
-        include_granted_scopes: "true",
-        prompt: "consent"
-    };
-    const authUrl = authEndpoint + "?" + new URLSearchParams(params).toString();
-     //改成 window.open，確保在舊iOS也能跳轉
-    const newWindow = window.open(authUrl, "_blank");
-    if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
-        //  如果阻擋了，強制改回 window.location.href
-        window.location.href = authUrl;
+   handleAuthFlow() {
+    try {
+        const authEndpoint = "https://accounts.google.com/o/oauth2/v2/auth";
+        const params = {
+            client_id: this.CLIENT_ID,
+            redirect_uri: this.REDIRECT_URI,
+            response_type: "token",
+            scope: this.SCOPES,
+            include_granted_scopes: "true",
+            prompt: "consent"
+        };
+        const authUrl = authEndpoint + "?" + new URLSearchParams(params).toString();
+        
+        // 更新按鈕狀態
+        const authBtn = document.getElementById("authorize-btn");
+        authBtn.disabled = true;
+        authBtn.textContent = "正在導向登入頁...";
+        
+        // 檢測是否為舊版 iOS
+        const isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+                        !window.MSStream && 
+                        /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
+        
+        // 短暫延遲讓用戶看到反饋
+        setTimeout(() => {
+            if (isOldiOS) {
+                // 舊版 iOS 直接使用當前視窗導航
+                window.location.href = authUrl;
+            } else {
+                // 其他瀏覽器使用新視窗
+                const newWindow = window.open(authUrl, "_blank");
+                if (!newWindow || newWindow.closed || typeof newWindow.closed == 'undefined') {
+                    // 如果彈出視窗被阻擋，改用當前視窗
+                    window.location.href = authUrl;
+                }
+            }
+        }, 100);
+    } catch (error) {
+        console.error("授權流程錯誤:", error);
+        this.showMessage("無法開啟登入頁面，請檢查瀏覽器設定", true);
+        const authBtn = document.getElementById("authorize-btn");
+        authBtn.disabled = false;
+        authBtn.textContent = "使用 Google 帳號登入";
     }
 },
     
@@ -180,9 +216,13 @@ const app = {
     setupEventListeners() {
         const authBtn = document.getElementById("authorize-btn");
         authBtn.addEventListener("click", (e) => {
-            e.preventDefault();
-            this.handleAuthFlow();
-        });
+    e.preventDefault();
+    authBtn.disabled = true;
+    authBtn.textContent = "正在導向登入頁...";
+    setTimeout(() => {
+        this.handleAuthFlow();
+    }, 100);
+    });
 
         document.getElementById("album-select").addEventListener("change", (e) => {
             this.states.albumId = e.target.value;
