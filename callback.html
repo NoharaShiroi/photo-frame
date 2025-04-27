@@ -1,35 +1,58 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Callback</title>
+    <title>處理登入中...</title>
     <script>
-        function handleAuthCallback() {
-            const hash = window.location.hash.substring(1);
-            const params = new URLSearchParams(hash);
-            const accessToken = params.get('access_token');
-            const params = new URLSearchParams(window.location.hash.substring(1));
-if (params.get('state') !== localStorage.getItem('oauth_state')) {
-    alert('安全驗證失敗，請重新登入');
-    window.close();
-}
-            if (accessToken) {
-                // 回傳 token 給父視窗（原頁面）
+        function handleAuth() {
+            try {
+                const hash = window.location.hash.substring(1);
+                if (!hash) {
+                    window.close();
+                    return;
+                }
+
+                const params = new URLSearchParams(hash);
+                const token = params.get('access_token');
+                const state = params.get('state');
+                const savedState = localStorage.getItem('oauth_state');
+
+                // 基本驗證
+                if (state && savedState !== state) {
+                    console.error('State 驗證失敗');
+                    window.close();
+                    return;
+                }
+
+                // 傳回 token 給父窗口
                 if (window.opener) {
                     window.opener.postMessage({
                         type: 'oauth-callback',
-                        accessToken: accessToken
+                        accessToken: token,
+                        state: state
                     }, '*');
                 }
-                // 關閉此視窗（僅限彈出視窗模式）
+
+                // 嘗試關閉窗口（可能被瀏覽器阻止）
+                setTimeout(() => {
+                    window.close();
+                }, 300);
+
+            } catch (error) {
+                console.error('回調處理錯誤:', error);
                 window.close();
-            } else {
-                console.error('未取得 access_token');
             }
         }
-        window.addEventListener('load', handleAuthCallback);
+
+        // 舊版 iOS 兼容處理
+        if (/iPad|iPhone|iPod.*OS [6-8]_/.test(navigator.userAgent)) {
+            document.body.innerHTML = '<p>正在完成登入...</p>';
+            setTimeout(handleAuth, 500);
+        } else {
+            window.addEventListener('load', handleAuth);
+        }
     </script>
 </head>
 <body>
-    <p>處理登入中，請稍候...</p>
+    <p>登入完成，請稍候...</p>
 </body>
 </html>
