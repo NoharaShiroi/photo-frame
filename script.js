@@ -33,158 +33,92 @@ const app = {
     },
 
     init() {
-    // 1. 舊版 iOS 檢測強化 (iPad Mini 2 通常運行 iOS 9-12)
-    this.states.isOldiOS = /iPad|iPhone|iPod.*OS [6-9]_/.test(navigator.userAgent) && 
-                         !window.MSStream;
+    // 极简存储检测
+    this.states.storageAvailable = this.checkLocalStorage();
     
-    // 2. 存儲可用性檢測 (兼容 iOS 私有模式)
-    this.states.storageAvailable = this.checkStorage();
+    // 强化版旧iOS检测（iPad Mini 2通常运行iOS 9-12）
+    this.states.isOldiOS = /iPad|iPhone|iPod.*OS [6-9]_/.test(navigator.userAgent);
     
-    // 3. 強化 URL hash 處理 (主流程)
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    const urlToken = hashParams.get('access_token');
-    const stateToken = hashParams.get('state');
+    // 直接从URL哈希获取token（主流程）
+    this.handleUrlToken();
     
-    if (urlToken) {
-        // 驗證 state 防止 CSRF
-        if (!stateToken || stateToken === localStorage.getItem('oauth_state')) {
-            this.handleNewToken(urlToken);
-            // 清除 URL hash 避免洩露
-            window.history.replaceState({}, "", window.location.pathname.split('#')[0]);
-        }
-    }
+    // 从存储加载token
+    this.loadTokenFromStorage();
     
-    // 4. 從存儲載入現有 token
-    this.states.accessToken = this.loadStoredToken();
-    
-    // 5. 舊設備特殊處理
-    if (this.states.isOldiOS) {
-        this.setupOldiOSFallback();
-    }
-    
-    // 6. 監聽消息事件 (保留但簡化)
-    this.setupMessageListener();
-    
-    // 7. 初始化界面
+    // 初始化界面
     if (!this.states.accessToken) {
-        document.getElementById("auth-container").style.display = "flex";
-        // 舊設備顯示指引
-        if (this.states.isOldiOS) {
-            this.showOldiOSGuide();
-        }
+        this.showAuthUI();
     } else {
         this.showApp();
     }
     
-    // 8. 設置事件監聽器
+    // 设置事件监听
     this.setupEventListeners();
 },
 
-// ===== 新增輔助方法 ===== //
-
-// 存儲檢測 (兼容私有模式)
-checkStorage() {
+// 辅助方法
+checkLocalStorage() {
     try {
-        const testKey = '__storage_test__';
+        const testKey = '__test__';
         localStorage.setItem(testKey, testKey);
-        const valid = localStorage.getItem(testKey) === testKey;
         localStorage.removeItem(testKey);
-        return valid;
+        return true;
     } catch (e) {
         return false;
     }
 },
 
-// Token 處理統一方法
-handleNewToken(token) {
-    this.states.accessToken = token;
-    if (this.states.storageAvailable) {
-        localStorage.setItem("access_token", token);
-    }
-    // 舊設備額外存儲到 sessionStorage 備份
-    if (this.states.isOldiOS) {
-        sessionStorage.setItem("access_token_backup", token);
-    }
-},
-
-// 從存儲載入 Token
-loadStoredToken() {
-    // 優先級: localStorage > sessionStorage (僅舊設備)
-    return this.states.storageAvailable 
-        ? localStorage.getItem("access_token")
-        : this.states.isOldiOS 
-            ? sessionStorage.getItem("access_token_backup")
-            : null;
-},
-
-// 舊設備後備方案
-setupOldiOSFallback() {
-    // 10秒後顯示手動恢復按鈕
-    setTimeout(() => {
-        const manualBtn = document.createElement('button');
-        manualBtn.id = 'manual-retry';
-        manualBtn.textContent = '我已登入成功，點此刷新';
-        manualBtn.style.cssText = `
-            margin-top: 15px;
-            padding: 8px 15px;
-            background: #f0f0f0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        `;
-        manualBtn.onclick = () => location.reload();
-        
-        const authContainer = document.getElementById("auth-container");
-        if (authContainer) authContainer.appendChild(manualBtn);
-    }, 10000);
+handleUrlToken() {
+    const hash = window.location.hash.substr(1);
+    if (!hash) return;
     
-    // 定時檢查 token (每秒一次，共30秒)
-    let retries = 0;
-    const checkInterval = setInterval(() => {
-        const token = this.loadStoredToken();
-        if (token || retries >= 30) {
-            clearInterval(checkInterval);
-            if (token) {
-                this.states.accessToken = token;
-                this.showApp();
-            }
-        }
-        retries++;
-    }, 1000);
-},
-
-// 顯示舊設備指引
-showOldiOSGuide() {
-    const guide = document.createElement('div');
-    guide.innerHTML = `
-        <div style="
-            margin-top: 15px;
-            padding: 10px;
-            background: #fff3cd;
-            border-radius: 4px;
-            font-size: 14px;
-            color: #856404;
-        ">
-            <p><strong>設備兼容提示：</strong></p>
-            <ol style="padding-left: 20px;margin: 5px 0;">
-                <li>確保系統日期時間正確</li>
-                <li>關閉 Safari「阻止彈出窗口」功能</li>
-                <li>如登入後卡住，請嘗試手動刷新</li>
-            </ol>
-        </div>
-    `;
-    const authContainer = document.getElementById("auth-container");
-    if (authContainer) authContainer.appendChild(guide);
-},
-
-// 簡化消息監聽
-setupMessageListener() {
-    window.addEventListener('message', (e) => {
-        if (e.origin !== new URL(this.REDIRECT_URI).origin) return;
-        if (e.data.type === 'oauth-callback' && e.data.accessToken) {
-            this.handleNewToken(e.data.accessToken);
-            this.showApp();
-        }
+    // 极简参数解析（避免使用URLSearchParams）
+    const params = {};
+    hash.split('&').forEach(pair => {
+        const [key, value] = pair.split('=');
+        params[key] = decodeURIComponent(value);
     });
+    
+    if (params.access_token) {
+        this.states.accessToken = params.access_token;
+        if (this.states.storageAvailable) {
+            localStorage.setItem("access_token", params.access_token);
+        }
+        // 清除URL中的敏感信息
+        window.location.hash = '';
+    }
+},
+
+loadTokenFromStorage() {
+    if (!this.states.accessToken && this.states.storageAvailable) {
+        this.states.accessToken = localStorage.getItem("access_token");
+    }
+},
+
+showAuthUI() {
+    document.getElementById("auth-container").style.display = "flex";
+    
+    // 旧设备特别提示
+    if (this.states.isOldiOS) {
+        const note = document.createElement('div');
+        note.innerHTML = `
+            <div style="
+                margin: 15px 0;
+                padding: 10px;
+                background: #fff8e1;
+                border-radius: 4px;
+                font-size: 14px;
+            ">
+                <p><strong>设备兼容提示：</strong></p>
+                <ol style="margin: 5px 0; padding-left: 20px;">
+                    <li>请确保系统日期时间正确</li>
+                    <li>在Safari设置中关闭"阻止弹窗"</li>
+                    <li>登录后若页面无响应，请手动刷新</li>
+                </ol>
+            </div>
+        `;
+        document.getElementById("auth-container").appendChild(note);
+    }
 },
     saveSchedule() {
         this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
@@ -277,26 +211,22 @@ setupMessageListener() {
    handleAuthFlow() {
     const authBtn = document.getElementById("authorize-btn");
     authBtn.disabled = true;
-    authBtn.textContent = "正在準備登入...";
+    authBtn.textContent = "正在转向登录页面...";
     
-    // 生成唯一 state 並存儲
-    const stateToken = Date.now().toString(36);
-    localStorage.setItem('oauth_state', stateToken);
+    // 极简参数构造（避免使用URLSearchParams）
+    const params = [
+        'client_id=' + encodeURIComponent(this.CLIENT_ID),
+        'redirect_uri=' + encodeURIComponent(window.location.href.split('#')[0]),
+        'response_type=token',
+        'scope=' + encodeURIComponent(this.SCOPES),
+        'prompt=consent'
+    ].join('&');
     
-    // 構建最簡化的授權 URL
-    const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-        `client_id=${encodeURIComponent(this.CLIENT_ID)}` +
-        `&redirect_uri=${encodeURIComponent(window.location.origin + window.location.pathname)}` +
-        `&response_type=token` +
-        `&scope=${encodeURIComponent(this.SCOPES)}` +
-        `&state=${stateToken}` +
-        `&prompt=consent`;
-    
-    // 強制頁面跳轉（兼容所有版本）
+    // 强制页面跳转（最可靠方式）
     setTimeout(() => {
-        window.location.href = authUrl;
+        window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
     }, 100);
-   },
+},
     
     checkAuth() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
