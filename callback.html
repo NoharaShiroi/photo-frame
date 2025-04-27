@@ -7,7 +7,11 @@
             const hash = window.location.hash.substring(1);
             const params = new URLSearchParams(hash);
             const accessToken = params.get('access_token');
-
+            const params = new URLSearchParams(window.location.hash.substring(1));
+if (params.get('state') !== localStorage.getItem('oauth_state')) {
+    alert('安全驗證失敗，請重新登入');
+    window.close();
+}
             if (accessToken) {
                 // 回傳 token 給父視窗（原頁面）
                 if (window.opener) {
