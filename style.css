@@ -315,6 +315,12 @@ select, input[type="number"] {
     #lightbox-image {
         max-width: 98%;
         max-height: 98%;
+        transition: opacity 0.5s ease;
+        opacity: 1;
+    }
+
+    #lightbox-image.fade-out {
+    opacity: 0;
     }
 
     .lightbox-buttons {
