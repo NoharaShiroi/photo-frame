@@ -586,21 +586,23 @@ let lastTouchTime = 0;
         }, 300); // 延遲300ms讓舊圖慢慢消失
    },
 
-    toggleSlideshow() {
+   toggleSlideshow() {
     if (this.states.slideshowInterval) {
         this.stopSlideshow();
         this.stopClock();  // 停止時鐘
     } else {
-        // 新增：重置已播放記錄
+        // 重置已播放記錄
         this.states.playedPhotos.clear();
         this.states.loadedForSlideshow = this.states.photos.length;
         this.startClock(); // 啟動時鐘
+
+        // ⚡【新增這行】: 直接打開Lightbox顯示照片！
+        this.openLightbox(this.states.photos[this.states.currentIndex].id);
 
         const speed = document.getElementById("slideshow-speed").value * 1000 || 1000;
         const isRandom = document.getElementById("play-mode").value === "random";
 
         const getNextIndex = () => {
-            // 新增：如果照片不足，嘗試加載更多
             if (this.states.photos.length - this.states.loadedForSlideshow < 10 &&
                 this.states.hasMorePhotos && !this.states.isFetching) {
                 this.loadPhotos();
@@ -628,7 +630,6 @@ let lastTouchTime = 0;
                 return nextIndex;
             }
 
-            // 順序播放
             return (this.states.currentIndex + 1) % this.states.photos.length;
         };
 
@@ -636,12 +637,12 @@ let lastTouchTime = 0;
             setTimeout(() => {
                 this.states.currentIndex = getNextIndex();
                 this.navigate(0);
-            }, 100); // 小延遲讓切換更自然
-        }, speed); // <<< 這裡加上speed作為輪播間隔時間
+            }, 100);
+        }, speed);
 
         this.toggleButtonVisibility();
-       }
-    },
+    }
+},
 
     stopSlideshow() {
         clearInterval(this.states.slideshowInterval);
