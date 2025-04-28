@@ -581,61 +581,61 @@ let lastTouchTime = 0;
    },
 
     toggleSlideshow() {
-        if (this.states.slideshowInterval) {
-            this.stopSlideshow();
-            this.stopClock();  // 停止時鐘
-        } else {
-            // 新增：重置已播放記錄
-            this.states.playedPhotos.clear();
-            this.states.loadedForSlideshow = this.states.photos.length;
-            this.startClock(); // 啟動時鐘
-            const speed = document.getElementById("slideshow-speed").value * 1000 || 1000;
-            const isRandom = document.getElementById("play-mode").value === "random";
+    if (this.states.slideshowInterval) {
+        this.stopSlideshow();
+        this.stopClock();  // 停止時鐘
+    } else {
+        // 新增：重置已播放記錄
+        this.states.playedPhotos.clear();
+        this.states.loadedForSlideshow = this.states.photos.length;
+        this.startClock(); // 啟動時鐘
 
-            const getNextIndex = () => {
-                // 新增：如果照片不足，嘗試加載更多
-                if (this.states.photos.length - this.states.loadedForSlideshow < 10 && 
-                    this.states.hasMorePhotos && !this.states.isFetching) {
-                    this.loadPhotos();
-                }
+        const speed = document.getElementById("slideshow-speed").value * 1000 || 1000;
+        const isRandom = document.getElementById("play-mode").value === "random";
 
-                if (isRandom) {
-                    let nextIndex;
-                    let attempts = 0;
-                    const maxAttempts = this.states.photos.length * 2;
-                    
-                    do {
-                        nextIndex = Math.floor(Math.random() * this.states.photos.length);
-                        attempts++;
-                        
-                        // 如果嘗試次數過多，可能所有照片都已播放過，重置記錄
-                        if (attempts > maxAttempts) {
-                            this.states.playedPhotos.clear();
-                            break;
-                        }
-                    } while (
-                        (nextIndex === this.states.currentIndex && this.states.photos.length > 1) ||
-                        (this.states.playedPhotos.has(this.states.photos[nextIndex].id) && 
-                         this.states.playedPhotos.size < this.states.photos.length)
-                    );
-                    
-                    return nextIndex;
-                }
-                
-                // 順序播放
-                return (this.states.currentIndex + 1) % this.states.photos.length;
-            };
-
-            this.states.slideshowInterval = setInterval(() => {
-               setTimeout(() => {
-              this.states.currentIndex = getNextIndex();
-              this.navigate(0);
-              }, 100); // 延遲100ms，自然一點
-             })
-              this.toggleButtonVisibility();
+        const getNextIndex = () => {
+            // 新增：如果照片不足，嘗試加載更多
+            if (this.states.photos.length - this.states.loadedForSlideshow < 10 &&
+                this.states.hasMorePhotos && !this.states.isFetching) {
+                this.loadPhotos();
             }
-        },
-    
+
+            if (isRandom) {
+                let nextIndex;
+                let attempts = 0;
+                const maxAttempts = this.states.photos.length * 2;
+
+                do {
+                    nextIndex = Math.floor(Math.random() * this.states.photos.length);
+                    attempts++;
+
+                    if (attempts > maxAttempts) {
+                        this.states.playedPhotos.clear();
+                        break;
+                    }
+                } while (
+                    (nextIndex === this.states.currentIndex && this.states.photos.length > 1) ||
+                    (this.states.playedPhotos.has(this.states.photos[nextIndex].id) &&
+                     this.states.playedPhotos.size < this.states.photos.length)
+                );
+
+                return nextIndex;
+            }
+
+            // 順序播放
+            return (this.states.currentIndex + 1) % this.states.photos.length;
+        };
+
+        this.states.slideshowInterval = setInterval(() => {
+            setTimeout(() => {
+                this.states.currentIndex = getNextIndex();
+                this.navigate(0);
+            }, 100); // 小延遲讓切換更自然
+        }, speed); // <<< 這裡加上speed作為輪播間隔時間
+
+        this.toggleButtonVisibility();
+       }
+    },
 
     stopSlideshow() {
         clearInterval(this.states.slideshowInterval);
