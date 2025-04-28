@@ -562,15 +562,23 @@ let lastTouchTime = 0;
     },
 
     navigate(direction) {
+        const image = document.getElementById("lightbox-image");
+    image.classList.add('fade-out'); // 先淡出舊照片
+
+    setTimeout(() => {
         this.states.currentIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
-        document.getElementById("lightbox-image").src = 
-            this.getImageUrl(this.states.photos[this.states.currentIndex]);
-        
-        // 新增：記錄已播放的照片
+        image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
+
+        image.onload = () => {
+            image.classList.remove('fade-out'); // 新照片載入後淡入
+             };
+
+        // 幻燈片播放時，記錄已播放過的照片
         if (this.states.slideshowInterval) {
             this.states.playedPhotos.add(this.states.photos[this.states.currentIndex].id);
-        }
-    },
+            }
+        }, 300); // 延遲300ms讓舊圖慢慢消失
+   },
 
     toggleSlideshow() {
         if (this.states.slideshowInterval) {
@@ -618,11 +626,12 @@ let lastTouchTime = 0;
             };
 
             this.states.slideshowInterval = setInterval(() => {
-                this.states.currentIndex = getNextIndex(); 
-                this.navigate(0); 
-            }, speed);
-        }
-        this.toggleButtonVisibility();
+               setTimeout(() => {
+              this.states.currentIndex = getNextIndex();
+              this.navigate(0);
+              }, 100); // 延遲100ms，自然一點
+              }
+              this.toggleButtonVisibility();
     },
 
     stopSlideshow() {
