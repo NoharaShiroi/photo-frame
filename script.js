@@ -256,6 +256,19 @@ let lastTouchTime = 0;
             document.getElementById("schedule-modal").style.display = "none";
             this.checkSchedule();
         });
+        document.addEventListener("fullscreenchange", () => {
+    if (!document.fullscreenElement) {
+        this.states.isFullscreen = false;
+        this.toggleButtonVisibility();
+    }
+});
+
+document.addEventListener("webkitfullscreenchange", () => { // Safari用
+    if (!document.webkitFullscreenElement) {
+        this.states.isFullscreen = false;
+        this.toggleButtonVisibility();
+    }
+});
     },
     temporarilyDisableOverlay() {
         if (document.getElementById("screenOverlay").style.display === "block") {
