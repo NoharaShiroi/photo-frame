@@ -484,3 +484,23 @@ select, input[type="number"] {
     user-select: none;
     pointer-events: none; /* 不要阻擋點擊 */
 }
+
+#lightbox img.fade-in {
+    opacity: 0;
+    animation: fadeInImage 1.2s forwards;
+}
+
+#lightbox img.fade-out {
+    opacity: 1;
+    animation: fadeOutImage 1.2s forwards;
+}
+
+@keyframes fadeInImage {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOutImage {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
