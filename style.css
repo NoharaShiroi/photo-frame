@@ -224,15 +224,31 @@ select, input[type="number"] {
     }
 
 #lightbox-image {
-    max-width: 95%;
-    max-height: 95%;
+    max-width: 98%;
+    max-height: 98%;
     width: auto;
     height: auto;
     object-fit: contain;
     border-radius: 8px;
     box-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
     border: 5px solid rgba(255, 255, 255, 0.1);
-}
+    transition: opacity 1.2s ease-in-out;
+    opacity: 1;
+    will-change: opacity; /* 提示瀏覽器提前準備GPU */
+  }
+
+    #lightbox-image.fade-out {
+    opacity: 0;
+    }
+
+    .lightbox-buttons {
+        bottom: 20px;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+
 /* 新增OUGH	cancel 按鈕樣式 */
 #schedule-modal .styled-button {
     margin: 10px auto; /* 居中並保留間距 */
@@ -312,25 +328,7 @@ select, input[type="number"] {
         min-height: 150px;
     }
 
-    #lightbox-image {
-        max-width: 98%;
-        max-height: 98%;
-        transition: opacity 0.5s ease;
-        opacity: 1;
-    }
-
-    #lightbox-image.fade-out {
-    opacity: 0;
-    }
-
-    .lightbox-buttons {
-        bottom: 20px;
-        gap: 10px;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
-    .nav-button {
+       .nav-button {
         padding: 10px 20px;
         font-size: 0.9rem;
     }
