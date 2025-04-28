@@ -633,7 +633,9 @@ let lastTouchTime = 0;
               }, 100); // 延遲100ms，自然一點
              }
               this.toggleButtonVisibility();
-    },
+            }
+        },
+    
 
     stopSlideshow() {
         clearInterval(this.states.slideshowInterval);
