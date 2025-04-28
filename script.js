@@ -448,59 +448,47 @@ let lastTouchTime = 0;
     const container = document.getElementById("photo-container");
     container.style.display = "grid";
 
-    // 移除現有的錯誤訊息（如果有的話）
-    const existingError = container.querySelector('.error-state');
-    if (existingError) {
-        container.removeChild(existingError);
-    }
+    // 移除錯誤訊息
+    container.querySelectorAll('.error-state, .empty-state').forEach(el => el.remove());
 
-    // 只渲染尚未渲染的照片
-    const startIndex = container.children.length - 
-                     (container.querySelector('.empty-state') ? 1 : 0);
+    // 檢查目前已存在的相片ID，避免重複渲染
+    const existingIds = new Set(Array.from(container.querySelectorAll('.photo')).map(img => img.dataset.id));
 
     const fragment = document.createDocumentFragment();
-    const batchSize = 20; // 每批次新增20張
-
-    for (let i = startIndex; i < this.states.photos.length; i++) {
+    
+    for (let i = 0; i < this.states.photos.length; i++) {
         const photo = this.states.photos[i];
+        if (existingIds.has(photo.id)) {
+            continue; // 如果這張已經渲染過，就跳過
+        }
+
         const img = document.createElement('img');
         img.className = 'photo';
-        img.src = `${photo.baseUrl}=w150-h150`;
-        img.dataset.src = `${photo.baseUrl}=w800-h600`;
+        img.src = `${photo.baseUrl}=w150-h150`;  // 小尺寸
+        img.dataset.src = `${photo.baseUrl}=w800-h600`;  // 預載大尺寸
         img.alt = '相片';
         img.dataset.id = photo.id;
-        img.onclick = () => this.openLightbox(photo.id);
+        img.addEventListener('click', () => {
+            this.openLightbox(photo.id);
+        });
+
         fragment.appendChild(img);
-
-        // 每20張圖片，插入一次
-        if ((i - startIndex + 1) % batchSize === 0) {
-            container.appendChild(fragment.cloneNode(true));
-            fragment.innerHTML = ''; // 清空 fragment
-            await new Promise(resolve => requestIdleCallback(resolve));
-        }
+        existingIds.add(photo.id); // 加入Set
     }
 
-    // 最後一批
-    if (fragment.children.length > 0) {
-        container.appendChild(fragment);
-    }
-
-    // 移除現有的「已無更多相片」提示（如果有的話）
-    const existingEmptyState = container.querySelector('.empty-state');
-    if (existingEmptyState) {
-        container.removeChild(existingEmptyState);
-    }
-
-    // 只在確實沒有更多照片時顯示提示
+    // 沒有更多相片了，顯示提示
     if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
         const emptyState = document.createElement('p');
         emptyState.className = 'empty-state';
         emptyState.textContent = '已無更多相片';
-        container.appendChild(emptyState);
+        fragment.appendChild(emptyState);
     }
+
+    container.appendChild(fragment);
 
     this.setupLazyLoad();
 
+    // 更新幻燈片 preload 記錄
     if (this.states.slideshowInterval) {
         this.states.loadedForSlideshow = this.states.photos.length;
     }
