@@ -356,18 +356,6 @@ select, input[type="number"] {
     backdrop-filter: blur(5px);
 }
 
-#portrait-collage img {
-    box-shadow: 0 0 20px rgba(255,255,255,0.1);
-    transition: all 0.3s ease;
-}
-
-#portrait-collage {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 10px;
-}
-
 /* 時間排程設定彈窗 */
 .modal {
     display: none;

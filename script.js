@@ -16,182 +16,94 @@ const app = {
         currentRequestId: 0,
         lightboxActive: false,
         isFullscreen: false,
-        preloadCount: 200, // 新增預載照片數量設定
+        preloadCount: 500, // 新增預載照片數量設定
         loadedForSlideshow: 0, // 記錄已為幻燈片加載的照片數量
         playedPhotos: new Set(), // 記錄已播放過的照片ID
-                overlayTimeout: null,      // 儲存計時器ID
+        overlayTimeout: null,      // 儲存計時器ID
         overlayDisabled: false,   // 記錄遮罩是否被臨時取消
-           schedule: {
+        schedule: {
             sleepStart: "22:00",
             sleepEnd: "07:00",
             classStart: "08:00",
             classEnd: "17:00",
             isEnabled: false,
             useHoliday: true,
-            overlayAlwaysOff: false, //遮罩長時取消   
         }
     },
 
     init() {
-    // 极简存储检测
-    this.states.storageAvailable = this.checkLocalStorage();
-    
-    // 强化版旧iOS检测（iPad Mini 2通常运行iOS 9-12）
-    this.states.isOldiOS = /iPad|iPhone|iPod.*OS [6-9]_/.test(navigator.userAgent);
-    
-    // 直接从URL哈希获取token（主流程）
-    this.handleUrlToken();
-    
-    // 从存储加载token
-    this.loadTokenFromStorage();
-    
-    // 初始化界面
-    if (!this.states.accessToken) {
-        this.showAuthUI();
-    } else {
-        this.showApp();
-    }
-    
-    // 设置事件监听
+    this.states.isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+                     !window.MSStream && 
+                     /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
+
+    this.states.accessToken = sessionStorage.getItem("access_token");
     this.setupEventListeners();
-},
-
-// 辅助方法
-checkLocalStorage() {
-    try {
-        const testKey = '__test__';
-        localStorage.setItem(testKey, testKey);
-        localStorage.removeItem(testKey);
-        return true;
-    } catch (e) {
-        return false;
-    }
-},
-
-handleUrlToken() {
-    const hash = window.location.hash.substr(1);
-    if (!hash) return;
     
-    // 极简参数解析（避免使用URLSearchParams）
-    const params = {};
-    hash.split('&').forEach(pair => {
-        const [key, value] = pair.split('=');
-        params[key] = decodeURIComponent(value);
-    });
-    
-    if (params.access_token) {
-        this.states.accessToken = params.access_token;
-        if (this.states.storageAvailable) {
-            localStorage.setItem("access_token", params.access_token);
+    if (!this.checkAuth()) {
+        // 未授權：顯示登入介面
+        document.getElementById("auth-container").style.display = "flex";
+        if (this.states.isOldiOS) {
+            document.getElementById("screenOverlay").style.display = "none";
         }
-        // 清除URL中的敏感信息
-        window.location.hash = '';
+    } else {
+        // 已授權：初始化應用程式
+        this.loadSchedule();
+        this.checkSchedule();
+        setInterval(() => {
+            console.log('執行定期排程檢查');
+            this.checkSchedule();
+        }, this.states.isOldiOS ? 300000 : 60000);
     }
 },
 
-loadTokenFromStorage() {
-    if (!this.states.accessToken && this.states.storageAvailable) {
-        this.states.accessToken = localStorage.getItem("access_token");
-    }
-},
-
-showAuthUI() {
-    document.getElementById("auth-container").style.display = "flex";
-    
-    // 旧设备特别提示
-    if (this.states.isOldiOS) {
-        const note = document.createElement('div');
-        note.innerHTML = `
-            <div style="
-                margin: 15px 0;
-                padding: 10px;
-                background: #fff8e1;
-                border-radius: 4px;
-                font-size: 14px;
-            ">
-                <p><strong>设备兼容提示：</strong></p>
-                <ol style="margin: 5px 0; padding-left: 20px;">
-                    <li>请确保系统日期时间正确</li>
-                    <li>在Safari设置中关闭"阻止弹窗"</li>
-                    <li>登录后若页面无响应，请手动刷新</li>
-                </ol>
-            </div>
-        `;
-        document.getElementById("auth-container").appendChild(note);
-    }
-},
     saveSchedule() {
-        this.states.schedule.sleepStart = document.getElementById("sleep-start").value;
-        this.states.schedule.sleepEnd = document.getElementById("sleep-end").value;
-        this.states.schedule.classStart = document.getElementById("class-start").value;
-        this.states.schedule.classEnd = document.getElementById("class-end").value;
-        this.states.schedule.isEnabled = document.getElementById("is-enabled").checked;
-        this.states.schedule.useHoliday = document.getElementById("use-holiday").checked;
-        this.states.schedule.overlayAlwaysOff = document.getElementById("overlay-toggle").checked;
         localStorage.setItem("schedule", JSON.stringify(this.states.schedule));
-        this.resetOverlayState();
-    },
-
-    loadSchedule() {
-        const saved = localStorage.getItem("schedule");
-        if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                Object.assign(this.states.schedule, parsed);
-            } catch (e) {
-                console.warn("排程載入失敗", e);
-            }
-        }
+        this.resetOverlayState(); // 新增這行
     },
 
     checkSchedule() {
         if (this.states.isOldiOS) {
-            document.getElementById("screenOverlay").style.display = "none";
-            return;
-        }
+        document.getElementById("screenOverlay").style.display = "none";
+        return;
+    }
 
-        if (this.states.schedule.overlayAlwaysOff) {
-            document.getElementById("screenOverlay").style.display = "none";
-            return;
-        }
+    // 如果遮罩被臨時取消且計時器還在，則不執行後續檢查
+    if (this.states.overlayDisabled && this.states.overlayTimeout) {
+        return;
+    }
 
-        if (this.states.overlayDisabled && this.states.overlayTimeout) {
-            return;
-        }
+    const now = new Date();
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+    const sleepStart = this.getTimeInMinutes(this.states.schedule.sleepStart);
+    const sleepEnd = this.getTimeInMinutes(this.states.schedule.sleepEnd);
+    const classStart = this.getTimeInMinutes(this.states.schedule.classStart);
+    const classEnd = this.getTimeInMinutes(this.states.schedule.classEnd);
+    
+    // 修正跨午夜的時間比較
+    const isSleepTime = sleepStart < sleepEnd 
+        ? (currentTime >= sleepStart && currentTime < sleepEnd)
+        : (currentTime >= sleepStart || currentTime < sleepEnd);
+    
+    const isClassTime = currentTime >= classStart && currentTime < classEnd;
+    const isHoliday = this.isHolidayMode(now);
+    
+    const shouldShowOverlay = this.states.schedule.isEnabled && 
+                           (isSleepTime || isClassTime || isHoliday);
+    
+    console.log('排程檢查結果:', {
+        currentTime: `${now.getHours()}:${now.getMinutes()}`,
+        isSleepTime,
+        isClassTime,
+        isHoliday,
+        shouldShowOverlay
+    });
 
-        const now = new Date();
-        const currentTime = now.getHours() * 60 + now.getMinutes();
-        const sleepStart = this.getTimeInMinutes(this.states.schedule.sleepStart);
-        const sleepEnd = this.getTimeInMinutes(this.states.schedule.sleepEnd);
-        const classStart = this.getTimeInMinutes(this.states.schedule.classStart);
-        const classEnd = this.getTimeInMinutes(this.states.schedule.classEnd);
-
-        const isSleepTime = sleepStart < sleepEnd 
-            ? (currentTime >= sleepStart && currentTime < sleepEnd)
-            : (currentTime >= sleepStart || currentTime < sleepEnd);
-
-        const isClassTime = currentTime >= classStart && currentTime < classEnd;
-        const isHoliday = this.isHolidayMode(now);
-
-        const shouldShowOverlay = this.states.schedule.isEnabled && 
-                               (isSleepTime || isClassTime || isHoliday);
-
-        console.log('排程檢查結果:', {
-            currentTime: `${now.getHours()}:${now.getMinutes()}`,
-            isSleepTime,
-            isClassTime,
-            isHoliday,
-            shouldShowOverlay
-        });
-
-        if (!this.states.overlayDisabled && !this.states.schedule.overlayAlwaysOff) {
-            document.getElementById("screenOverlay").style.display = 
-                shouldShowOverlay ? "block" : "none";
-        } else if (this.states.schedule.overlayAlwaysOff) {
-            document.getElementById("screenOverlay").style.display = "none";
-        }
+    // 只有當不是被臨時取消時才更新顯示狀態
+    if (!this.states.overlayDisabled) {
+        document.getElementById("screenOverlay").style.display = 
+            shouldShowOverlay ? "block" : "none";
+    }
     },
-
 
     isHolidayMode(date) {
         const day = date.getDay();
@@ -208,26 +120,20 @@ showAuthUI() {
         return hours * 60 + minutes;
     },
 
-   handleAuthFlow() {
-    const authBtn = document.getElementById("authorize-btn");
-    authBtn.disabled = true;
-    authBtn.textContent = "正在转向登录页面...";
-    
-    // 极简参数构造（避免使用URLSearchParams）
-    const params = [
-        'client_id=' + encodeURIComponent(this.CLIENT_ID),
-        'redirect_uri=' + encodeURIComponent(window.location.href.split('#')[0]),
-        'response_type=token',
-        'scope=' + encodeURIComponent(this.SCOPES),
-        'prompt=consent'
-    ].join('&');
-    
-    // 强制页面跳转（最可靠方式）
-    setTimeout(() => {
-        window.location.href = 'https://accounts.google.com/o/oauth2/v2/auth?' + params;
-    }, 900);
-},
-    
+    handleAuthFlow() {
+        const authEndpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
+        const params = {
+            client_id: this.CLIENT_ID,
+            redirect_uri: this.REDIRECT_URI,
+            response_type: 'token',
+            scope: this.SCOPES,
+            include_granted_scopes: 'true',
+            state: 'pass-through-value',
+            prompt: 'consent'
+        };
+        window.location.href = authEndpoint + '?' + new URLSearchParams(params);
+    },
+
     checkAuth() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         if (hashParams.has("access_token")) {
@@ -248,17 +154,12 @@ showAuthUI() {
      }
      this.fetchAlbums();
      },
-    
+
     setupEventListeners() {
-        const authBtn = document.getElementById("authorize-btn");
-        authBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    authBtn.disabled = true;
-    authBtn.textContent = "正在導向登入頁...";
-    setTimeout(() => {
-        this.handleAuthFlow();
-    }, 100);
-    });
+        document.getElementById("authorize-btn").addEventListener("click", (e) => {
+            e.preventDefault();
+            this.handleAuthFlow();
+        });
 
         document.getElementById("album-select").addEventListener("change", (e) => {
             this.states.albumId = e.target.value;
@@ -351,35 +252,26 @@ let lastTouchTime = 0;
         });
     },
     temporarilyDisableOverlay() {
-        if (document.getElementById("overlay-toggle")?.checked) {
-            this.states.overlayDisabled = true;
-            this.states.overlayTimeout = null;
-            this.showTemporaryMessage("已永久停用遮罩");
-            return;
-        }
-
         if (document.getElementById("screenOverlay").style.display === "block") {
+            // 1. 隱藏遮罩
             document.getElementById("screenOverlay").style.display = "none";
             this.states.overlayDisabled = true;
-
+            
+            // 2. 清除現有計時器
             if (this.states.overlayTimeout) {
                 clearTimeout(this.states.overlayTimeout);
             }
-
+            
+            // 3. 設定5分鐘後自動恢復
             this.states.overlayTimeout = setTimeout(() => {
                 this.states.overlayDisabled = false;
                 this.states.overlayTimeout = null;
-                this.checkSchedule();
-            }, 5 * 60 * 1000);
-
+                this.checkSchedule(); // 重新檢查排程
+            }, 5 * 60 * 1000); // 5分鐘
+            
+            // 4. 顯示提示訊息
             this.showTemporaryMessage("遮罩已暫時取消，5分鐘後自動恢復");
         }
-            if (document.getElementById("overlay-toggle").checked) {
-           this.states.overlayDisabled = true;
-           this.states.overlayTimeout = null;
-           this.showTemporaryMessage("已長時停用遮罩");
-                 return; // 直接跳過計時器
-          }
     },
 
     showTemporaryMessage(message) {
@@ -399,15 +291,15 @@ let lastTouchTime = 0;
         setTimeout(() => {
             document.body.removeChild(msgElement);
         }, 3000);
-    }, 
-    
+    }, // <-- 這裡必須加上逗號
+   
     resetOverlayState() {
         this.states.overlayDisabled = false;
         if (this.states.overlayTimeout) {
             clearTimeout(this.states.overlayTimeout);
             this.states.overlayTimeout = null;
         }
-    }, 
+    }, // <-- 這裡必須加上逗號
 
         async fetchAlbums() {
         try {
@@ -498,26 +390,19 @@ let lastTouchTime = 0;
         // 2. 如果已達預載數量，改用較慢速度繼續加載剩餘照片
         // 3. 如果正在幻燈片播放，確保有足夠緩衝照片
         if (this.states.hasMorePhotos) {
-            let delay = 300;
-
-    if (this.states.photos.length >= this.states.preloadCount) {
-        delay = 1000;
-    }
-
-    if (this.states.slideshowInterval &&
-        this.states.photos.length - this.states.loadedForSlideshow < 50) {
-        delay = 300;
-    }
-
-    if ('requestIdleCallback' in window) {
-        requestIdleCallback(() => {
-            this.loadPhotos();
-        }, { timeout: delay });
-    } else {
-        // 備援：不支援的瀏覽器仍使用 setTimeout
-        setTimeout(() => this.loadPhotos(), delay);
-    }
-     }       
+            let delay = 300; // 預設加載間隔
+            
+            if (this.states.photos.length >= this.states.preloadCount) {
+                delay = 1000; // 預載完成後改用較慢速度加載
+            }
+            
+            if (this.states.slideshowInterval && 
+                this.states.photos.length - this.states.loadedForSlideshow < 50) {
+                delay = 300; // 幻燈片播放時需要更快加載
+            }
+            
+            setTimeout(() => this.loadPhotos(), delay);
+        }
     } catch (error) {
         // 只在第一次失敗時顯示錯誤訊息
         if (this.states.photos.length === 0) {
@@ -554,7 +439,6 @@ let lastTouchTime = 0;
         img.className = 'photo';
         img.src = `${photo.baseUrl}=w150-h150`;
         img.dataset.src = `${photo.baseUrl}=w800-h600`;
-        img.loading = 'lazy';
         img.alt = '相片';
         img.dataset.id = photo.id;
         img.onclick = () => this.openLightbox(photo.id);
@@ -645,99 +529,6 @@ let lastTouchTime = 0;
         }
         return `${photo.baseUrl}=w${width}-h${height}`;
     },
-   
-    isPortrait(photo) {
-    const metadata = photo.mediaMetadata;
-    if (metadata && metadata.width && metadata.height) {
-        return parseInt(metadata.width, 10) < parseInt(metadata.height, 10);
-    }
-    return false;
-    }, 
-
-    displayPortraitCollage(startIndex) {
-    const lightbox = document.getElementById("lightbox");
-    const image = document.getElementById("lightbox-image");
-
-    image.style.display = "none";
-
-    const oldCollage = document.getElementById("portrait-collage");
-    if (oldCollage) oldCollage.remove();
-
-    const collage = document.createElement("div");
-    collage.id = "portrait-collage";
-    collage.style.display = "flex";
-    collage.style.flexDirection = "row";
-    collage.style.gap = "10px";
-    collage.style.maxHeight = "95vh";
-    collage.style.maxWidth = "95vw";
-
-    let added = 0;
-    let index = startIndex;
-
-    while (index < this.states.photos.length && added < 2) {
-        const photo = this.states.photos[index];
-        if (this.isPortrait(photo)) {
-            const img = document.createElement("img");
-            img.src = this.getImageUrl(photo);
-            img.style.maxHeight = "95vh";
-            img.style.objectFit = "contain";
-            img.style.borderRadius = "8px";
-            img.style.flex = "1 1 0";
-            collage.appendChild(img);
-            added++;
-        }
-        index++;
-    }
-
-    lightbox.appendChild(collage);
-collage.id = "portrait-collage";
-collage.style.display = "flex";
-collage.style.flexDirection = "row";
-collage.style.gap = "10px";
-collage.style.maxHeight = "95vh";
-collage.style.maxWidth = "95vw";
-
-const loadPromises = [];
-
-while (index < this.states.photos.length && added < 2) {
-    const photo = this.states.photos[index];
-    if (this.isPortrait(photo)) {
-        const img = document.createElement("img");
-        img.src = this.getImageUrl(photo);
-        img.style.maxHeight = "95vh";
-        img.style.objectFit = "contain";
-        img.style.borderRadius = "8px";
-        img.style.flex = "1 1 0";
-        collage.appendChild(img);
-        
-        loadPromises.push(new Promise((resolve) => {
-            img.onload = resolve;
-            img.onerror = resolve; // 即使錯也算載入完，避免永遠不顯示
-        }));
-
-        added++;
-    }
-    index++;
-}
-
-// 等待所有拼貼圖載入後再顯示
-Promise.all(loadPromises).then(() => {
-    const lightbox = document.getElementById("lightbox");
-    const oldCollage = document.getElementById("portrait-collage");
-    const image = document.getElementById("lightbox-image");
-
-    if (oldCollage) oldCollage.remove();
-    image.style.display = "none";
-
-    lightbox.appendChild(collage);
-    lightbox.style.display = "flex";
-    lightbox.style.opacity = 1;
-    this.states.lightboxActive = true;
-    this.toggleButtonVisibility();
-});
-    this.states.lightboxActive = true;
-    this.toggleButtonVisibility();
-   },
 
     openLightbox(photoId) {
         this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
@@ -771,38 +562,15 @@ Promise.all(loadPromises).then(() => {
     },
 
     navigate(direction) {
-    const nextIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
-    const nextPhoto = this.states.photos[nextIndex];
-
-    if (this.isPortrait(nextPhoto)) {
-        this.states.currentIndex = nextIndex;
-        this.displayPortraitCollage(nextIndex);
-    } else {
-        this.states.currentIndex = nextIndex;
-        const lightbox = document.getElementById("lightbox");
-        const image = document.getElementById("lightbox-image");
-        const oldCollage = document.getElementById("portrait-collage");
-        if (oldCollage) oldCollage.remove();
-
-        image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
-        image.style.display = "block";
-
-        image.onload = () => {
-            const imgWidth = image.naturalWidth;
-            const imgHeight = image.naturalHeight;
-            image.classList.remove("portrait-mode", "landscape-mode");
-            if (imgHeight > imgWidth) {
-                image.classList.add("portrait-mode");
-            } else {
-                image.classList.add("landscape-mode");
-            }
-        };
-    }
-
-    if (this.states.slideshowInterval) {
-        this.states.playedPhotos.add(this.states.photos[this.states.currentIndex].id);
-    }
-},
+        this.states.currentIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
+        document.getElementById("lightbox-image").src = 
+            this.getImageUrl(this.states.photos[this.states.currentIndex]);
+        
+        // 新增：記錄已播放的照片
+        if (this.states.slideshowInterval) {
+            this.states.playedPhotos.add(this.states.photos[this.states.currentIndex].id);
+        }
+    },
 
     toggleSlideshow() {
         if (this.states.slideshowInterval) {
@@ -850,19 +618,11 @@ Promise.all(loadPromises).then(() => {
             };
 
             this.states.slideshowInterval = setInterval(() => {
-                const nextIndex = getNextIndex();
-                const nextPhoto = this.states.photos[nextIndex];
-
-                 if (this.isPortrait(nextPhoto)) {
-                 this.states.currentIndex = nextIndex;
-                 this.displayPortraitCollage(nextIndex);
-               } else {
-                        this.states.currentIndex = nextIndex;
-                     this.navigate(0);
-                     }
-},            speed);
-            }
-                this.toggleButtonVisibility();
+                this.states.currentIndex = getNextIndex(); 
+                this.navigate(0); 
+            }, speed);
+        }
+        this.toggleButtonVisibility();
     },
 
     stopSlideshow() {
