@@ -444,56 +444,55 @@ let lastTouchTime = 0;
     }
 },
 
-    async renderPhotos() {
+    renderPhotos() {
     const container = document.getElementById("photo-container");
     container.style.display = "grid";
 
-    // 移除錯誤訊息
+    // 移除舊訊息
     container.querySelectorAll('.error-state, .empty-state').forEach(el => el.remove());
 
-    // 檢查目前已存在的相片ID，避免重複渲染
     const existingIds = new Set(Array.from(container.querySelectorAll('.photo')).map(img => img.dataset.id));
+    const photosToAdd = this.states.photos.filter(photo => !existingIds.has(photo.id));
 
-    const fragment = document.createDocumentFragment();
-    
-    for (let i = 0; i < this.states.photos.length; i++) {
-        const photo = this.states.photos[i];
-        if (existingIds.has(photo.id)) {
-            continue; // 如果這張已經渲染過，就跳過
+    const batchSize = 20; // 每批新增20張
+    let index = 0;
+
+    const addBatch = (deadline) => {
+        while ((deadline.timeRemaining() > 0 || deadline.didTimeout) && index < photosToAdd.length) {
+            const photo = photosToAdd[index];
+            const img = document.createElement('img');
+            img.className = 'photo';
+            img.src = `${photo.baseUrl}=w150-h150`;
+            img.dataset.src = `${photo.baseUrl}=w800-h600`;
+            img.alt = '相片';
+            img.dataset.id = photo.id;
+            img.addEventListener('click', () => this.openLightbox(photo.id));
+            container.appendChild(img);
+
+            existingIds.add(photo.id);
+            index++;
         }
 
-        const img = document.createElement('img');
-        img.className = 'photo';
-        img.src = `${photo.baseUrl}=w150-h150`;  // 小尺寸
-        img.dataset.src = `${photo.baseUrl}=w800-h600`;  // 預載大尺寸
-        img.alt = '相片';
-        img.dataset.id = photo.id;
-        img.addEventListener('click', () => {
-            this.openLightbox(photo.id);
-        });
+        if (index < photosToAdd.length) {
+            requestIdleCallback(addBatch);
+        } else {
+            this.setupLazyLoad();
+            this.setupScrollObserver();
+            if (this.states.slideshowInterval) {
+                this.states.loadedForSlideshow = this.states.photos.length;
+            }
+        }
+    };
 
-        fragment.appendChild(img);
-        existingIds.add(photo.id); // 加入Set
-    }
+    requestIdleCallback(addBatch);
 
-    // 沒有更多相片了，顯示提示
+    // 如果確定已無更多照片，顯示「已無更多相片」
     if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
         const emptyState = document.createElement('p');
         emptyState.className = 'empty-state';
         emptyState.textContent = '已無更多相片';
-        fragment.appendChild(emptyState);
+        container.appendChild(emptyState);
     }
-
-    container.appendChild(fragment);
-
-    this.setupLazyLoad();
-
-    // 更新幻燈片 preload 記錄
-    if (this.states.slideshowInterval) {
-        this.states.loadedForSlideshow = this.states.photos.length;
-    }
-
-    this.setupScrollObserver();
 },
 
 setupLazyLoad() {
