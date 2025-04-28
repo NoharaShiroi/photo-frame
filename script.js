@@ -528,7 +528,7 @@ let lastTouchTime = 0;
     }
 },
 
-    getImageUrl(photo, width = 1920, height = 1080) {
+    getImageUrl(photo, width = 1024, height = 768) {
         if (!photo || !photo.baseUrl) {
             console.error("无效的照片对象:", photo);
             return "";
@@ -569,22 +569,31 @@ let lastTouchTime = 0;
 
     navigate(direction) {
         const image = document.getElementById("lightbox-image");
-    image.classList.add('fade-out'); // 先淡出舊照片
+    const nextIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
+    const nextPhoto = this.states.photos[nextIndex];
 
-    setTimeout(() => {
-        this.states.currentIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
-        image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
+    if (!nextPhoto) return; // 安全保險
 
-        image.onload = () => {
-            image.classList.remove('fade-out'); // 新照片載入後淡入
-             };
+    // 預先創建一個新圖片，等載入完再切換
+    const preloadImage = new Image();
+    preloadImage.src = this.getImageUrl(nextPhoto);
 
-        // 幻燈片播放時，記錄已播放過的照片
-        if (this.states.slideshowInterval) {
-            this.states.playedPhotos.add(this.states.photos[this.states.currentIndex].id);
+    preloadImage.onload = () => {
+        image.classList.add('fade-out'); // 舊圖淡出
+
+        setTimeout(() => {
+            this.states.currentIndex = nextIndex;
+            image.src = preloadImage.src;
+            image.onload = () => {
+                image.classList.remove('fade-out'); // 新圖淡入
+            };
+            
+            if (this.states.slideshowInterval) {
+                this.states.playedPhotos.add(nextPhoto.id);
             }
-        }, 300); // 延遲300ms讓舊圖慢慢消失
-   },
+        }, 500); // 讓fade-out走一半後換圖
+    };
+},
 
    toggleSlideshow() {
     if (this.states.slideshowInterval) {
