@@ -602,31 +602,52 @@ setupLazyLoad() {
     },
 
     navigate(direction) {
-        const image = document.getElementById("lightbox-image");
+    const lightbox = document.getElementById("lightbox");
+
+    // 舊的 img
+    const oldImage = document.getElementById("lightbox-image");
+
     const nextIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
     const nextPhoto = this.states.photos[nextIndex];
 
-    if (!nextPhoto) return; // 安全保險
+    if (!nextPhoto) return;
 
-    // 預先創建一個新圖片，等載入完再切換
-    const preloadImage = new Image();
-    preloadImage.src = this.getImageUrl(nextPhoto);
+    const newImage = new Image();
+    newImage.id = "lightbox-image";
+    newImage.className = "fade-in"; // 新增class做進場
+    newImage.src = this.getImageUrl(nextPhoto);
+    newImage.style.position = "absolute";
+    newImage.style.maxWidth = "98%";
+    newImage.style.maxHeight = "98%";
+    newImage.style.objectFit = "contain";
+    newImage.style.borderRadius = "8px";
+    newImage.style.transition = "opacity 1.2s ease-in-out";
+    newImage.style.opacity = 0; // 初始透明
 
-    preloadImage.onload = () => {
-        image.classList.add('fade-out'); // 舊圖淡出
+    newImage.onload = () => {
+        // 把新圖插進lightbox
+        lightbox.appendChild(newImage);
+
+        // 小延遲讓transition能啟動
+        requestAnimationFrame(() => {
+            newImage.style.opacity = 1;
+            if (oldImage) {
+                oldImage.classList.add('fade-out'); // 舊圖開始淡出
+            }
+        });
 
         setTimeout(() => {
-            this.states.currentIndex = nextIndex;
-            image.src = preloadImage.src;
-            image.onload = () => {
-                image.classList.remove('fade-out'); // 新圖淡入
-            };
-            
-            if (this.states.slideshowInterval) {
-                this.states.playedPhotos.add(nextPhoto.id);
+            if (oldImage && oldImage.parentNode) {
+                lightbox.removeChild(oldImage); // 刪掉舊的
             }
-        }, 500); // 讓fade-out走一半後換圖
+            newImage.id = "lightbox-image"; // 確保新的也是正確id
+        }, 1200); // 等fade-out完成
     };
+
+    this.states.currentIndex = nextIndex;
+    if (this.states.slideshowInterval) {
+        this.states.playedPhotos.add(nextPhoto.id);
+    }
 },
 
    toggleSlideshow() {
