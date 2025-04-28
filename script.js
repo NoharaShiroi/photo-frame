@@ -256,20 +256,28 @@ let lastTouchTime = 0;
             document.getElementById("schedule-modal").style.display = "none";
             this.checkSchedule();
         });
+        
         document.addEventListener("fullscreenchange", () => {
-    if (!document.fullscreenElement) {
-        this.states.isFullscreen = false;
-        this.toggleButtonVisibility();
-    }
-});
+            if (!document.fullscreenElement) {
+            this.states.isFullscreen = false;
+            if (this.states.slideshowInterval) {
+            this.toggleSlideshow(); // 離開全螢幕 ➔ 停止幻燈片
+                }
+            this.toggleButtonVisibility();
+             }
+        });
 
-document.addEventListener("webkitfullscreenchange", () => { // Safari用
-    if (!document.webkitFullscreenElement) {
-        this.states.isFullscreen = false;
-        this.toggleButtonVisibility();
-    }
-});
+        document.addEventListener("webkitfullscreenchange", () => {
+            if (!document.webkitFullscreenElement) {
+            this.states.isFullscreen = false;
+            if (this.states.slideshowInterval) {
+            this.toggleSlideshow(); // 離開全螢幕 ➔ 停止幻燈片
+                 }
+            this.toggleButtonVisibility();
+              }
+        });
     },
+    
     temporarilyDisableOverlay() {
         if (document.getElementById("screenOverlay").style.display === "block") {
             // 1. 隱藏遮罩
@@ -673,43 +681,41 @@ document.addEventListener("webkitfullscreenchange", () => { // Safari用
     },
 
     toggleFullscreen() {
-        const isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
-                    !window.MSStream && 
-                    /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
-    
+    const elem = document.documentElement;
+    const isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+                     !window.MSStream && 
+                     /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
+
     if (isOldiOS) {
         alert("您的裝置不支援全螢幕模式");
         return;
     }
 
-    if (!document.fullscreenElement) {
-        const elem = document.documentElement;
+    if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+        // 進入全螢幕
         if (elem.requestFullscreen) {
-            elem.requestFullscreen().catch(err => {
-                console.error('全螢幕錯誤:', err);
-            });
-        } else if (elem.webkitRequestFullscreen) { // Safari 專用
+            elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) { // Safari
             elem.webkitRequestFullscreen();
         }
         this.states.isFullscreen = true;
+
+        this.openLightbox(this.states.photos[this.states.currentIndex].id); // 開啟lightbox
+        if (!this.states.slideshowInterval) {
+            this.toggleSlideshow(); // 啟動幻燈片
+        }
+        this.toggleButtonVisibility();
     } else {
+        // 退出全螢幕
         if (document.exitFullscreen) {
             document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) { // Safari 專用
+        } else if (document.webkitExitFullscreen) { // Safari
             document.webkitExitFullscreen();
         }
-        this.states.isFullscreen = false;
+        // 離開全螢幕的後續動作由 fullscreenchange 事件負責
     }
-    this.toggleButtonVisibility();
-},
-
-    toggleButtonVisibility() {
-        const isSlideshowOrFullscreen = this.states.slideshowInterval !== null || this.states.isFullscreen;
-        const buttons = document.querySelectorAll('.lightbox-buttons .nav-button');
-        buttons.forEach(button => {
-            button.style.display = isSlideshowOrFullscreen ? 'none' : 'block';
-        });
-    },
+}
+,
 
     resetPhotoData() {
         this.states.currentRequestId++;
