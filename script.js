@@ -631,7 +631,7 @@ let lastTouchTime = 0;
               this.states.currentIndex = getNextIndex();
               this.navigate(0);
               }, 100); // 延遲100ms，自然一點
-              }
+              ,speed)
               this.toggleButtonVisibility();
     },
 
