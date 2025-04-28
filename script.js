@@ -583,11 +583,12 @@ let lastTouchTime = 0;
     toggleSlideshow() {
         if (this.states.slideshowInterval) {
             this.stopSlideshow();
+            this.stopClock();  // 停止時鐘
         } else {
             // 新增：重置已播放記錄
             this.states.playedPhotos.clear();
             this.states.loadedForSlideshow = this.states.photos.length;
-            
+            this.startClock(); // 啟動時鐘
             const speed = document.getElementById("slideshow-speed").value * 1000 || 1000;
             const isRandom = document.getElementById("play-mode").value === "random";
 
@@ -700,6 +701,17 @@ let lastTouchTime = 0;
         }
     },
 
+    startClock() {
+          this.updateClock();
+          this.clockInterval = setInterval(() => this.updateClock(), 60000); // 每分鐘更新一次
+          document.getElementById("clock").style.display = "block";
+     },
+
+    stopClock() {
+       clearInterval(this.clockInterval);
+       document.getElementById("clock").style.display = "none";
+     },
+    
     showMessage(message, isError = false) {
     const container = document.getElementById("photo-container");
     // 移除現有的訊息
@@ -712,6 +724,7 @@ let lastTouchTime = 0;
     messageElement.textContent = message;
     container.appendChild(messageElement);
  }
+    
 };
 
 document.addEventListener("DOMContentLoaded", () => app.init());
