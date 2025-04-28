@@ -710,6 +710,16 @@ let lastTouchTime = 0;
         }
     },
 
+    updateClock() {
+    const now = new Date();
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const clockElement = document.getElementById("clock");
+        if (clockElement) {
+            clockElement.textContent = `${hours}:${minutes}`;
+          }
+    },
+    
     startClock() {
           this.updateClock();
           this.clockInterval = setInterval(() => this.updateClock(), 60000); // 每分鐘更新一次
