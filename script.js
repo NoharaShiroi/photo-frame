@@ -34,6 +34,11 @@ const app = {
         playedPhotos: new Set(), // 記錄已播放過的照片ID
         overlayTimeout: null,      // 儲存計時器ID
         overlayDisabled: false,   // 記錄遮罩是否被臨時取消
+        autoCollageEnabled: false, // 預設關閉
+        currentOrientation: 'portrait', // 預設
+        tileMode: false, // 是否啟用雙圖拼貼
+        currentTileGroup: [], // 當前播放的兩張圖片
+        
         schedule: {
             sleepStart: "22:00",
             sleepEnd: "07:00",
@@ -51,8 +56,12 @@ const app = {
 
     this.states.accessToken = sessionStorage.getItem("access_token");
     this.setupEventListeners();
+    this.setupOrientationListener();
+    document.getElementById("toggle-collage-mode").addEventListener("click", () => {
+        this.toggleCollageMode();
+     });
     
-    if (!this.checkAuth()) {
+        if (!this.checkAuth()) {
         // 未授權：顯示登入介面
         document.getElementById("auth-container").style.display = "flex";
         if (this.states.isOldiOS) {
@@ -289,6 +298,14 @@ let lastTouchTime = 0;
             this.toggleButtonVisibility();
               }
         });
+
+        document.getElementById("toggle-tile-mode").addEventListener("click", () => {
+        this.states.tileMode = !this.states.tileMode;
+        if (this.states.lightboxActive) {
+        this.openLightbox(this.states.photos[this.states.currentIndex].id);
+             }
+            alert(`雙拼貼模式 ${this.states.tileMode ? '已開啟' : '已關閉'}`);
+        });
     },
     
     temporarilyDisableOverlay() {
@@ -456,6 +473,86 @@ let lastTouchTime = 0;
         }
     }
 },
+    
+    setupOrientationDetection() {
+    this.states.autoTileEnabled = true; // 預設開啟
+    window.addEventListener('orientationchange', () => this.adjustLightboxLayout());
+    window.addEventListener('resize', () => this.adjustLightboxLayout());
+},
+
+adjustLightboxLayout() {
+    if (!this.states.lightboxActive) return;
+
+    const lightbox = document.getElementById('lightbox');
+    const images = lightbox.querySelectorAll('img');
+
+    const { innerWidth: width, innerHeight: height } = window;
+    const isLandscape = width > height;
+
+    if (this.states.tileMode && images.length === 2) {
+        if (isLandscape) {
+            // 橫向 ➔ 直向拼貼（上下）
+            images[0].style.width = '90%';
+            images[0].style.height = '45%';
+            images[1].style.width = '90%';
+            images[1].style.height = '45%';
+            images[0].style.objectFit = images[1].style.objectFit = 'contain';
+            lightbox.style.flexDirection = 'column';
+        } else {
+            // 直向 ➔ 橫向拼貼（左右）
+            images[0].style.width = '45%';
+            images[0].style.height = '90%';
+            images[1].style.width = '45%';
+            images[1].style.height = '90%';
+            images[0].style.objectFit = images[1].style.objectFit = 'contain';
+            lightbox.style.flexDirection = 'row';
+        }
+    } else if (images.length === 1) {
+        // 單張顯示（正常情況）
+        images[0].style.maxWidth = isLandscape ? '95%' : '98%';
+        images[0].style.maxHeight = isLandscape ? '95%' : '98%';
+        lightbox.style.flexDirection = 'row';
+    }
+},
+
+    applyCollageMode() {
+    const lightbox = document.getElementById("lightbox");
+    const image = document.getElementById("lightbox-image");
+
+    if (!lightbox || !image) return;
+
+    if (this.states.currentOrientation === 'portrait') {
+        // 直向時，橫向拚貼
+        image.style.objectFit = "cover"; 
+        image.style.width = "90%";
+        image.style.height = "auto";
+    } else {
+        // 橫向時，直向拚貼
+        image.style.objectFit = "cover";
+        image.style.width = "auto";
+        image.style.height = "90%";
+    }
+},
+
+    toggleCollageMode() {
+    this.states.autoCollageEnabled = !this.states.autoCollageEnabled;
+    const btn = document.getElementById("toggle-collage-mode");
+    btn.textContent = `自動拼貼模式：${this.states.autoCollageEnabled ? '開' : '關'}`;
+
+    if (this.states.autoCollageEnabled) {
+        this.applyCollageMode();
+    } else {
+        // 關閉後恢復原本比例
+        const image = document.getElementById("lightbox-image");
+        if (image) {
+            image.style.objectFit = "contain";
+            image.style.maxWidth = "98%";
+            image.style.maxHeight = "98%";
+            image.style.width = "auto";
+            image.style.height = "auto";
+        }
+    }
+},
 
     async renderPhotos() {
     const container = document.getElementById("photo-container");
@@ -584,24 +681,50 @@ setupLazyLoad() {
     },
 
     openLightbox(photoId) {
-        this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
-        const lightbox = document.getElementById("lightbox");
-        const image = document.getElementById("lightbox-image");
-        
-        image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
+    this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
 
-        image.onload = () => {
-            const isSlideshowActive = this.states.slideshowInterval !== null;
-            image.style.maxWidth = isSlideshowActive ? '99%' : '90%';
-            image.style.maxHeight = isSlideshowActive ? '99%' : '90%';
-            lightbox.style.display = "flex";
-            setTimeout(() => {
-                lightbox.style.opacity = 1;
-                this.states.lightboxActive = true;
-                this.toggleButtonVisibility();
-            }, 10);
+    const lightbox = document.getElementById("lightbox");
+    lightbox.innerHTML = ''; // 清除舊內容
+
+    const createImage = (photo) => {
+        const img = new Image();
+        img.src = this.getImageUrl(photo);
+        img.style.borderRadius = '8px';
+        img.style.objectFit = 'contain';
+        img.style.transition = 'opacity 1.2s ease-in-out';
+        img.style.opacity = 0;
+        img.onload = () => {
+            img.style.opacity = 1;
+            this.adjustLightboxLayout(); // 加載完後自適應
         };
-    },
+        return img;
+    };
+
+    if (this.states.tileMode) {
+        // 進行雙圖片拼貼
+        const nextIndex = (this.states.currentIndex + 1) % this.states.photos.length;
+        this.states.currentTileGroup = [
+            this.states.photos[this.states.currentIndex],
+            this.states.photos[nextIndex]
+        ];
+        const img1 = createImage(this.states.currentTileGroup[0]);
+        const img2 = createImage(this.states.currentTileGroup[1]);
+        lightbox.appendChild(img1);
+        lightbox.appendChild(img2);
+    } else {
+        // 單圖
+        const img = createImage(this.states.photos[this.states.currentIndex]);
+        lightbox.appendChild(img);
+    }
+
+    lightbox.style.display = "flex";
+    lightbox.style.opacity = 0;
+    setTimeout(() => {
+        lightbox.style.opacity = 1;
+        this.states.lightboxActive = true;
+        this.toggleButtonVisibility();
+    }, 10);
+},
 
     closeLightbox() {
         const lightbox = document.getElementById("lightbox");
@@ -616,15 +739,20 @@ setupLazyLoad() {
 
     navigate(direction) {
     const lightbox = document.getElementById("lightbox");
-
     // 舊的 img
     const oldImage = document.getElementById("lightbox-image");
-
     const nextIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
     const nextPhoto = this.states.photos[nextIndex];
-
+    const totalPhotos = this.states.photos.length;
+    if (this.states.tileMode) {
+        // 每次移動兩張
+        this.states.currentIndex = (this.states.currentIndex + (2 * direction) + totalPhotos) % totalPhotos;
+    } else {
+        this.states.currentIndex = (this.states.currentIndex + direction + totalPhotos) % totalPhotos;
+    }
+    this.openLightbox(this.states.photos[this.states.currentIndex].id);
+}
     if (!nextPhoto) return;
-
     const newImage = new Image();
     newImage.id = "lightbox-image";
     newImage.className = "fade-in"; // 新增class做進場
@@ -636,7 +764,6 @@ setupLazyLoad() {
     newImage.style.borderRadius = "8px";
     newImage.style.transition = "opacity 1.2s ease-in-out";
     newImage.style.opacity = 0; // 初始透明
-
     newImage.onload = () => {
         // 把新圖插進lightbox
         lightbox.appendChild(newImage);
