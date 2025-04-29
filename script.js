@@ -734,7 +734,7 @@ setupLazyLoad() {
         this.states.lightboxActive = true;
         this.toggleButtonVisibility();
     }, 10);
-}
+    },
 
     closeLightbox() {
         const lightbox = document.getElementById("lightbox");
