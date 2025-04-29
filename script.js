@@ -796,6 +796,7 @@ setupLazyLoad() {
             if (loadedCount === newImages.length) {
                 // 所有新圖載入完成後再做動畫
                 this.animateTransition(oldImages, newImages);
+                this.toggleButtonVisibility();
             }
         };
     });
