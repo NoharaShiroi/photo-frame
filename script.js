@@ -208,11 +208,7 @@ let lastTouchTime = 0;
         }
 
         lightbox.addEventListener("dblclick", (event) => {
-            const shouldCloseLightbox = (event) => {
-        return !event.target.closest('.nav-button') && !event.target.closest('img');
-    };
-    
-    if (shouldCloseLightbox(event)) {
+      if (shouldCloseLightbox(event)) {
         this.closeLightbox();
     }
 });
@@ -874,34 +870,7 @@ setupLazyLoad() {
     }
 },
 
-    animateTransition(oldImages, newImages) {
-    const lightbox = document.getElementById("lightbox");
-
-    oldImages.forEach(img => {
-        img.style.opacity = 0;
-    });
-
-    setTimeout(() => {
-        // 清空舊圖片
-        lightbox.innerHTML = '';
-
-        // 加入新圖片
-        newImages.forEach(img => {
-            img.style.opacity = 0;
-            lightbox.appendChild(img);
-        });
-
-        // 小延遲啟動 fade-in
-        requestAnimationFrame(() => {
-            newImages.forEach(img => {
-                img.style.opacity = 1;
-            });
-        });
-
-        this.adjustLightboxLayout(); // 保持橫向直向適應
-    }, 500); // 跟fade-out速度同步
-},
-
+   
     stopSlideshow() {
         clearInterval(this.states.slideshowInterval);
         this.states.slideshowInterval = null;
