@@ -56,7 +56,7 @@ const app = {
 
     this.states.accessToken = sessionStorage.getItem("access_token");
     this.setupEventListeners();
-    this.setupOrientationListener();
+    this.ssetupOrientationDetection();
     document.getElementById("toggle-collage-mode").addEventListener("click", () => {
         this.toggleCollageMode();
      });
@@ -475,13 +475,13 @@ let lastTouchTime = 0;
 },
     
     setupOrientationDetection() {
-    this.states.autoTileEnabled = true; // 預設開啟
+    this.states.autoTileEnabled = true; // 預設啟用，讓使用者可以開關
     window.addEventListener('orientationchange', () => this.adjustLightboxLayout());
     window.addEventListener('resize', () => this.adjustLightboxLayout());
 },
 
 adjustLightboxLayout() {
-    if (!this.states.lightboxActive) return;
+    if (!this.states.lightboxActive) return;// 只在Lightbox打開時才調整
 
     const lightbox = document.getElementById('lightbox');
     const images = lightbox.querySelectorAll('img');
