@@ -693,9 +693,10 @@ setupLazyLoad() {
 
     openLightbox(photoId) {
     this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
+
     const lightbox = document.getElementById("lightbox");
-    const Lightbox Image = document.getElementById("lightbox-image-container")    
-    Lightbox Image.innerHTML = ''; // 清除舊內容
+    const lightboxImageContainer = document.getElementById("lightbox-image-container");
+    lightboxImageContainer.innerHTML = ''; // ⚡ 只清圖片區，按鈕區保留
 
     const createImage = (photo) => {
         const img = new Image();
@@ -706,13 +707,12 @@ setupLazyLoad() {
         img.style.opacity = 0;
         img.onload = () => {
             img.style.opacity = 1;
-            this.adjustLightboxLayout(); // 加載完後自適應
+            this.adjustLightboxLayout();
         };
         return img;
     };
 
     if (this.states.tileMode) {
-        // 進行雙圖片拼貼
         const nextIndex = (this.states.currentIndex + 1) % this.states.photos.length;
         this.states.currentTileGroup = [
             this.states.photos[this.states.currentIndex],
@@ -720,12 +720,11 @@ setupLazyLoad() {
         ];
         const img1 = createImage(this.states.currentTileGroup[0]);
         const img2 = createImage(this.states.currentTileGroup[1]);
-        lightbox.appendChild(img1);
-        lightbox.appendChild(img2);
+        lightboxImageContainer.appendChild(img1);
+        lightboxImageContainer.appendChild(img2);
     } else {
-        // 單圖
         const img = createImage(this.states.photos[this.states.currentIndex]);
-        lightbox.appendChild(img);
+        lightboxImageContainer.appendChild(img);
     }
 
     lightbox.style.display = "flex";
@@ -735,8 +734,7 @@ setupLazyLoad() {
         this.states.lightboxActive = true;
         this.toggleButtonVisibility();
     }, 10);
-     this.toggleButtonVisibility();  
-},
+}
 
     closeLightbox() {
         const lightbox = document.getElementById("lightbox");
