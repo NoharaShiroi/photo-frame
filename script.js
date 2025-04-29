@@ -272,17 +272,7 @@ let lastTouchTime = 0;
             this.checkSchedule();
         });
         
-        document.addEventListener("fullscreenchange", () => {
-            if (!document.fullscreenElement) {
-            this.states.isFullscreen = false;
-            if (this.states.slideshowInterval) {
-            this.toggleSlideshow(); // 離開全螢幕 ➔ 停止幻燈片
-                }
-            this.toggleButtonVisibility();
-             }
-        });
-
-        document.addEventListener("webkitfullscreenchange", () => {
+              document.addEventListener("webkitfullscreenchange", () => {
             if (!document.webkitFullscreenElement) {
             this.states.isFullscreen = false;
             if (this.states.slideshowInterval) {
