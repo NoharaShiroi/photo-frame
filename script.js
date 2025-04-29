@@ -1,3 +1,16 @@
+if (!window.requestIdleCallback) {
+    window.requestIdleCallback = function (handler) {
+        return setTimeout(() => {
+            handler({ timeRemaining: () => 50, didTimeout: true });
+        }, 1);
+    };
+}
+
+if (!window.cancelIdleCallback) {
+    window.cancelIdleCallback = function (id) {
+        clearTimeout(id);
+    };
+}
 const app = {
     CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
     REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
