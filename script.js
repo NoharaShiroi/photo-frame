@@ -694,8 +694,8 @@ setupLazyLoad() {
     openLightbox(photoId) {
     this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
     const lightbox = document.getElementById("lightbox");
-    const lightbox-image = document.getElementById("lightbox-image-container")    
-    lightbox-image.innerHTML = ''; // 清除舊內容
+    const Lightbox Image = document.getElementById("lightbox-image-container")    
+    Lightbox Image.innerHTML = ''; // 清除舊內容
 
     const createImage = (photo) => {
         const img = new Image();
