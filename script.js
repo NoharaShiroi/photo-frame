@@ -444,7 +444,7 @@ let lastTouchTime = 0;
     }
 },
 
-    renderPhotos() {
+    async renderPhotos() {
     const container = document.getElementById("photo-container");
     container.style.display = "grid";
 
