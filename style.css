@@ -217,18 +217,18 @@ select, input[type="number"] {
 }
 
 #lightbox-image {
-    max-width: 98%;
-    max-height: 98%;
     width: auto;
     height: auto;
     object-fit: contain;
     border-radius: 8px;
     box-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
     border: 5px solid rgba(255, 255, 255, 0.1);
-    transition: opacity 1.2s ease-in-out; /* ✅ 用 transition 就夠了 */
+    transition: opacity 1.2s ease-in-out; /* 只保留 opacity 轉場 */
     opacity: 1;
-    will-change: opacity, transform; /* 提示瀏覽器提前準備GPU */
-  }
+    will-change: opacity, transform; /* 提醒GPU加速 */
+    max-width: 98%; /* 預設 */
+    max-height: 98%;
+}
 
      #lightbox-image.fade-out {
      opacity: 0;
