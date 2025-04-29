@@ -745,6 +745,7 @@ setupLazyLoad() {
         this.states.lightboxActive = true;
         this.toggleButtonVisibility();
     }, 10);
+     this.toggleButtonVisibility()   
 },
 
     closeLightbox() {
