@@ -57,10 +57,7 @@ const app = {
     this.states.accessToken = sessionStorage.getItem("access_token");
     this.setupEventListeners();
     this.setupOrientationDetection();
-    document.getElementById("toggle-collage-mode").addEventListener("click", () => {
-        this.toggleCollageMode();
-     });
-    
+       
         if (!this.checkAuth()) {
         // 未授權：顯示登入介面
         document.getElementById("auth-container").style.display = "flex";
@@ -875,6 +872,34 @@ setupLazyLoad() {
 
         this.toggleButtonVisibility();
     }
+},
+
+    animateTransition(oldImages, newImages) {
+    const lightbox = document.getElementById("lightbox");
+
+    oldImages.forEach(img => {
+        img.style.opacity = 0;
+    });
+
+    setTimeout(() => {
+        // 清空舊圖片
+        lightbox.innerHTML = '';
+
+        // 加入新圖片
+        newImages.forEach(img => {
+            img.style.opacity = 0;
+            lightbox.appendChild(img);
+        });
+
+        // 小延遲啟動 fade-in
+        requestAnimationFrame(() => {
+            newImages.forEach(img => {
+                img.style.opacity = 1;
+            });
+        });
+
+        this.adjustLightboxLayout(); // 保持橫向直向適應
+    }, 500); // 跟fade-out速度同步
 },
 
     stopSlideshow() {
