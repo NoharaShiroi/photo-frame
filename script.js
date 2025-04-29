@@ -56,7 +56,7 @@ const app = {
 
     this.states.accessToken = sessionStorage.getItem("access_token");
     this.setupEventListeners();
-    this.ssetupOrientationDetection();
+    this.setupOrientationDetection();
     document.getElementById("toggle-collage-mode").addEventListener("click", () => {
         this.toggleCollageMode();
      });
