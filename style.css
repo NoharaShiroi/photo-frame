@@ -215,13 +215,6 @@ select, input[type="number"] {
     outline: none;
     -webkit-tap-highlight-color: transparent;
 }
-#lightbox.fade-in {
-        opacity: 1;
-   }
-
-    #lightbox.fade-out {
-        opacity: 0;
-    }
 
 #lightbox-image {
     max-width: 98%;
