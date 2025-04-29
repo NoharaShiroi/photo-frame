@@ -743,10 +743,9 @@ setupLazyLoad() {
     setTimeout(() => {
         lightbox.style.opacity = 1;
         this.states.lightboxActive = true;
-        this.;
+        this.toggleButtonVisibility();
     }, 10);
-     this.   
-},
+   },
 
     closeLightbox() {
         const lightbox = document.getElementById("lightbox");
