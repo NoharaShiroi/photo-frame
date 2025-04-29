@@ -554,6 +554,34 @@ adjustLightboxLayout() {
     }
 },
 
+    animateTransition(oldImages, newImages) {
+    const lightbox = document.getElementById("lightbox");
+
+    oldImages.forEach(img => {
+        img.style.opacity = 0;
+    });
+
+    setTimeout(() => {
+        // 清空舊圖片
+        lightbox.innerHTML = '';
+
+        // 加入新圖片
+        newImages.forEach(img => {
+            img.style.opacity = 0;
+            lightbox.appendChild(img);
+        });
+
+        // 小延遲啟動 fade-in
+        requestAnimationFrame(() => {
+            newImages.forEach(img => {
+                img.style.opacity = 1;
+            });
+        });
+
+        this.adjustLightboxLayout(); // 保持橫向直向適應
+    }, 500); // 跟fade-out速度同步
+},
+
     async renderPhotos() {
     const container = document.getElementById("photo-container");
     container.style.display = "grid";
@@ -739,55 +767,56 @@ setupLazyLoad() {
 
     navigate(direction) {
     const lightbox = document.getElementById("lightbox");
-    // 舊的 img
-    const oldImage = document.getElementById("lightbox-image");
-    const nextIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
-    const nextPhoto = this.states.photos[nextIndex];
+
+    // 取得舊的全部img
+    const oldImages = Array.from(lightbox.querySelectorAll('img'));
+
     const totalPhotos = this.states.photos.length;
     if (this.states.tileMode) {
-        // 每次移動兩張
+        // 雙圖模式，每次移動兩張
         this.states.currentIndex = (this.states.currentIndex + (2 * direction) + totalPhotos) % totalPhotos;
     } else {
         this.states.currentIndex = (this.states.currentIndex + direction + totalPhotos) % totalPhotos;
     }
-    this.openLightbox(this.states.photos[this.states.currentIndex].id);
-}
-    if (!nextPhoto) return;
-    const newImage = new Image();
-    newImage.id = "lightbox-image";
-    newImage.className = "fade-in"; // 新增class做進場
-    newImage.src = this.getImageUrl(nextPhoto);
-    newImage.style.position = "absolute";
-    newImage.style.maxWidth = "98%";
-    newImage.style.maxHeight = "98%";
-    newImage.style.objectFit = "contain";
-    newImage.style.borderRadius = "8px";
-    newImage.style.transition = "opacity 1.2s ease-in-out";
-    newImage.style.opacity = 0; // 初始透明
-    newImage.onload = () => {
-        // 把新圖插進lightbox
-        lightbox.appendChild(newImage);
 
-        // 小延遲讓transition能啟動
-        requestAnimationFrame(() => {
-            newImage.style.opacity = 1;
-            if (oldImage) {
-                oldImage.classList.add('fade-out'); // 舊圖開始淡出
-            }
+    // 預先建立新的img們
+    const newImages = [];
+
+    if (this.states.tileMode) {
+        const nextPhoto1 = this.states.photos[this.states.currentIndex];
+        const nextPhoto2 = this.states.photos[(this.states.currentIndex + 1) % totalPhotos];
+
+        [nextPhoto1, nextPhoto2].forEach(photo => {
+            const img = new Image();
+            img.src = this.getImageUrl(photo);
+            img.style.opacity = 0;
+            img.style.transition = 'opacity 1.2s ease-in-out';
+            img.style.borderRadius = '8px';
+            img.style.objectFit = 'contain';
+            newImages.push(img);
         });
-
-        setTimeout(() => {
-            if (oldImage && oldImage.parentNode) {
-                lightbox.removeChild(oldImage); // 刪掉舊的
-            }
-            newImage.id = "lightbox-image"; // 確保新的也是正確id
-        }, 1200); // 等fade-out完成
-    };
-
-    this.states.currentIndex = nextIndex;
-    if (this.states.slideshowInterval) {
-        this.states.playedPhotos.add(nextPhoto.id);
+    } else {
+        const nextPhoto = this.states.photos[this.states.currentIndex];
+        const img = new Image();
+        img.src = this.getImageUrl(nextPhoto);
+        img.style.opacity = 0;
+        img.style.transition = 'opacity 1.2s ease-in-out';
+        img.style.borderRadius = '8px';
+        img.style.objectFit = 'contain';
+        newImages.push(img);
     }
+
+    // 等新的圖片都載入
+    let loadedCount = 0;
+    newImages.forEach(img => {
+        img.onload = () => {
+            loadedCount++;
+            if (loadedCount === newImages.length) {
+                // 所有新圖載入完成後再做動畫
+                this.animateTransition(oldImages, newImages);
+            }
+        };
+    });
 },
 
    toggleSlideshow() {
