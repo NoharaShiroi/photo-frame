@@ -911,9 +911,16 @@ setupLazyLoad() {
         }
         // 離開全螢幕的後續動作由 fullscreenchange 事件負責
     }
-}
-,
+},
 
+toggleButtonVisibility() {
+        const isSlideshowOrFullscreen = this.states.slideshowInterval !== null || this.states.isFullscreen;
+        const buttons = document.querySelectorAll('.lightbox-buttons .nav-button');
+        buttons.forEach(button => {
+            button.style.display = isSlideshowOrFullscreen ? 'none' : 'block';
+        });
+    },
+    
     resetPhotoData() {
         this.states.currentRequestId++;
         this.states.photos = [];
