@@ -278,7 +278,7 @@ let lastTouchTime = 0;
             if (this.states.slideshowInterval) {
             this.toggleSlideshow(); // 離開全螢幕 ➔ 停止幻燈片
                 }
-            this.toggleButtonVisibility();
+            this.;
              }
         });
 
@@ -288,7 +288,7 @@ let lastTouchTime = 0;
             if (this.states.slideshowInterval) {
             this.toggleSlideshow(); // 離開全螢幕 ➔ 停止幻燈片
                  }
-            this.toggleButtonVisibility();
+            this.;
               }
         });
 
@@ -743,9 +743,9 @@ setupLazyLoad() {
     setTimeout(() => {
         lightbox.style.opacity = 1;
         this.states.lightboxActive = true;
-        this.toggleButtonVisibility();
+        this.;
     }, 10);
-     this.toggleButtonVisibility()   
+     this.   
 },
 
     closeLightbox() {
@@ -754,7 +754,7 @@ setupLazyLoad() {
         setTimeout(() => {
             lightbox.style.display = "none";
             this.states.lightboxActive = false;
-            this.toggleButtonVisibility();
+            this.;
         }, 300);
         this.stopSlideshow();
     },
@@ -867,7 +867,7 @@ setupLazyLoad() {
             }, 100);
         }, speed);
 
-        this.toggleButtonVisibility();
+        this.;
     }
 },
 
