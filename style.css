@@ -261,7 +261,7 @@ select, input[type="number"] {
     bottom: 30px;
     left: 50%;
     transform: translateX(-50%);
-    display: flex;
+    display: none;
     gap: 15px;
     padding: 0 15px;
     z-index: 1000;
