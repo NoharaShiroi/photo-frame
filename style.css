@@ -122,8 +122,12 @@ select, input[type="number"] {
 
 /* 滾動容器 */
 #scroll-container {
+    height: calc(100vh - 150px);
     overflow-y: auto;
-    height: calc(100vh - 150px); /* 預留相簿選單 + 控制按鈕空間 */
+    padding: 20px 0;
+    margin: 0 -20px;
+    box-sizing: border-box;
+    scrollbar-width: 8px;
 }
 
 #scroll-container::-webkit-scrollbar {
@@ -194,56 +198,41 @@ select, input[type="number"] {
 }
 
 /* Lightbox */
-/* Lightbox 主體設定 */
 #lightbox {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.9);
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.95);
     display: none;
-    flex-direction: column;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
-    z-index: 9999;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 20px rgba(128, 255, 255, 0.5);
+    outline: none;
+    -webkit-tap-highlight-color: transparent;
 }
+#lightbox.fade-in {
+        opacity: 1;
+   }
 
-/* Lightbox 按鈕容器 */
-.lightbox-buttons {
-    position: absolute;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    flex-wrap: wrap; /* 如果空間不足，換行 */
-    gap: 12px;
-    z-index: 10000;
-}
+    #lightbox.fade-out {
+        opacity: 0;
+    }
+
 #lightbox-image {
+    max-width: 95%;
+    max-height: 95%;
     width: auto;
     height: auto;
     object-fit: contain;
     border-radius: 8px;
     box-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
     border: 5px solid rgba(255, 255, 255, 0.1);
-    transition: opacity 1.2s ease-in-out; /* 只保留 opacity 轉場 */
-    opacity: 1;
-    will-change: opacity, transform; /* 提醒GPU加速 */
-    max-width: 98%; /* 預設 */
-    max-height: 98%;
 }
-
-     #lightbox-image.fade-out {
-     opacity: 0;
-  }
-
-     #lightbox-image.fade-in {
-     opacity: 1;
-  }
-    
-  
 /* 新增OUGH	cancel 按鈕樣式 */
 #schedule-modal .styled-button {
     margin: 10px auto; /* 居中並保留間距 */
@@ -256,20 +245,32 @@ select, input[type="number"] {
     transform: translateY(-1px);
 }
 
-.nav-button {
-    background-color: rgba(0, 0, 0, 0.6);
-    color: #fff;
-    border: none;
-    padding: 14px 20px; /* 加大觸控範圍 */
-    font-size: 18px;     /* 手指看得清楚 */
-    border-radius: 10px;
-    cursor: pointer;
-    transition: background-color 0.3s;
+.lightbox-buttons {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 15px;
+    padding: 0 15px;
+    z-index: 1000;
 }
 
-/* 按鈕 hover 效果（適合桌面端） */
+.nav-button {
+    padding: 12px 25px;
+    font-size: 1rem;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(6px);
+}
+
 .nav-button:hover {
-    background-color: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
 }
 
 .nav-button:active {
@@ -300,12 +301,9 @@ select, input[type="number"] {
     }
 
     #album-selection-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
+        grid-template-columns: 1fr;
+    }
+
     select, input[type="number"] {
         max-width: 100%;
     }
@@ -314,7 +312,25 @@ select, input[type="number"] {
         min-height: 150px;
     }
 
-       .nav-button {
+    #lightbox-image {
+        max-width: 98%;
+        max-height: 98%;
+        transition: opacity 0.5s ease;
+        opacity: 1;
+    }
+
+    #lightbox-image.fade-out {
+    opacity: 0;
+    }
+
+    .lightbox-buttons {
+        bottom: 20px;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .nav-button {
         padding: 10px 20px;
         font-size: 0.9rem;
     }
@@ -350,15 +366,14 @@ select, input[type="number"] {
 .modal {
     display: none;
     position: fixed;
-    z-index: 10001;
+    z-index: 1001;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.7);
     justify-content: center;
     align-items: center;
-    overflow: auto;
 }
 
 .modal-content {
