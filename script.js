@@ -695,10 +695,9 @@ setupLazyLoad() {
     this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
 
     const lightbox = document.getElementById("lightbox");
-    const lightboxImageContainer = document.getElementById("lightbox-image-container");
-    lightboxImageContainer.innerHTML = ''; // ⚡ 只清圖片區，按鈕區保留
-    
-        const createImage = (photo) => {
+    lightbox.innerHTML = ''; // 清除舊內容
+
+    const createImage = (photo) => {
         const img = new Image();
         img.src = this.getImageUrl(photo);
         img.style.borderRadius = '8px';
