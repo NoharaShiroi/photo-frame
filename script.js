@@ -18,6 +18,7 @@ const app = {
         isFullscreen: false,
         preloadCount: 100, // 新增預載照片數量設定
         defaultPreloadCount: 100,       // ← 新增：平常模式預載量
+        pausePreload: false, // ← 新增：使用者互動時暫停背景預載
         slideshowPreloadCount: 300,
         loadedForSlideshow: 0, // 記錄已為幻燈片加載的照片數量
         playedPhotos: new Set(), // 記錄已播放過的照片ID
@@ -338,9 +339,12 @@ let lastTouchTime = 0;
         if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
         return;
     }
-
+    if (this.states.pausePreload) {
+    this.states.isFetching = false;
+    document.getElementById("loading-indicator").style.display = "none";
+    return;
+    }
     if (this.states.isFetching) return;
-
     const requestId = ++this.states.currentRequestId;
     this.states.isFetching = true;
     document.getElementById("loading-indicator").style.display = "block";
@@ -540,6 +544,7 @@ let lastTouchTime = 0;
 
     openLightbox(photoId) {
         this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
+        this.states.pausePreload = true; // ← 暫停背景預載
         const lightbox = document.getElementById("lightbox");
         const image = document.getElementById("lightbox-image");
         
@@ -555,8 +560,14 @@ let lastTouchTime = 0;
                 this.states.lightboxActive = true;
                 this.toggleButtonVisibility();
             }, 10);
-        };
-    },
+        setTimeout(() => {
+            this.states.pausePreload = false;
+            if (this.states.hasMorePhotos && !this.states.isFetching) {
+                this.loadPhotos();
+            }
+        }, 1000);
+    };
+},
 
     closeLightbox() {
         const lightbox = document.getElementById("lightbox");
@@ -570,6 +581,7 @@ let lastTouchTime = 0;
     },
 
     navigate(direction) {
+        this.states.pausePreload = true;
         const image = document.getElementById("lightbox-image");
     image.classList.add('fade-out'); // 先淡出舊照片
 
@@ -586,10 +598,17 @@ let lastTouchTime = 0;
             this.states.playedPhotos.add(this.states.photos[this.states.currentIndex].id);
             }
         }, 300); // 延遲300ms讓舊圖慢慢消失
-   },
+        setTimeout(() => {
+            this.states.pausePreload = false;
+            if (this.states.hasMorePhotos && !this.states.isFetching) {
+                this.loadPhotos();
+            }
+        }, 1000);
+    },
 
    toggleSlideshow() {
-    if (this.states.slideshowInterval) {
+    this.states.pausePreload = true;
+       if (this.states.slideshowInterval) {
         // 停止播放時，恢復預載量
         this.stopSlideshow();
         this.stopClock();
@@ -643,8 +662,13 @@ let lastTouchTime = 0;
                 this.navigate(0);
             }, 100);
         }, speed);
-
-        this.toggleButtonVisibility();
+     setTimeout(() => {
+            this.states.pausePreload = false;
+            if (this.states.hasMorePhotos && !this.states.isFetching) {
+                this.loadPhotos();
+            }
+        }, 1000);
+       this.toggleButtonVisibility();
     },
 
     stopSlideshow() {
