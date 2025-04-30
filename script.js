@@ -397,20 +397,22 @@ let lastTouchTime = 0;
         // 1. 如果還沒達到預載數量，繼續快速加載
         // 2. 如果已達預載數量，改用較慢速度繼續加載剩餘照片
         // 3. 如果正在幻燈片播放，確保有足夠緩衝照片
-        if (this.states.hasMorePhotos) {
-            let delay = 300; // 預設加載間隔
-            
-            if (this.states.photos.length >= this.states.preloadCount) {
-                delay = 1000; // 預載完成後改用較慢速度加載
-            }
-            
-            if (this.states.slideshowInterval && 
-                this.states.photos.length - this.states.loadedForSlideshow < 50) {
-                delay = 300; // 幻燈片播放時需要更快加載
-            }
-            
-            setTimeout(() => this.loadPhotos(), delay);
-        }
+       if (this.states.hasMorePhotos) {
+    let delay = 300;
+    if (this.states.photos.length >= this.states.preloadCount) {
+        delay = 1000;
+    }
+    if (this.states.slideshowInterval && 
+        this.states.photos.length - this.states.loadedForSlideshow < 50) {
+        delay = 300;
+    }
+
+    if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => setTimeout(() => this.loadPhotos(), delay));
+    } else {
+        setTimeout(() => this.loadPhotos(), delay + 200);
+    }
+}
     } catch (error) {
         // 只在第一次失敗時顯示錯誤訊息
         if (this.states.photos.length === 0) {
@@ -542,20 +544,23 @@ let lastTouchTime = 0;
         this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
         const lightbox = document.getElementById("lightbox");
         const image = document.getElementById("lightbox-image");
-        
-        image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
+        // 立即顯示 lightbox 結構，給使用者即時回饋
+         lightbox.style.display = "flex";
+         lightbox.style.opacity = 0;
+         this.states.lightboxActive = true;
+         this.toggleButtonVisibility();
+         const placeholderUrl = this.getImageUrl(this.states.photos[this.states.currentIndex], 400, 400);
+    image.src = placeholderUrl;
 
-        image.onload = () => {
-            const isSlideshowActive = this.states.slideshowInterval !== null;
-            image.style.maxWidth = isSlideshowActive ? '99%' : '90%';
-            image.style.maxHeight = isSlideshowActive ? '99%' : '90%';
-            lightbox.style.display = "flex";
-            setTimeout(() => {
-                lightbox.style.opacity = 1;
-                this.states.lightboxActive = true;
-                this.toggleButtonVisibility();
-            }, 10);
-        };
+    // 預載高解析圖，載完再切換
+    const fullImage = new Image();
+    fullImage.onload = () => {
+        image.src = fullImage.src;
+        image.style.maxWidth = '90%';
+        image.style.maxHeight = '90%';
+        lightbox.style.opacity = 1;
+    };
+    fullImage.src = this.getImageUrl(this.states.photos[this.states.currentIndex], 1920, 1080);
     },
 
     closeLightbox() {
@@ -570,25 +575,31 @@ let lastTouchTime = 0;
     },
 
     navigate(direction) {
-        const image = document.getElementById("lightbox-image");
-    image.classList.add('fade-out'); // 先淡出舊照片
+    const image = document.getElementById("lightbox-image");
+    image.classList.add('fade-out');
 
     setTimeout(() => {
         this.states.currentIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
-        image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
 
-        image.onload = () => {
-            image.classList.remove('fade-out'); // 新照片載入後淡入
-             };
+        // 顯示低清圖
+        const placeholderUrl = this.getImageUrl(this.states.photos[this.states.currentIndex], 400, 400);
+        image.src = placeholderUrl;
 
-        // 幻燈片播放時，記錄已播放過的照片
+        // 預載大圖
+        const fullImage = new Image();
+        fullImage.onload = () => {
+            image.src = fullImage.src;
+            image.classList.remove('fade-out');
+        };
+        fullImage.src = this.getImageUrl(this.states.photos[this.states.currentIndex], 1920, 1080);
+
         if (this.states.slideshowInterval) {
             this.states.playedPhotos.add(this.states.photos[this.states.currentIndex].id);
-            }
-        }, 300); // 延遲300ms讓舊圖慢慢消失
-   },
+        }
+    }, 300);
+}
 
-   toggleSlideshow() {
+    toggleSlideshow() {
     if (this.states.slideshowInterval) {
         // 停止播放時，恢復預載量
         this.stopSlideshow();
