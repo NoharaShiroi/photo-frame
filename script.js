@@ -173,8 +173,13 @@ const app = {
         document.getElementById("album-select").addEventListener("change", (e) => {
             this.states.albumId = e.target.value;
             this.resetPhotoData();
-            this.loadPhotos();
-        });
+            if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => this.loadPhotos(), { timeout: 1000 });
+    } else {
+        // 備援：不支援的瀏覽器 fallback
+        setTimeout(() => this.loadPhotos(), 200);
+    }
+});
        document.getElementById("screenOverlay").addEventListener("dblclick", () => {
         this.temporarilyDisableOverlay();
     });
@@ -575,7 +580,8 @@ let lastTouchTime = 0;
         setTimeout(() => {
             lightbox.style.display = "none";
             this.states.lightboxActive = false;
-            this.toggleButtonVisibility();
+            this.states.isFullscreen = false; // ← 修正關鍵點：退出 fullscreen 狀態
+            this.toggleButtonVisibility();  
         }, 300);
         this.stopSlideshow();
     },
