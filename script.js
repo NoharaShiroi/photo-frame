@@ -338,9 +338,14 @@ let lastTouchTime = 0;
         if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
         return;
     }
-
+    if (this.states.hasMorePhotos) {
+    const delay = this.states.photos.length >= this.states.preloadCount ? 1000 : 300;
+    requestIdleCallback(() => {
+        setTimeout(() => this.loadPhotos(), delay);
+    });
+    }
+        
     if (this.states.isFetching) return;
-
     const requestId = ++this.states.currentRequestId;
     this.states.isFetching = true;
     document.getElementById("loading-indicator").style.display = "block";
@@ -350,7 +355,6 @@ let lastTouchTime = 0;
             pageSize: 100,
             pageToken: this.states.nextPageToken || undefined
         };
-
         if (this.states.albumId !== "all") {
             body.albumId = this.states.albumId;
         } else {
@@ -436,14 +440,11 @@ let lastTouchTime = 0;
     if (existingError) {
         container.removeChild(existingError);
     }
-    
-    // 只渲染尚未渲染的照片
+        // 只渲染尚未渲染的照片
     const startIndex = container.children.length - 
-                     (container.querySelector('.empty-state') ? 1 : 0);
-    
-    const fragment = document.createDocumentFragment();
-    
-    for (let i = startIndex; i < this.states.photos.length; i++) {
+      (container.querySelector('.empty-state') ? 1 : 0);
+        const fragment = document.createDocumentFragment();
+        for (let i = startIndex; i < this.states.photos.length; i++) {
         const photo = this.states.photos[i];
         const img = document.createElement('img');
         img.className = 'photo';
@@ -454,7 +455,6 @@ let lastTouchTime = 0;
         img.onclick = () => this.openLightbox(photo.id);
         fragment.appendChild(img);
     }
-
     // 移除現有的「已無更多相片」提示（如果有的話）
     const existingEmptyState = container.querySelector('.empty-state');
     if (existingEmptyState) {
@@ -471,14 +471,19 @@ let lastTouchTime = 0;
 
     container.appendChild(fragment);
     this.setupLazyLoad();
-    
+    if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => this.setupLazyLoad());
+} else {
+    setTimeout(() => this.setupLazyLoad(), 500);
+}
     // 更新幻燈片已加載數量
     if (this.states.slideshowInterval) {
         this.states.loadedForSlideshow = this.states.photos.length;
     }
-    
+    requestIdleCallback(() => {
     // 每次渲染後檢查是否需要設置滾動監聽
     this.setupScrollObserver();
+ });
 },
 
     setupLazyLoad() {
@@ -550,7 +555,7 @@ let lastTouchTime = 0;
          this.states.lightboxActive = true;
          this.toggleButtonVisibility();
          const placeholderUrl = this.getImageUrl(this.states.photos[this.states.currentIndex], 400, 400);
-    image.src = placeholderUrl;
+         image.src = placeholderUrl;
 
     // 預載高解析圖，載完再切換
     const fullImage = new Image();
