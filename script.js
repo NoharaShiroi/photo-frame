@@ -313,7 +313,7 @@ let lastTouchTime = 0;
             clearTimeout(this.states.overlayTimeout);
             this.states.overlayTimeout = null;
         }
-    }, // <-- 這裡必須加上逗號
+    }, 
 
         async fetchAlbums() {
         try {
@@ -327,6 +327,11 @@ let lastTouchTime = 0;
         } catch (error) {
             this.handleAuthError();
         }
+           if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => this.loadPhotos(), { timeout: 1000 });
+} else {
+    setTimeout(() => this.loadPhotos(), 200);
+} 
     },
 
     renderAlbumSelect(albums) {
