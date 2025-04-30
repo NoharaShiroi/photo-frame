@@ -17,6 +17,8 @@ const app = {
         lightboxActive: false,
         isFullscreen: false,
         preloadCount: 100, // 新增預載照片數量設定
+        defaultPreloadCount: 100,       // ← 新增：平常模式預載量
+        slideshowPreloadCount: 300,
         loadedForSlideshow: 0, // 記錄已為幻燈片加載的照片數量
         playedPhotos: new Set(), // 記錄已播放過的照片ID
         overlayTimeout: null,      // 儲存計時器ID
@@ -588,9 +590,11 @@ let lastTouchTime = 0;
 
    toggleSlideshow() {
     if (this.states.slideshowInterval) {
+        // 停止播放時，恢復預載量
         this.stopSlideshow();
-        this.stopClock();  // 停止時鐘
-    } else {
+        this.stopClock();
+        return;
+    }
         // 重置已播放記錄
         this.states.playedPhotos.clear();
         this.states.loadedForSlideshow = this.states.photos.length;
@@ -641,12 +645,12 @@ let lastTouchTime = 0;
         }, speed);
 
         this.toggleButtonVisibility();
-    }
-},
+    },
 
     stopSlideshow() {
         clearInterval(this.states.slideshowInterval);
         this.states.slideshowInterval = null;
+        this.states.preloadCount = this.states.defaultPreloadCount;
         this.toggleButtonVisibility();
     },
 
