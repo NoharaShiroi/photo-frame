@@ -16,13 +16,11 @@ const app = {
         currentRequestId: 0,
         lightboxActive: false,
         isFullscreen: false,
-        preloadCount: 1500, // 新增預載照片數量設定
+        preloadCount: 500, // 新增預載照片數量設定
         loadedForSlideshow: 0, // 記錄已為幻燈片加載的照片數量
         playedPhotos: new Set(), // 記錄已播放過的照片ID
         overlayTimeout: null,      // 儲存計時器ID
         overlayDisabled: false,   // 記錄遮罩是否被臨時取消
-        defaultPreloadCount: 100,       // ← 新增：平常模式預載量
-        slideshowPreloadCount: 500,     // ← 新增：幻燈片模式下預載量
         schedule: {
             sleepStart: "22:00",
             sleepEnd: "07:00",
@@ -590,17 +588,10 @@ let lastTouchTime = 0;
 
    toggleSlideshow() {
     if (this.states.slideshowInterval) {
-        // 停止播放時，恢復預載量
         this.stopSlideshow();
-        this.stopClock();
-        return;
-    }
-        // ── 【新增】切換到幻燈片模式預載量
-    this.states.preloadCount = this.states.slideshowPreloadCount;
-    // 提前把 buffer 補滿
-    if (this.states.photos.length < this.states.preloadCount) {
-        this.loadPhotos();
-    }
+        this.stopClock();  // 停止時鐘
+    } else {
+        // 重置已播放記錄
         this.states.playedPhotos.clear();
         this.states.loadedForSlideshow = this.states.photos.length;
         this.startClock(); // 啟動時鐘
@@ -610,6 +601,7 @@ let lastTouchTime = 0;
 
         const speed = document.getElementById("slideshow-speed").value * 1000 || 1000;
         const isRandom = document.getElementById("play-mode").value === "random";
+
         const getNextIndex = () => {
             if (this.states.photos.length - this.states.loadedForSlideshow < 10 &&
                 this.states.hasMorePhotos && !this.states.isFetching) {
@@ -655,7 +647,6 @@ let lastTouchTime = 0;
     stopSlideshow() {
         clearInterval(this.states.slideshowInterval);
         this.states.slideshowInterval = null;
-        this.states.preloadCount = this.states.defaultPreloadCount;
         this.toggleButtonVisibility();
     },
 
