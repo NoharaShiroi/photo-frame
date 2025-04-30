@@ -25,6 +25,8 @@ const app = {
         overlayTimeout: null,
         overlayDisabled: false,
         clockInterval: null,
+        defaultPreloadCount: 100,       // ← 新增：平常模式預載量
+        slideshowPreloadCount: 500,     // ← 新增：幻燈片模式下預載量
         isOldiOS: /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream && /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent),
         schedule: {
             sleepStart: "22:00",
@@ -141,10 +143,18 @@ const app = {
     stopSlideshow() {
         clearInterval(this.states.slideshowInterval);
         this.states.slideshowInterval = null;
+        this.states.preloadCount = this.states.defaultPreloadCount;
         this.toggleButtonVisibility();
     },
 
     startSlideshow() {
+        // ⬅️【新增】幻燈片模式下調高預載數量
+        this.states.preloadCount = this.states.slideshowPreloadCount;
+
+       // ⬅️【新增】若當前照片數不足，強制補滿
+        if (this.states.photos.length < this.states.preloadCount && this.states.hasMorePhotos) {
+        this.loadPhotos();
+        }
         const speed = parseInt(document.getElementById("slideshow-speed").value || 5) * 1000;
         const isRandom = document.getElementById("play-mode").value === "random";
 
