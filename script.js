@@ -439,23 +439,18 @@ let lastTouchTime = 0;
     }
 },
 
-    renderPhotos() {
-       const container = document.getElementById("photo-container");
+    renderPhotos(batchSize = 30, startIndex = 0) {
+    const container = document.getElementById("photo-container");
     container.style.display = "grid";
-    
-    // 移除現有的錯誤訊息（如果有的話）
-    const existingError = container.querySelector('.error-state');
-    if (existingError) {
-        container.removeChild(existingError);
-    }
-    
-    // 只渲染尚未渲染的照片
-    const startIndex = container.children.length - 
-                     (container.querySelector('.empty-state') ? 1 : 0);
-    
+
+    // 移除錯誤/空狀態訊息
+    const existingMessage = container.querySelector('.error-state, .empty-state');
+    if (existingMessage) container.removeChild(existingMessage);
+
     const fragment = document.createDocumentFragment();
-    
-    for (let i = startIndex; i < this.states.photos.length; i++) {
+    const endIndex = Math.min(this.states.photos.length, startIndex + batchSize);
+
+    for (let i = startIndex; i < endIndex; i++) {
         const photo = this.states.photos[i];
         const img = document.createElement('img');
         img.className = 'photo';
@@ -467,30 +462,35 @@ let lastTouchTime = 0;
         fragment.appendChild(img);
     }
 
-    // 移除現有的「已無更多相片」提示（如果有的話）
-    const existingEmptyState = container.querySelector('.empty-state');
-    if (existingEmptyState) {
-        container.removeChild(existingEmptyState);
-    }
-
-    // 只在確實沒有更多照片時顯示提示
-    if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
-        const emptyState = document.createElement('p');
-        emptyState.className = 'empty-state';
-        emptyState.textContent = '已無更多相片';
-        fragment.appendChild(emptyState);
-    }
-
     container.appendChild(fragment);
-    this.setupLazyLoad();
-    
-    // 更新幻燈片已加載數量
+
+    // 若尚未顯示全部，繼續用 idle 回呼載入下一批
+    if (endIndex < this.states.photos.length) {
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(() => this.renderPhotos(batchSize, endIndex), { timeout: 1000 });
+        } else {
+            setTimeout(() => this.renderPhotos(batchSize, endIndex), 200);
+        }
+    } else {
+        // 所有圖片渲染完畢後再啟動 LazyLoad 與 Scroll 監聽
+        this.setupLazyLoad();
+        this.setupScrollObserver();
+
+        // 若沒更多相片顯示提示
+        if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
+            const emptyState = document.createElement('p');
+            emptyState.className = 'empty-state';
+            emptyState.textContent = '已無更多相片';
+            container.appendChild(emptyState);
+        }
+
+        document.getElementById("loading-indicator").style.display = "none";
+    }
+
+    // 幻燈片加載數記錄
     if (this.states.slideshowInterval) {
         this.states.loadedForSlideshow = this.states.photos.length;
     }
-    
-    // 每次渲染後檢查是否需要設置滾動監聽
-    this.setupScrollObserver();
 },
 
     setupLazyLoad() {
@@ -736,6 +736,7 @@ let lastTouchTime = 0;
         this.states.loadedForSlideshow = 0;
         this.states.playedPhotos.clear();
         document.getElementById("photo-container").innerHTML = '';
+        document.getElementById("loading-indicator").style.display = "block";
     },
 
     handleAuthError() {
