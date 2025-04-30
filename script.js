@@ -592,7 +592,6 @@ let lastTouchTime = 0;
             image.classList.remove('fade-out');
         };
         fullImage.src = this.getImageUrl(this.states.photos[this.states.currentIndex], 1920, 1080);
-
         if (this.states.slideshowInterval) {
             this.states.playedPhotos.add(this.states.photos[this.states.currentIndex].id);
         }
@@ -610,19 +609,15 @@ let lastTouchTime = 0;
         this.states.playedPhotos.clear();
         this.states.loadedForSlideshow = this.states.photos.length;
         this.startClock(); // 啟動時鐘
-
         // ⚡【新增這行】: 直接打開Lightbox顯示照片！
         this.openLightbox(this.states.photos[this.states.currentIndex].id);
-
         const speed = document.getElementById("slideshow-speed").value * 1000 || 1000;
         const isRandom = document.getElementById("play-mode").value === "random";
-
         const getNextIndex = () => {
             if (this.states.photos.length - this.states.loadedForSlideshow < 10 &&
                 this.states.hasMorePhotos && !this.states.isFetching) {
                 this.loadPhotos();
             }
-
             if (isRandom) {
                 let nextIndex;
                 let attempts = 0;
@@ -641,20 +636,16 @@ let lastTouchTime = 0;
                     (this.states.playedPhotos.has(this.states.photos[nextIndex].id) &&
                      this.states.playedPhotos.size < this.states.photos.length)
                 );
-
                 return nextIndex;
             }
-
             return (this.states.currentIndex + 1) % this.states.photos.length;
         };
-
         this.states.slideshowInterval = setInterval(() => {
             setTimeout(() => {
                 this.states.currentIndex = getNextIndex();
                 this.navigate(0);
             }, 100);
         }, speed);
-
         this.toggleButtonVisibility();
     },
 
