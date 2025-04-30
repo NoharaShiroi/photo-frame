@@ -597,7 +597,7 @@ let lastTouchTime = 0;
             this.states.playedPhotos.add(this.states.photos[this.states.currentIndex].id);
         }
     }, 300);
-}
+    },
 
     toggleSlideshow() {
     if (this.states.slideshowInterval) {
