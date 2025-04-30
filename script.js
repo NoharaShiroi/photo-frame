@@ -610,7 +610,6 @@ let lastTouchTime = 0;
 
         const speed = document.getElementById("slideshow-speed").value * 1000 || 1000;
         const isRandom = document.getElementById("play-mode").value === "random";
-
         const getNextIndex = () => {
             if (this.states.photos.length - this.states.loadedForSlideshow < 10 &&
                 this.states.hasMorePhotos && !this.states.isFetching) {
