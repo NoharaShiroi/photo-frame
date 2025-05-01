@@ -395,8 +395,7 @@ let lastTouchTime = 0;
 
         if (requestId !== this.states.currentRequestId) return;
 
-            const newPhotos = (data.mediaItems || []).filter(item => {
-        const newPhotos = (data.mediaItems || []).filter(item => {
+           const newPhotos = (data.mediaItems || []).filter(item => {
     if (!item) return false;
 
     const isDuplicate = this.states.photoIds.has(item.id) || this.states.photoUrls.has(item.baseUrl);
@@ -436,7 +435,7 @@ let lastTouchTime = 0;
             
             setTimeout(() => this.loadPhotos(), delay);
         }
-    } catch (error) {
+     catch (error) {
         // 只在第一次失敗時顯示錯誤訊息
         if (this.states.photos.length === 0) {
             console.error("照片加載失敗:", error);
