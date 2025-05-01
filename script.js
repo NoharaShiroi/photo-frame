@@ -435,7 +435,7 @@ let lastTouchTime = 0;
             
             setTimeout(() => this.loadPhotos(), delay);
         }
-     catch (error) {
+     }catch (error) {
         // 只在第一次失敗時顯示錯誤訊息
         if (this.states.photos.length === 0) {
             console.error("照片加載失敗:", error);
@@ -496,7 +496,7 @@ let lastTouchTime = 0;
 
         document.getElementById("loading-indicator").style.display = "none";
     }
-
+}
     // 幻燈片加載數記錄
     if (this.states.slideshowInterval) {
         this.states.loadedForSlideshow = this.states.photos.length;
