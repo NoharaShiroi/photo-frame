@@ -18,15 +18,11 @@ const app = {
         isFullscreen: false,
         preloadCount: 100, // 新增預載照片數量設定
         defaultPreloadCount: 100,       // ← 新增：平常模式預載量
-        pausePreload: false, // ← 新增：使用者互動時暫停背景預載
         slideshowPreloadCount: 300,
         loadedForSlideshow: 0, // 記錄已為幻燈片加載的照片數量
         playedPhotos: new Set(), // 記錄已播放過的照片ID
         overlayTimeout: null,      // 儲存計時器ID
         overlayDisabled: false,   // 記錄遮罩是否被臨時取消
-        loadedPhotoIds: new Set(), //  記錄全局已載入過的照片 ID
-        photoIds: new Set(),
-        photoUrls: new Set(),
         schedule: {
             sleepStart: "22:00",
             sleepEnd: "07:00",
@@ -176,13 +172,8 @@ const app = {
         document.getElementById("album-select").addEventListener("change", (e) => {
             this.states.albumId = e.target.value;
             this.resetPhotoData();
-            if ('requestIdleCallback' in window) {
-        requestIdleCallback(() => this.loadPhotos(), { timeout: 1000 });
-    } else {
-        // 備援：不支援的瀏覽器 fallback
-        setTimeout(() => this.loadPhotos(), 200);
-    }
-});
+            this.loadPhotos();
+        });
        document.getElementById("screenOverlay").addEventListener("dblclick", () => {
         this.temporarilyDisableOverlay();
     });
@@ -316,7 +307,7 @@ let lastTouchTime = 0;
             clearTimeout(this.states.overlayTimeout);
             this.states.overlayTimeout = null;
         }
-    }, 
+    }, // <-- 這裡必須加上逗號
 
         async fetchAlbums() {
         try {
@@ -330,11 +321,6 @@ let lastTouchTime = 0;
         } catch (error) {
             this.handleAuthError();
         }
-           if ('requestIdleCallback' in window) {
-    requestIdleCallback(() => this.loadPhotos(), { timeout: 1000 });
-} else {
-    setTimeout(() => this.loadPhotos(), 200);
-} 
     },
 
     renderAlbumSelect(albums) {
@@ -352,12 +338,9 @@ let lastTouchTime = 0;
         if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
         return;
     }
-    if (this.states.pausePreload) {
-    this.states.isFetching = false;
-    document.getElementById("loading-indicator").style.display = "none";
-    return;
-    }
+
     if (this.states.isFetching) return;
+
     const requestId = ++this.states.currentRequestId;
     this.states.isFetching = true;
     document.getElementById("loading-indicator").style.display = "block";
@@ -368,12 +351,12 @@ let lastTouchTime = 0;
             pageToken: this.states.nextPageToken || undefined
         };
 
-        if (this.states.albumId && this.states.albumId !== "all") {
+        if (this.states.albumId !== "all") {
             body.albumId = this.states.albumId;
-           } else {
+        } else {
             body.filters = { includeArchivedMedia: true };
-           }
-        
+        }
+
         const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
             method: "POST",
             headers: {
@@ -395,16 +378,9 @@ let lastTouchTime = 0;
 
         if (requestId !== this.states.currentRequestId) return;
 
-           const newPhotos = (data.mediaItems || []).filter(item => {
-    if (!item) return false;
+        const existingIds = new Set(this.states.photos.map(p => p.id));
+        const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
 
-    const isDuplicate = this.states.photoIds.has(item.id) || this.states.photoUrls.has(item.baseUrl);
-    if (isDuplicate) return false;
-
-    this.states.photoIds.add(item.id);
-    this.states.photoUrls.add(item.baseUrl);
-    return true;
-});
         // 如果沒有新照片，標記為沒有更多照片
         if (newPhotos.length === 0 && data.nextPageToken) {
             this.states.nextPageToken = null;
@@ -435,7 +411,7 @@ let lastTouchTime = 0;
             
             setTimeout(() => this.loadPhotos(), delay);
         }
-     }catch (error) {
+    } catch (error) {
         // 只在第一次失敗時顯示錯誤訊息
         if (this.states.photos.length === 0) {
             console.error("照片加載失敗:", error);
@@ -449,18 +425,23 @@ let lastTouchTime = 0;
     }
 },
 
-    renderPhotos(batchSize = 30, startIndex = 0) {
-    const container = document.getElementById("photo-container");
+    renderPhotos() {
+       const container = document.getElementById("photo-container");
     container.style.display = "grid";
-
-    // 移除錯誤/空狀態訊息
-    const existingMessage = container.querySelector('.error-state, .empty-state');
-    if (existingMessage) container.removeChild(existingMessage);
-
+    
+    // 移除現有的錯誤訊息（如果有的話）
+    const existingError = container.querySelector('.error-state');
+    if (existingError) {
+        container.removeChild(existingError);
+    }
+    
+    // 只渲染尚未渲染的照片
+    const startIndex = container.children.length - 
+                     (container.querySelector('.empty-state') ? 1 : 0);
+    
     const fragment = document.createDocumentFragment();
-    const endIndex = Math.min(this.states.photos.length, startIndex + batchSize);
-
-    for (let i = startIndex; i < endIndex; i++) {
+    
+    for (let i = startIndex; i < this.states.photos.length; i++) {
         const photo = this.states.photos[i];
         const img = document.createElement('img');
         img.className = 'photo';
@@ -472,33 +453,30 @@ let lastTouchTime = 0;
         fragment.appendChild(img);
     }
 
-    container.appendChild(fragment);
-
-    // 若尚未顯示全部，繼續用 idle 回呼載入下一批
-    if (endIndex < this.states.photos.length) {
-        if ('requestIdleCallback' in window) {
-            requestIdleCallback(() => this.renderPhotos(batchSize, endIndex), { timeout: 1000 });
-        } else {
-            setTimeout(() => this.renderPhotos(batchSize, endIndex), 200);
-        }
-    } else {
-        // 所有圖片渲染完畢後再啟動 LazyLoad 與 Scroll 監聽
-        this.setupLazyLoad();
-        this.setupScrollObserver();
-
-        // 若沒更多相片顯示提示
-        if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
-            const emptyState = document.createElement('p');
-            emptyState.className = 'empty-state';
-            emptyState.textContent = '已無更多相片';
-            container.appendChild(emptyState);
-        }
-
-        document.getElementById("loading-indicator").style.display = "none";
+    // 移除現有的「已無更多相片」提示（如果有的話）
+    const existingEmptyState = container.querySelector('.empty-state');
+    if (existingEmptyState) {
+        container.removeChild(existingEmptyState);
     }
-if (this.states.slideshowInterval) {
+
+    // 只在確實沒有更多照片時顯示提示
+    if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
+        const emptyState = document.createElement('p');
+        emptyState.className = 'empty-state';
+        emptyState.textContent = '已無更多相片';
+        fragment.appendChild(emptyState);
+    }
+
+    container.appendChild(fragment);
+    this.setupLazyLoad();
+    
+    // 更新幻燈片已加載數量
+    if (this.states.slideshowInterval) {
         this.states.loadedForSlideshow = this.states.photos.length;
     }
+    
+    // 每次渲染後檢查是否需要設置滾動監聽
+    this.setupScrollObserver();
 },
 
     setupLazyLoad() {
@@ -562,7 +540,6 @@ if (this.states.slideshowInterval) {
 
     openLightbox(photoId) {
         this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
-        this.states.pausePreload = true; // ← 暫停背景預載
         const lightbox = document.getElementById("lightbox");
         const image = document.getElementById("lightbox-image");
         
@@ -578,14 +555,8 @@ if (this.states.slideshowInterval) {
                 this.states.lightboxActive = true;
                 this.toggleButtonVisibility();
             }, 10);
-        setTimeout(() => {
-            this.states.pausePreload = false;
-            if (this.states.hasMorePhotos && !this.states.isFetching) {
-                this.loadPhotos();
-            }
-        }, 1000);
-    };
-},
+        };
+    },
 
     closeLightbox() {
         const lightbox = document.getElementById("lightbox");
@@ -593,14 +564,12 @@ if (this.states.slideshowInterval) {
         setTimeout(() => {
             lightbox.style.display = "none";
             this.states.lightboxActive = false;
-            this.states.isFullscreen = false; // ← 修正關鍵點：退出 fullscreen 狀態
-            this.toggleButtonVisibility();  
+            this.toggleButtonVisibility();
         }, 300);
         this.stopSlideshow();
     },
 
     navigate(direction) {
-        this.states.pausePreload = true;
         const image = document.getElementById("lightbox-image");
     image.classList.add('fade-out'); // 先淡出舊照片
 
@@ -617,17 +586,10 @@ if (this.states.slideshowInterval) {
             this.states.playedPhotos.add(this.states.photos[this.states.currentIndex].id);
             }
         }, 300); // 延遲300ms讓舊圖慢慢消失
-        setTimeout(() => {
-            this.states.pausePreload = false;
-            if (this.states.hasMorePhotos && !this.states.isFetching) {
-                this.loadPhotos();
-            }
-        }, 1000);
-    },
+   },
 
    toggleSlideshow() {
-    this.states.pausePreload = true;
-       if (this.states.slideshowInterval) {
+    if (this.states.slideshowInterval) {
         // 停止播放時，恢復預載量
         this.stopSlideshow();
         this.stopClock();
@@ -681,13 +643,8 @@ if (this.states.slideshowInterval) {
                 this.navigate(0);
             }, 100);
         }, speed);
-     setTimeout(() => {
-            this.states.pausePreload = false;
-            if (this.states.hasMorePhotos && !this.states.isFetching) {
-                this.loadPhotos();
-            }
-        }, 1000);
-       this.toggleButtonVisibility();
+
+        this.toggleButtonVisibility();
     },
 
     stopSlideshow() {
@@ -744,14 +701,6 @@ if (this.states.slideshowInterval) {
         this.states.loadedForSlideshow = 0;
         this.states.playedPhotos.clear();
         document.getElementById("photo-container").innerHTML = '';
-        document.getElementById("loading-indicator").style.display = "block";
-        if (this.states.albumId !== "all") {
-        this.states.loadedPhotoIds.clear();
-    }
-        if (this.states.albumId !== "all") {
-    this.states.photoIds.clear();
-    this.states.photoUrls.clear();
-    }
     },
 
     handleAuthError() {
