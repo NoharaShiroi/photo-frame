@@ -25,6 +25,8 @@ const app = {
         overlayTimeout: null,      // 儲存計時器ID
         overlayDisabled: false,   // 記錄遮罩是否被臨時取消
         loadedPhotoIds: new Set(), //  記錄全局已載入過的照片 ID
+        deferQueue: [],
+        userActiveTimeout: null,
         schedule: {
             sleepStart: "22:00",
             sleepEnd: "07:00",
@@ -219,10 +221,53 @@ let lastTouchTime = 0;
     }
 });
 
-        document.getElementById("prev-photo").addEventListener("click", () => this.navigate(-1));
-        document.getElementById("next-photo").addEventListener("click", () => this.navigate(1));
-        document.getElementById("start-slideshow-btn").addEventListener("click", () => this.toggleSlideshow());
-        document.getElementById("fullscreen-toggle-btn").addEventListener("click", () => this.toggleFullscreen());
+     document.getElementById("prev-photo").addEventListener("click", () => {
+    this.cancelDeferredTasks();
+    this.navigate(-1);
+    this.states.userActiveTimeout = setTimeout(() => {
+        this.scheduleDeferredTask(() => {
+            if (this.states.hasMorePhotos && !this.states.isFetching) {
+                this.loadPhotos();
+            }
+        }, 0);
+    }, 3000); // 3秒內無互動才恢復背景載入
+});
+
+document.getElementById("next-photo").addEventListener("click", () => {
+    this.cancelDeferredTasks();
+    this.navigate(1);
+    this.states.userActiveTimeout = setTimeout(() => {
+        this.scheduleDeferredTask(() => {
+            if (this.states.hasMorePhotos && !this.states.isFetching) {
+                this.loadPhotos();
+            }
+        }, 0);
+    }, 3000);
+});
+
+document.getElementById("start-slideshow-btn").addEventListener("click", () => {
+    this.cancelDeferredTasks();
+    this.toggleSlideshow();
+    this.states.userActiveTimeout = setTimeout(() => {
+        this.scheduleDeferredTask(() => {
+            if (this.states.hasMorePhotos && !this.states.isFetching) {
+                this.loadPhotos();
+            }
+        }, 0);
+    }, 3000);
+});
+
+document.getElementById("fullscreen-toggle-btn").addEventListener("click", () => {
+    this.cancelDeferredTasks();
+    this.toggleFullscreen();
+    this.states.userActiveTimeout = setTimeout(() => {
+        this.scheduleDeferredTask(() => {
+            if (this.states.hasMorePhotos && !this.states.isFetching) {
+                this.loadPhotos();
+            }
+        }, 0);
+    }, 3000);
+});
 
         document.getElementById("play-mode").addEventListener("change", (e) => {
             if (this.states.slideshowInterval) {
@@ -266,6 +311,23 @@ let lastTouchTime = 0;
             this.checkSchedule();
         });
     },
+    scheduleDeferredTask(fn, delay = 500) {
+    const task = setTimeout(() => {
+        fn();
+        this.states.deferQueue = this.states.deferQueue.filter(t => t !== task);
+    }, delay);
+    this.states.deferQueue.push(task);
+},
+
+cancelDeferredTasks() {
+    this.states.deferQueue.forEach(clearTimeout);
+    this.states.deferQueue = [];
+    if (this.states.userActiveTimeout) {
+        clearTimeout(this.states.userActiveTimeout);
+        this.states.userActiveTimeout = null;
+    }
+},
+    
     temporarilyDisableOverlay() {
         if (document.getElementById("screenOverlay").style.display === "block") {
             // 1. 隱藏遮罩
@@ -461,7 +523,18 @@ let lastTouchTime = 0;
         img.dataset.src = `${photo.baseUrl}=w800-h600`;
         img.alt = '相片';
         img.dataset.id = photo.id;
-        img.onclick = () => this.openLightbox(photo.id);
+        iimg.onclick = () => {
+    this.cancelDeferredTasks();
+    this.openLightbox(photo.id);
+
+    this.states.userActiveTimeout = setTimeout(() => {
+        this.scheduleDeferredTask(() => {
+            if (this.states.hasMorePhotos && !this.states.isFetching) {
+                this.loadPhotos();
+            }
+        }, 0);
+    }, 500); // 使用者500ms沒再動作才背景加載
+};
         fragment.appendChild(img);
     }
 
