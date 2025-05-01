@@ -365,12 +365,12 @@ let lastTouchTime = 0;
             pageToken: this.states.nextPageToken || undefined
         };
 
-        if (this.states.albumId !== "all") {
+        if (this.states.albumId && this.states.albumId !== "all") {
             body.albumId = this.states.albumId;
-        } else {
+           } else {
             body.filters = { includeArchivedMedia: true };
-        }
-
+           }
+        
         const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
             method: "POST",
             headers: {
