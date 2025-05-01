@@ -25,6 +25,8 @@ const app = {
         overlayTimeout: null,      // 儲存計時器ID
         overlayDisabled: false,   // 記錄遮罩是否被臨時取消
         loadedPhotoIds: new Set(), //  記錄全局已載入過的照片 ID
+        photoIds: new Set(),
+        photoUrls: new Set(),
         schedule: {
             sleepStart: "22:00",
             sleepEnd: "07:00",
@@ -394,10 +396,16 @@ let lastTouchTime = 0;
         if (requestId !== this.states.currentRequestId) return;
 
             const newPhotos = (data.mediaItems || []).filter(item => {
-        if (!item || this.states.loadedPhotoIds.has(item.id)) return false;
-            this.states.loadedPhotoIds.add(item.id); // ✅ 加入唯一紀錄
-            return true;
-            });
+        const newPhotos = (data.mediaItems || []).filter(item => {
+    if (!item) return false;
+
+    const isDuplicate = this.states.photoIds.has(item.id) || this.states.photoUrls.has(item.baseUrl);
+    if (isDuplicate) return false;
+
+    this.states.photoIds.add(item.id);
+    this.states.photoUrls.add(item.baseUrl);
+    return true;
+});
         // 如果沒有新照片，標記為沒有更多照片
         if (newPhotos.length === 0 && data.nextPageToken) {
             this.states.nextPageToken = null;
@@ -742,6 +750,10 @@ let lastTouchTime = 0;
         document.getElementById("loading-indicator").style.display = "block";
         if (this.states.albumId !== "all") {
         this.states.loadedPhotoIds.clear();
+    }
+        if (this.states.albumId !== "all") {
+    this.states.photoIds.clear();
+    this.states.photoUrls.clear();
     }
     },
 
