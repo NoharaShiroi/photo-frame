@@ -496,9 +496,7 @@ let lastTouchTime = 0;
 
         document.getElementById("loading-indicator").style.display = "none";
     }
-}
-    // 幻燈片加載數記錄
-    if (this.states.slideshowInterval) {
+if (this.states.slideshowInterval) {
         this.states.loadedForSlideshow = this.states.photos.length;
     }
 },
