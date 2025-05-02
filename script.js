@@ -347,7 +347,15 @@ const app = {
     },
 
     async loadPhotos() {
-        if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
+    // ✅ 安全上限控制，避免過度預載
+    const MAX_PHOTOS = 300;
+    if (this.states.photos.length >= MAX_PHOTOS) {
+        console.log("⚠️ 已達最大圖片數，不再預載更多");
+        this.states.hasMorePhotos = false;
+        return;
+    }
+
+    if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
         return;
     }
 
@@ -379,7 +387,6 @@ const app = {
         });
 
         if (!response.ok) {
-            // 只在第一次失敗時顯示錯誤訊息
             if (this.states.photos.length === 0) {
                 throw new Error('照片加載失敗');
             }
@@ -388,12 +395,13 @@ const app = {
 
         const data = await response.json();
 
+        // ✅ 忽略過時請求
         if (requestId !== this.states.currentRequestId) return;
 
         const existingIds = new Set(this.states.photos.map(p => p.id));
         const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
 
-        // 如果沒有新照片，標記為沒有更多照片
+        // ✅ 無新照片
         if (newPhotos.length === 0 && data.nextPageToken) {
             this.states.nextPageToken = null;
             this.states.hasMorePhotos = false;
@@ -403,31 +411,35 @@ const app = {
             this.states.hasMorePhotos = !!this.states.nextPageToken;
         }
 
+        // ✅ 清除超過的圖片，控制在 MAX_PHOTOS 張以內
+        if (this.states.photos.length > MAX_PHOTOS) {
+            const excess = this.states.photos.length - MAX_PHOTOS;
+            this.states.photos.splice(0, excess);
+            console.log(`🧹 清除 ${excess} 張舊圖片，保留最新 ${MAX_PHOTOS} 張`);
+
+            // ✅ 同步清理已播放記錄
+            this.states.playedPhotos = new Set(
+                [...this.states.playedPhotos].filter(id =>
+                    this.states.photos.some(photo => photo.id === id)
+                )
+            );
+        }
+
         this.renderPhotos();
 
-        // 自動加載策略：
-        // 1. 如果還沒達到預載數量，繼續快速加載
-        // 2. 如果已達預載數量，改用較慢速度繼續加載剩餘照片
-        // 3. 如果正在幻燈片播放，確保有足夠緩衝照片
-        if (this.states.hasMorePhotos) {
-            let delay = 300; // 預設加載間隔
-            
-            if (this.states.photos.length >= this.states.preloadCount) {
-                delay = 1000; // 預載完成後改用較慢速度加載
-            }
-            
-            if (this.states.slideshowInterval && 
-                this.states.photos.length - this.states.loadedForSlideshow < 50) {
-                delay = 300; // 幻燈片播放時需要更快加載
-            }
-            
-            setTimeout(() => this.loadPhotos(), delay);
+        // ✅ 如果還沒滿 300，背景自動載入下一批（非阻塞）
+        if (this.states.photos.length < MAX_PHOTOS && this.states.hasMorePhotos) {
+            console.log("🚀 背景預載下一批照片");
+            setTimeout(() => this.loadPhotos(), 300); // ⚠️ 避免阻塞主流程
+        } else {
+            console.log("✅ 已加載至上限，停止載入更多");
+            this.states.hasMorePhotos = false;
         }
+
     } catch (error) {
-        // 只在第一次失敗時顯示錯誤訊息
+        console.error("照片加載錯誤:", error);
         if (this.states.photos.length === 0) {
-            console.error("照片加載失敗:", error);
-            this.showMessage("加載失敗，請檢查網路連線", true);
+            this.showMessage("照片加載失敗，請檢查網路", true);
         }
     } finally {
         if (requestId === this.states.currentRequestId) {
@@ -582,23 +594,39 @@ const app = {
     },
 
     navigate(direction) {
-        const image = document.getElementById("lightbox-image");
-    image.classList.add('fade-out'); // 先淡出舊照片
+    const image = document.getElementById("lightbox-image");
+    image.classList.add('fade-out');
+
+    // ⏳ 設定圖片載入失敗的保險 timeout（避免無圖黑畫面）
+    let fallbackTimeout = setTimeout(() => {
+        console.warn("⚠️ 圖片載入逾時，自動略過淡入");
+        image.classList.remove('fade-out');
+    }, 1500); // 1.5 秒未完成就視為逾時
 
     setTimeout(() => {
-        this.states.currentIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
-        image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
+        // ✅ 清除上一張圖片資源，幫助釋放 GPU 記憶體
+        image.src = "";
+
+        // ✅ 計算下一張 index（循環）
+        this.states.currentIndex =
+            (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
+
+        // ✅ 載入新圖片（推薦解析度 w800-h600）
+        const photo = this.states.photos[this.states.currentIndex];
+        image.src = this.getImageUrl(photo, 800, 600);
 
         image.onload = () => {
-            image.classList.remove('fade-out'); // 新照片載入後淡入
-             };
+            clearTimeout(fallbackTimeout); // 成功載入，清除保險 timeout
+            image.classList.remove('fade-out');
 
-        // 幻燈片播放時，記錄已播放過的照片
-        if (this.states.slideshowInterval) {
-            this.states.playedPhotos.add(this.states.photos[this.states.currentIndex].id);
+            // ✅ 幻燈片模式時紀錄已播
+            if (this.states.slideshowInterval) {
+                this.states.playedPhotos.add(photo.id);
             }
-        }, 300); // 延遲300ms讓舊圖慢慢消失
-   },
+        };
+    }, 300); // 淡出動畫結束後再切換圖片
+ ,   }
+
 
    toggleSlideshow() {
     if (this.states.slideshowInterval) {
