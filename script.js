@@ -625,7 +625,7 @@ const app = {
             }
         };
     }, 300); // 淡出動畫結束後再切換圖片
- ,   }
+    },
 
 
    toggleSlideshow() {
