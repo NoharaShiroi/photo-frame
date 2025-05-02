@@ -178,10 +178,12 @@ const app = {
             const isFullscreenNow = !!document.fullscreenElement;
              this.states.isFullscreen = isFullscreenNow;
             this.toggleButtonVisibility();
+           
             if (!isFullscreenNow) {
         // ✅ 退出全螢幕：關閉幻燈片 + 關閉 lightbox
         if (this.states.slideshowInterval) this.stopSlideshow();
         this.closeLightbox();
+        }        
         });
       
         document.getElementById("screenOverlay").addEventListener("dblclick", () => {
