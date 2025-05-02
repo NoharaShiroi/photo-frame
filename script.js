@@ -449,59 +449,62 @@ const app = {
     }
 },
 
-    renderPhotos() {
-       const container = document.getElementById("photo-container");
+renderPhotos() {
+    const container = document.getElementById("photo-container");
     container.style.display = "grid";
-    
-    // 移除現有的錯誤訊息（如果有的話）
-    const existingError = container.querySelector('.error-state');
-    if (existingError) {
-        container.removeChild(existingError);
-    }
-    
-    // 只渲染尚未渲染的照片
-    const startIndex = container.children.length - 
-                     (container.querySelector('.empty-state') ? 1 : 0);
-    
+
+    // ✅ 移除錯誤或空狀態提示
+    const messages = container.querySelectorAll('.error-state, .empty-state');
+    messages.forEach(el => container.removeChild(el));
+
+    // ✅ 移除舊 sentinel，避免重複觀察
+    const oldSentinel = document.getElementById("scroll-sentinel");
+    if (oldSentinel) oldSentinel.remove();
+
+    // ✅ 計算起始渲染 index（僅純圖片）
+    const startIndex = [...container.children].filter(c => c.classList.contains("photo")).length;
+
     const fragment = document.createDocumentFragment();
-    
+
     for (let i = startIndex; i < this.states.photos.length; i++) {
         const photo = this.states.photos[i];
         const img = document.createElement('img');
         img.className = 'photo';
-        img.src = `${photo.baseUrl}=w150-h150`;
-        img.dataset.src = `${photo.baseUrl}=w800-h600`;
+        img.src = `${photo.baseUrl}=w150-h150`;                 // 預覽小圖
+        img.dataset.src = `${photo.baseUrl}=w800-h600`;        // lazy load 大圖 & Lightbox 用
         img.alt = '相片';
         img.dataset.id = photo.id;
+        img.loading = "lazy";                                   // ✅ 保護初次大量載入
         img.onclick = () => this.openLightbox(photo.id);
         fragment.appendChild(img);
     }
 
-    // 移除現有的「已無更多相片」提示（如果有的話）
-    const existingEmptyState = container.querySelector('.empty-state');
-    if (existingEmptyState) {
-        container.removeChild(existingEmptyState);
-    }
-
-    // 只在確實沒有更多照片時顯示提示
+    // ✅ 若所有圖片載完，顯示提示
     if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
         const emptyState = document.createElement('p');
         emptyState.className = 'empty-state';
-        emptyState.textContent = '已無更多相片';
+        emptyState.textContent = '📷 已無更多相片';
         fragment.appendChild(emptyState);
     }
 
+    // ✅ 添加新的 scroll sentinel（用於懶加載新照片）
+    const sentinel = document.createElement('div');
+    sentinel.id = 'scroll-sentinel';
+    fragment.appendChild(sentinel);
+
+    // ✅ 加入所有新 DOM 元素
     container.appendChild(fragment);
+
+    // ✅ 執行懶加載與滾動監聽觀察
     this.setupLazyLoad();
-    
-    // 更新幻燈片已加載數量
+    this.setupScrollObserver();
+
+    // ✅ 更新幻燈片快取標記（僅在播放中）
     if (this.states.slideshowInterval) {
         this.states.loadedForSlideshow = this.states.photos.length;
     }
-    
-    // 每次渲染後檢查是否需要設置滾動監聽
-    this.setupScrollObserver();
 },
+
 
     setupLazyLoad() {
         const observer = new IntersectionObserver((entries) => {
@@ -563,69 +566,86 @@ const app = {
     },
 
     openLightbox(photoId) {
-        this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
-        const lightbox = document.getElementById("lightbox");
-        const image = document.getElementById("lightbox-image");
-        
-        image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
+    const index = this.states.photos.findIndex(p => p.id === photoId);
+    if (index === -1) {
+        console.warn("⚠️ 找不到對應的照片 ID:", photoId);
+        return;
+    }
 
-        image.onload = () => {
-            const isSlideshowActive = this.states.slideshowInterval !== null;
-            image.style.maxWidth = isSlideshowActive ? '99%' : '90%';
-            image.style.maxHeight = isSlideshowActive ? '99%' : '90%';
-            lightbox.style.display = "flex";
-            setTimeout(() => {
-                lightbox.style.opacity = 1;
-                this.states.lightboxActive = true;
-                this.toggleButtonVisibility();
-            }, 10);
-        };
-    },
+    this.states.currentIndex = index;
 
-    closeLightbox() {
-        const lightbox = document.getElementById("lightbox");
-        lightbox.style.opacity = 0;
+    const lightbox = document.getElementById("lightbox");
+    const image = document.getElementById("lightbox-image");
+
+    // ✅ 顯示大圖（w800-h600 為推薦解析度）
+    const selectedPhoto = this.states.photos[this.states.currentIndex];
+    image.src = this.getImageUrl(selectedPhoto, 800, 600);
+
+    image.onload = () => {
+        const isSlideshowActive = this.states.slideshowInterval !== null;
+        image.style.maxWidth = isSlideshowActive ? '99%' : '90%';
+        image.style.maxHeight = isSlideshowActive ? '99%' : '90%';
+
+        lightbox.style.display = "flex";
         setTimeout(() => {
-            lightbox.style.display = "none";
-            this.states.lightboxActive = false;
+            lightbox.style.opacity = 1;
+            this.states.lightboxActive = true;
             this.toggleButtonVisibility();
-        }, 300);
-        this.stopSlideshow();
-    },
+        }, 10);
+    };
+},
 
-    navigate(direction) {
+closeLightbox() {
+    const lightbox = document.getElementById("lightbox");
+    const image = document.getElementById("lightbox-image");
+
+    // ✅ 避免記憶體累積：釋放圖片資源
+    image.src = "";
+
+    lightbox.style.opacity = 0;
+    setTimeout(() => {
+        lightbox.style.display = "none";
+        this.states.lightboxActive = false;
+        this.toggleButtonVisibility();
+    }, 300);
+
+    this.stopSlideshow();
+},
+
+navigate(direction) {
     const image = document.getElementById("lightbox-image");
     image.classList.add('fade-out');
 
-    // ⏳ 設定圖片載入失敗的保險 timeout（避免無圖黑畫面）
+    // ✅ fallback：圖片載入失敗時自動略過淡入，避免黑畫面
     let fallbackTimeout = setTimeout(() => {
         console.warn("⚠️ 圖片載入逾時，自動略過淡入");
         image.classList.remove('fade-out');
-    }, 1500); // 1.5 秒未完成就視為逾時
+    }, 1500);
 
     setTimeout(() => {
         // ✅ 清除上一張圖片資源，幫助釋放 GPU 記憶體
         image.src = "";
 
         // ✅ 計算下一張 index（循環）
-        this.states.currentIndex =
-            (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
+        const photos = this.states.photos;
+        if (photos.length === 0) return;
 
-        // ✅ 載入新圖片（推薦解析度 w800-h600）
-        const photo = this.states.photos[this.states.currentIndex];
-        image.src = this.getImageUrl(photo, 800, 600);
+        this.states.currentIndex =
+            (this.states.currentIndex + direction + photos.length) % photos.length;
+
+        const nextPhoto = photos[this.states.currentIndex];
+        image.src = this.getImageUrl(nextPhoto, 800, 600);
 
         image.onload = () => {
-            clearTimeout(fallbackTimeout); // 成功載入，清除保險 timeout
+            clearTimeout(fallbackTimeout);
             image.classList.remove('fade-out');
 
-            // ✅ 幻燈片模式時紀錄已播
             if (this.states.slideshowInterval) {
-                this.states.playedPhotos.add(photo.id);
+                this.states.playedPhotos.add(nextPhoto.id);
             }
         };
-    }, 300); // 淡出動畫結束後再切換圖片
-    },
+    }, 300);
+},
 
 
    toggleSlideshow() {
