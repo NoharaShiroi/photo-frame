@@ -174,10 +174,15 @@ const app = {
             this.resetPhotoData();
             this.loadPhotos();
         });
+        document.addEventListener("fullscreenchange", () => {
+            const isFullscreenNow = !!document.fullscreenElement;
+             this.states.isFullscreen = isFullscreenNow;
+            this.toggleButtonVisibility();
+        });
        document.getElementById("screenOverlay").addEventListener("dblclick", () => {
         this.temporarilyDisableOverlay();
-    });
-let lastTouchTime = 0;
+        });     
+        let lastTouchTime = 0;
         document.getElementById("screenOverlay").addEventListener("touchend", (e) => {
             const currentTime = new Date().getTime();
             if (currentTime - lastTouchTime < 500) {
