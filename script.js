@@ -551,24 +551,29 @@ const app = {
     },
 
     openLightbox(photoId) {
-        this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
-        const lightbox = document.getElementById("lightbox");
-        const image = document.getElementById("lightbox-image");
-        
-        image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
+        // ✅ 1. 停止其他活動（例如 slideshow）
+    if (this.states.slideshowInterval) this.stopSlideshow();
 
-        image.onload = () => {
-            const isSlideshowActive = this.states.slideshowInterval !== null;
-            image.style.maxWidth = isSlideshowActive ? '99%' : '90%';
-            image.style.maxHeight = isSlideshowActive ? '99%' : '90%';
-            lightbox.style.display = "flex";
-            setTimeout(() => {
-                lightbox.style.opacity = 1;
-                this.states.lightboxActive = true;
-                this.toggleButtonVisibility();
-            }, 10);
-        };
-    },
+    // ✅ 2. 顯示圖片
+    this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
+    const lightbox = document.getElementById("lightbox");
+    const image = document.getElementById("lightbox-image");
+    image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
+
+    image.onload = () => {
+        lightbox.style.display = "flex";
+        setTimeout(() => {
+            lightbox.style.opacity = 1;
+            this.states.lightboxActive = true;
+            this.toggleButtonVisibility();
+        }, 10);
+
+        // ✅ 3. 背景自動續載照片（如還有）
+        if (this.states.hasMorePhotos && !this.states.isFetching) {
+            setTimeout(() => this.loadPhotos(), 500);
+        }
+    };
+},
 
     closeLightbox() {
         const lightbox = document.getElementById("lightbox");
@@ -598,66 +603,106 @@ const app = {
             this.states.playedPhotos.add(this.states.photos[this.states.currentIndex].id);
             }
         }, 300); // 延遲300ms讓舊圖慢慢消失
+        
+        image.onload = () => {
+             image.classList.remove('fade-out');
+               // ⚡播放模式時續載
+             if (this.states.slideshowInterval &&
+             this.states.hasMorePhotos &&
+             this.states.photos.length - this.states.loadedForSlideshow < 30 &&
+             !this.states.isFetching) {
+             setTimeout(() => this.loadPhotos(), 500);
+            }
+        };
    },
 
    toggleSlideshow() {
     if (this.states.slideshowInterval) {
-        // 停止播放時，恢復預載量
         this.stopSlideshow();
         this.stopClock();
         return;
     }
-        // 重置已播放記錄
-        this.states.playedPhotos.clear();
-        this.states.loadedForSlideshow = this.states.photos.length;
-        this.startClock(); // 啟動時鐘
 
-        // ⚡【新增這行】: 直接打開Lightbox顯示照片！
-        this.openLightbox(this.states.photos[this.states.currentIndex].id);
+    this.states.playedPhotos.clear();
+    this.states.loadedForSlideshow = this.states.photos.length;
+    this.startClock();
+    this.openLightbox(this.states.photos[this.states.currentIndex].id);
 
-        const speed = document.getElementById("slideshow-speed").value * 1000 || 1000;
-        const isRandom = document.getElementById("play-mode").value === "random";
+    const speed = document.getElementById("slideshow-speed").value * 1000 || 1000;
+    const isRandom = document.getElementById("play-mode").value === "random";
 
-        const getNextIndex = () => {
-            if (this.states.photos.length - this.states.loadedForSlideshow < 10 &&
-                this.states.hasMorePhotos && !this.states.isFetching) {
+    const getNextIndex = () => {
+        if (this.states.photos.length - this.states.loadedForSlideshow < 10 &&
+            this.states.hasMorePhotos && !this.states.isFetching) {
+            this.loadPhotos();
+        }
+
+        if (isRandom) {
+            let nextIndex;
+            let attempts = 0;
+            const maxAttempts = this.states.photos.length * 2;
+
+            do {
+                nextIndex = Math.floor(Math.random() * this.states.photos.length);
+                attempts++;
+                if (attempts > maxAttempts) {
+                    this.states.playedPhotos.clear();
+                    break;
+                }
+            } while (
+                (nextIndex === this.states.currentIndex && this.states.photos.length > 1) ||
+                (this.states.playedPhotos.has(this.states.photos[nextIndex].id) &&
+                 this.states.playedPhotos.size < this.states.photos.length)
+            );
+
+            return nextIndex;
+        }
+
+        return (this.states.currentIndex + 1) % this.states.photos.length;
+    };
+
+    this.states.slideshowInterval = setInterval(() => {
+        setTimeout(() => {
+            this.states.currentIndex = getNextIndex();
+            this.navigate(0);
+
+            // ✅ 清除緩存避免記憶體過大
+            if (this.states.photos.length > 500) {
+                this.cleanImageCache(300);
+            }
+
+            // ✅ 若不夠照片，背景加載避免播放中斷
+            if (this.states.photos.length < this.states.preloadCount &&
+                this.states.hasMorePhotos &&
+                !this.states.isFetching) {
                 this.loadPhotos();
             }
+        }, 100);
+    }, speed);
 
-            if (isRandom) {
-                let nextIndex;
-                let attempts = 0;
-                const maxAttempts = this.states.photos.length * 2;
+    this.toggleButtonVisibility();
+},
 
-                do {
-                    nextIndex = Math.floor(Math.random() * this.states.photos.length);
-                    attempts++;
+    cleanImageCache(limit = 300) {
+    // 1. 播放時保留已播放過的照片
+    const retained = new Set([...this.states.playedPhotos]);
+    
+    // 2. 裁切方式：只保留近期照片與已播放的
+    if (this.states.photos.length > limit) {
+        const recentPhotos = this.states.photos.slice(-limit);
+        const finalPhotos = recentPhotos.filter(p => retained.has(p.id));
 
-                    if (attempts > maxAttempts) {
-                        this.states.playedPhotos.clear();
-                        break;
-                    }
-                } while (
-                    (nextIndex === this.states.currentIndex && this.states.photos.length > 1) ||
-                    (this.states.playedPhotos.has(this.states.photos[nextIndex].id) &&
-                     this.states.playedPhotos.size < this.states.photos.length)
-                );
+        // 3. 更新照片清單
+        this.states.photos = finalPhotos;
 
-                return nextIndex;
-            }
+        // 4. 清空 DOM 並重新渲染，避免記憶體累積
+        document.getElementById("photo-container").innerHTML = '';
+        this.renderPhotos();
 
-            return (this.states.currentIndex + 1) % this.states.photos.length;
-        };
-
-        this.states.slideshowInterval = setInterval(() => {
-            setTimeout(() => {
-                this.states.currentIndex = getNextIndex();
-                this.navigate(0);
-            }, 100);
-        }, speed);
-
-        this.toggleButtonVisibility();
-    },
+        // 5. 強制刷新滾動加載（如有需要）
+        this.setupScrollObserver();
+    }
+},
 
     stopSlideshow() {
         clearInterval(this.states.slideshowInterval);
