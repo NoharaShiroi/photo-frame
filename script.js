@@ -544,12 +544,11 @@ const app = {
 
     getImageUrl(photo, width = 1920, height = 1080, isLowQuality = false) {
     if (!photo || !photo.baseUrl) return "";
-    return isLowQuality
-        ? `${photo.baseUrl}=w600-h400`   // 優先快速載入
-        : `${photo.baseUrl}=w${width}-h${height}`;
-          }
-        return `${photo.baseUrl}=w${width}-h${height}`;
-    },
+    if (isLowQuality) {
+        return `${photo.baseUrl}=w600-h400`;
+    }
+   return `${photo.baseUrl}=w${width}-h${height}`;
+},
 
     openLightbox(photoId) {
         // ✅ 1. 停止其他活動（例如 slideshow）
@@ -638,10 +637,6 @@ const app = {
     this.states.loadedForSlideshow = this.states.photos.length;
     this.states.currentIndex = 0;  // ✅ 從第一張有效圖片開始播放
     this.startClock();
-
-    // ✅ 安全顯示第一張圖片
-    this.openLightbox(this.states.photos[this.states.currentIndex].id);
-
     const speed = document.getElementById("slideshow-speed").value * 1000 || 1000;
     const isRandom = document.getElementById("play-mode").value === "random";
 
@@ -674,14 +669,14 @@ const app = {
 
         return (this.states.currentIndex + 1) % this.states.photos.length;
     };
-       const firstValidIndex = this.states.photos.findIndex(p => p.baseUrl);
-if (firstValidIndex !== -1) {
-    this.states.currentIndex = firstValidIndex;
-    this.openLightbox(this.states.photos[this.states.currentIndex].id);
-} else {
-    alert("尚未載入任何圖片，請稍後再啟動幻燈片");
-    return;
-};
+       
+           const firstValidIndex = this.states.photos.findIndex(p => p.baseUrl);
+           if (firstValidIndex === -1) {
+              alert("尚未載入任何圖片，請稍後再啟動幻燈片");
+                  return;
+           }
+           this.states.currentIndex = firstValidIndex;
+           this.openLightbox(this.states.photos[this.states.currentIndex].id);
 
     this.states.slideshowInterval = setInterval(() => {
         setTimeout(() => {
