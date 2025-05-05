@@ -503,7 +503,7 @@ const app = {
     }
 },
 
-    cleanPhotoCacheSafe(maxKeep = 300) {     \\每隔 X 分鐘清理不再使用的 photo 資料
+    cleanPhotoCacheSafe(maxKeep = 300) {     //每隔 X 分鐘清理不再使用的 photo 資料
     const currentPhotoId = this.states.photos[this.states.currentIndex]?.id;
     this.states.photos = this.states.photos.filter(p => 
         !this.states.playedPhotos.has(p.id) || p.id === currentPhotoId
