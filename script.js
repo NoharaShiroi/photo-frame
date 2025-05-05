@@ -17,8 +17,8 @@ const app = {
         lightboxActive: false,
         isFullscreen: false,
         preloadCount: 100, // 新增預載照片數量設定
-        defaultPreloadCount: 80,       // ← 新增：平常模式預載量
-        slideshowPreloadCount: 150,
+        defaultPreloadCount: 100,       // ← 新增：平常模式預載量
+        slideshowPreloadCount: 300,
         loadedForSlideshow: 0, // 記錄已為幻燈片加載的照片數量
         playedPhotos: new Set(), // 記錄已播放過的照片ID
         overlayTimeout: null,      // 儲存計時器ID
@@ -54,7 +54,6 @@ const app = {
         setInterval(() => {
             console.log('執行定期排程檢查');
             this.checkSchedule();
-            this.cleanPhotoCacheSafe(); // 每分鐘清理快取
         }, this.states.isOldiOS ? 300000 : 60000);
     }
 },
@@ -490,30 +489,8 @@ const app = {
     
     // 每次渲染後檢查是否需要設置滾動監聽
     this.setupScrollObserver();
-    this.cleanupOldImages();
-
-},
-    cleanupOldImages(limit = 300) {   //加入圖片記憶體釋放機制
-    const container = document.getElementById("photo-container");
-    const images = container.querySelectorAll("img.photo");
-    if (images.length > limit) {
-        for (let i = 0; i < images.length - limit; i++) {
-            images[i].remove();
-        }
-    }
 },
 
-    cleanPhotoCacheSafe(maxKeep = 300) {     //每隔 X 分鐘清理不再使用的 photo 資料
-    const currentPhotoId = this.states.photos[this.states.currentIndex]?.id;
-    this.states.photos = this.states.photos.filter(p => 
-        !this.states.playedPhotos.has(p.id) || p.id === currentPhotoId
-    );
-    if (this.states.photos.length > maxKeep) {
-        this.states.photos = this.states.photos.slice(-maxKeep);
-        this.states.currentIndex = this.states.photos.findIndex(p => p.id === currentPhotoId);
-    }
-},
-    
     setupLazyLoad() {
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
@@ -521,7 +498,6 @@ const app = {
                     const img = entry.target;
                     if (!img.src.includes('w800')) {
                         img.src = img.dataset.src;
-                        img.removeAttribute("data-src");
                     }
                     observer.unobserve(img);
                 }
@@ -622,7 +598,6 @@ const app = {
             this.states.playedPhotos.add(this.states.photos[this.states.currentIndex].id);
             }
         }, 300); // 延遲300ms讓舊圖慢慢消失
-        this.cleanPhotoCacheSafe();
    },
 
    toggleSlideshow() {
@@ -659,11 +634,8 @@ const app = {
                     attempts++;
 
                     if (attempts > maxAttempts) {
-                        console.warn("已播放照片接近全部，清除紀錄重新播放");
                         this.states.playedPhotos.clear();
-                // 加入隨機抽取的新 index，避免中斷播放
-                        nextIndex = Math.floor(Math.random() * this.states.photos.length);
-                break;
+                        break;
                     }
                 } while (
                     (nextIndex === this.states.currentIndex && this.states.photos.length > 1) ||
