@@ -359,7 +359,7 @@ const app = {
 
     try {
         const body = {
-            pageSize: 100,
+            pageSize: 50, //減少初始載入延遲和記憶體佔用
             pageToken: this.states.nextPageToken || undefined
         };
 
@@ -503,7 +503,7 @@ const app = {
                 }
             });
         }, { 
-            rootMargin: "200px 0px",
+            rootMargin: "600px 0px",
             threshold: 0.01 
         });
 
@@ -542,11 +542,12 @@ const app = {
     }
 },
 
-    getImageUrl(photo, width = 1920, height = 1080) {
-        if (!photo || !photo.baseUrl) {
-            console.error("无效的照片对象:", photo);
-            return "";
-        }
+    getImageUrl(photo, width = 1920, height = 1080, isLowQuality = false) {
+    if (!photo || !photo.baseUrl) return "";
+    return isLowQuality
+        ? `${photo.baseUrl}=w600-h400`   // 優先快速載入
+        : `${photo.baseUrl}=w${width}-h${height}`;
+          }
         return `${photo.baseUrl}=w${width}-h${height}`;
     },
 
@@ -558,15 +559,17 @@ const app = {
     this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
     const lightbox = document.getElementById("lightbox");
     const image = document.getElementById("lightbox-image");
-    image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
-
+    image.src = this.getImageUrl(this.states.photos[this.states.currentIndex], 1920, 1080, true);
     image.onload = () => {
-        lightbox.style.display = "flex";
-        setTimeout(() => {
-            lightbox.style.opacity = 1;
-            this.states.lightboxActive = true;
-            this.toggleButtonVisibility();
-        }, 10);
+    lightbox.style.display = "flex";
+    setTimeout(() => {
+        lightbox.style.opacity = 1;
+        this.states.lightboxActive = true;
+        this.toggleButtonVisibility();
+
+        // ⚡ 補載高解析圖
+        image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
+    }, 10);
 
         // ✅ 3. 背景自動續載照片（如還有）
         if (this.states.hasMorePhotos && !this.states.isFetching) {
@@ -623,9 +626,20 @@ const app = {
         return;
     }
 
+    // ✅ 播放前篩選出「已載入 baseUrl」的有效圖片
+    const availablePhotos = this.states.photos.filter(p => p.baseUrl);
+    if (availablePhotos.length === 0) {
+        alert("尚未載入任何圖片，請稍後再啟動幻燈片");
+        return;
+    }
+
+    this.states.photos = availablePhotos;
     this.states.playedPhotos.clear();
     this.states.loadedForSlideshow = this.states.photos.length;
+    this.states.currentIndex = 0;  // ✅ 從第一張有效圖片開始播放
     this.startClock();
+
+    // ✅ 安全顯示第一張圖片
     this.openLightbox(this.states.photos[this.states.currentIndex].id);
 
     const speed = document.getElementById("slideshow-speed").value * 1000 || 1000;
@@ -660,6 +674,14 @@ const app = {
 
         return (this.states.currentIndex + 1) % this.states.photos.length;
     };
+       const firstValidIndex = this.states.photos.findIndex(p => p.baseUrl);
+if (firstValidIndex !== -1) {
+    this.states.currentIndex = firstValidIndex;
+    this.openLightbox(this.states.photos[this.states.currentIndex].id);
+} else {
+    alert("尚未載入任何圖片，請稍後再啟動幻燈片");
+    return;
+};
 
     this.states.slideshowInterval = setInterval(() => {
         setTimeout(() => {
@@ -675,31 +697,27 @@ const app = {
             if (this.states.photos.length < this.states.preloadCount &&
                 this.states.hasMorePhotos &&
                 !this.states.isFetching) {
-                this.loadPhotos();
-            }
-        }, 100);
+                for (let i = 0; i < 3; i++) {  // 多呼叫幾次提高速度
+        setTimeout(() => this.loadPhotos(), i * 500);
+                   }
+                } 
+         }, 100);
     }, speed);
 
     this.toggleButtonVisibility();
 },
 
     cleanImageCache(limit = 300) {
-    // 1. 播放時保留已播放過的照片
     const retained = new Set([...this.states.playedPhotos]);
-    
-    // 2. 裁切方式：只保留近期照片與已播放的
-    if (this.states.photos.length > limit) {
-        const recentPhotos = this.states.photos.slice(-limit);
-        const finalPhotos = recentPhotos.filter(p => retained.has(p.id));
 
-        // 3. 更新照片清單
-        this.states.photos = finalPhotos;
+    const finalPhotos = this.states.photos.filter(p =>
+        retained.has(p.id) || p.baseUrl // 保留已播放或已載入的
+    );
 
-        // 4. 清空 DOM 並重新渲染，避免記憶體累積
+    if (finalPhotos.length > limit) {
+        this.states.photos = finalPhotos.slice(-limit);
         document.getElementById("photo-container").innerHTML = '';
         this.renderPhotos();
-
-        // 5. 強制刷新滾動加載（如有需要）
         this.setupScrollObserver();
     }
 },
@@ -709,6 +727,10 @@ const app = {
         this.states.slideshowInterval = null;
         this.states.preloadCount = this.states.defaultPreloadCount;
         this.toggleButtonVisibility();
+        if (this.states.photos.length > 0) {
+        document.getElementById("photo-container").innerHTML = '';
+        this.renderPhotos();
+        }
     },
 
     toggleFullscreen() {
