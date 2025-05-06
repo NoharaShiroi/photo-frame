@@ -38,7 +38,7 @@ const app = {
     this.states.isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
                      !window.MSStream && 
                      /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
-
+    this.checkAuth(); 
     this.states.accessToken = sessionStorage.getItem("access_token");
     this.setupEventListeners();
     
