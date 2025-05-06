@@ -139,6 +139,7 @@ const app = {
             include_granted_scopes: 'true',
             state: 'pass-through-value',
             prompt: 'consent'
+            access_type: 'online'
         };
         window.location.href = authEndpoint + '?' + new URLSearchParams(params);
     },
