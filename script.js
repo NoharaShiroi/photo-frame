@@ -331,10 +331,7 @@ const app = {
                 error.status = response.status;
                 throw error;
             }
-               
-           const data = await response.json();
-           this.renderAlbumSelect(data.albums || []);
-           this.loadPhotos(); // 初始化載入所有相片
+           
         } catch (error) {
     this.handleAuthError(error);
       }
