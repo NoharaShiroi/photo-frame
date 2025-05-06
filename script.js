@@ -547,7 +547,7 @@ const app = {
     if (isLowQuality) {
         return `${photo.baseUrl}=w600-h400`;
     }
-   return `${photo.baseUrl}=w${width}-h${height}`;
+    return `${photo.baseUrl}=w${width}-h${height}`;
 },
 
     openLightbox(photoId) {
