@@ -380,11 +380,16 @@ const app = {
         });
 
         if (!response.ok) {
-            // 只在第一次失敗時顯示錯誤訊息
-            if (this.states.photos.length === 0) {
-                throw new Error('照片加載失敗');
-            }
-            return;
+             const error = await response.json().catch(() => ({}));
+             error.status = response.status;
+             throw error;
+        }
+            } catch (error) {
+               if (this.states.photos.length === 0) {
+               this.handleAuthError(error);
+               } else {
+                  console.warn("後續加載失敗，但略過", error);
+               }
         }
 
         const data = await response.json();
@@ -792,9 +797,14 @@ const app = {
         document.getElementById("photo-container").innerHTML = '';
     },
 
-    handleAuthError() {
-        if (error.status === 401 || error.code === 401 || error.message?.includes("401")) {
-        const retry = confirm("授權已過期，是否重新登入？");
+    handleAuthError(error = {}) {
+    console.warn("授權錯誤處理中", error);
+
+    const is401 = error.status === 401 || error.code === 401 || (error.message || "").includes("401");
+    const is403 = error.status === 403 || error.code === 403 || (error.message || "").includes("403");
+
+    if (is401 || is403) {
+        const retry = confirm("授權已過期或權限不足，是否重新登入？");
         if (retry) {
             sessionStorage.removeItem("access_token");
             window.location.reload();
@@ -803,7 +813,6 @@ const app = {
             document.getElementById("app-container").style.display = "none";
         }
     } else {
-        console.error("非授權類錯誤：", error);
         this.showMessage("發生錯誤，請稍後再試。", true);
     }
 },
