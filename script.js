@@ -326,13 +326,14 @@ const app = {
             const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
                 headers: { "Authorization": `Bearer ${this.states.accessToken}` }
             });
-            if (!response.ok) throw new Error('無法取得相簿');
-            const data = await response.json();
-            this.renderAlbumSelect(data.albums || []);
-            this.loadPhotos();
+            if (!response.ok) {
+    const error = await response.json().catch(() => ({}));
+    error.status = response.status;
+    throw error;
+}
         } catch (error) {
-            this.handleAuthError();
-        }
+    this.handleAuthError(error);
+}
     },
 
     renderAlbumSelect(albums) {
@@ -792,6 +793,7 @@ const app = {
     },
 
     handleAuthError() {
+        if (error.status === 401 || error.code === 401 || error.message?.includes("401")) {
         const retry = confirm("授權已過期，是否重新登入？");
         if (retry) {
             sessionStorage.removeItem("access_token");
@@ -800,7 +802,11 @@ const app = {
             document.getElementById("auth-container").style.display = "flex";
             document.getElementById("app-container").style.display = "none";
         }
-    },
+    } else {
+        console.error("非授權類錯誤：", error);
+        this.showMessage("發生錯誤，請稍後再試。", true);
+    }
+},
 
     updateClock() {
     const now = new Date();
