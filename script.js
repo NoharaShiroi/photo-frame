@@ -23,6 +23,7 @@ const app = {
         playedPhotos: new Set(), // 記錄已播放過的照片ID
         overlayTimeout: null,      // 儲存計時器ID
         overlayDisabled: false,   // 記錄遮罩是否被臨時取消
+        clockInterval: null,
         schedule: {
             sleepStart: "22:00",
             sleepEnd: "07:00",
@@ -164,6 +165,7 @@ const app = {
      },
 
     setupEventListeners() {
+        const lightbox = document.getElementById("lightbox");
         document.getElementById("authorize-btn").addEventListener("click", (e) => {
             e.preventDefault();
             this.handleAuthFlow();
@@ -203,14 +205,10 @@ const app = {
         }
 
         lightbox.addEventListener("dblclick", (event) => {
-            const shouldCloseLightbox = (event) => {
-        return !event.target.closest('.nav-button') && !event.target.closest('img');
-    };
-    
-    if (shouldCloseLightbox(event)) {
-        this.closeLightbox();
-    }
-});
+         if (shouldCloseLightbox(event)) {
+             this.closeLightbox();
+        }
+        });
 
         lightbox.addEventListener("touchend", (event) => {
     if (shouldCloseLightbox(event)) {
@@ -379,15 +377,7 @@ const app = {
             },
             body: JSON.stringify(body)
         });
-       
-           const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
-            method: "POST",
-            headers: {
-                "Authorization": Bearer ${this.states.accessToken},
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(body)
-        });
+                 
                if (!response.ok) {
              const error = await response.json().catch(() => ({}));
              error.status = response.status;
@@ -606,31 +596,25 @@ const app = {
     navigate(direction) {
         const image = document.getElementById("lightbox-image");
     image.classList.add('fade-out'); // 先淡出舊照片
-
+    if (!this.states.photos[this.states.currentIndex]?.baseUrl) return
     setTimeout(() => {
         this.states.currentIndex = (this.states.currentIndex + direction + this.states.photos.length) % this.states.photos.length;
         image.src = this.getImageUrl(this.states.photos[this.states.currentIndex]);
 
         image.onload = () => {
-            image.classList.remove('fade-out'); // 新照片載入後淡入
-             };
-
+    image.classList.remove('fade-out');
+    if (this.states.slideshowInterval &&
+        this.states.hasMorePhotos &&
+        this.states.photos.length - this.states.loadedForSlideshow < 30 &&
+        !this.states.isFetching) {
+        setTimeout(() => this.loadPhotos(), 500);
+    }
+            };
         // 幻燈片播放時，記錄已播放過的照片
         if (this.states.slideshowInterval) {
             this.states.playedPhotos.add(this.states.photos[this.states.currentIndex].id);
             }
         }, 300); // 延遲300ms讓舊圖慢慢消失
-        
-        image.onload = () => {
-             image.classList.remove('fade-out');
-               // ⚡播放模式時續載
-             if (this.states.slideshowInterval &&
-             this.states.hasMorePhotos &&
-             this.states.photos.length - this.states.loadedForSlideshow < 30 &&
-             !this.states.isFetching) {
-             setTimeout(() => this.loadPhotos(), 500);
-            }
-        };
    },
 
    toggleSlideshow() {
