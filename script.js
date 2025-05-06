@@ -35,7 +35,7 @@ const app = {
     },
 
     init() {
-    this.states.isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+    this.states.isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && async fetchAlbums() {
                      !window.MSStream && 
                      /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
     this.checkAuth(); 
@@ -321,20 +321,18 @@ const app = {
     }, // <-- 這裡必須加上逗號
 
         async fetchAlbums() {
-           try {
+        try {
             const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
                 headers: { "Authorization": `Bearer ${this.states.accessToken}` }
             });
-            if (!response.ok) {
-                const error = await response.json().catch(() => ({}));
-                error.status = response.status;
-                throw error;
-            }
-           
+            if (!response.ok) throw new Error('無法取得相簿');
+            const data = await response.json();
+            this.renderAlbumSelect(data.albums || []);
+            this.loadPhotos();
         } catch (error) {
-    this.handleAuthError(error);
-      }
- },
+            this.handleAuthError();
+        }
+    },
 
     renderAlbumSelect(albums) {
         const select = document.getElementById("album-select");
