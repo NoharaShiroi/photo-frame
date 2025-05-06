@@ -322,16 +322,16 @@ const app = {
     }, // <-- 這裡必須加上逗號
 
         async fetchAlbums() {
-          
-            try {
+           try {
             const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
                 headers: { "Authorization": `Bearer ${this.states.accessToken}` }
             });
             if (!response.ok) {
-    const error = await response.json().catch(() => ({}));
-    error.status = response.status;
-    throw error;
-}
+                const error = await response.json().catch(() => ({}));
+                error.status = response.status;
+                throw error;
+            }
+               
            const data = await response.json();
            this.renderAlbumSelect(data.albums || []);
            this.loadPhotos(); // 初始化載入所有相片
