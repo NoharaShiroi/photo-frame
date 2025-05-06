@@ -322,7 +322,8 @@ const app = {
     }, // <-- 這裡必須加上逗號
 
         async fetchAlbums() {
-        try {
+          
+            try {
             const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
                 headers: { "Authorization": `Bearer ${this.states.accessToken}` }
             });
@@ -331,10 +332,13 @@ const app = {
     error.status = response.status;
     throw error;
 }
+           const data = await response.json();
+           this.renderAlbumSelect(data.albums || []);
+           this.loadPhotos(); // 初始化載入所有相片
         } catch (error) {
     this.handleAuthError(error);
-}
-    },
+      }
+ },
 
     renderAlbumSelect(albums) {
         const select = document.getElementById("album-select");
@@ -378,22 +382,17 @@ const app = {
             },
             body: JSON.stringify(body)
         });
-
-        if (!response.ok) {
-             const error = await response.json().catch(() => ({}));
-             error.status = response.status;
-             throw error;
+       
+           const response = await fetch(...);
+           let data = null;
+           if (!response.ok) {
+               const error = await response.json().catch(() => ({}));
+               error.status = response.status;
+              throw error;
+           } else {
+              data = await response.json();
         }
-            } catch (error) {
-               if (this.states.photos.length === 0) {
-               this.handleAuthError(error);
-               } else {
-                  console.warn("後續加載失敗，但略過", error);
-               }
-        }
-
-        const data = await response.json();
-
+     
         if (requestId !== this.states.currentRequestId) return;
 
         const existingIds = new Set(this.states.photos.map(p => p.id));
@@ -743,40 +742,24 @@ const app = {
         alert("您的裝置不支援全螢幕模式");
         return;
     }
+
     if (!document.fullscreenElement) {
-        const elem = document.documentElement;
-        if (elem.requestFullscreen) {
-            elem.requestFullscreen().then(() => {
-                this.states.isFullscreen = true;
-                this.openLightbox(this.states.photos[this.states.currentIndex]?.id); // 確保進入 Lightbox
-                this.toggleSlideshow(); // ✅ 啟動幻燈片
-                this.toggleButtonVisibility();
-            }).catch(err => console.error('全螢幕錯誤:', err));
-        }
-    } else {
-        document.exitFullscreen?.();
-        this.states.isFullscreen = false;
-        this.toggleButtonVisibility();
+    const elem = document.documentElement;
+    const request = elem.requestFullscreen || elem.webkitRequestFullscreen;
+    if (request) {
+        request.call(elem).then(() => {
+            this.states.isFullscreen = true;
+            this.openLightbox(this.states.photos[this.states.currentIndex]?.id);
+            this.toggleSlideshow();
+            this.toggleButtonVisibility();
+        }).catch(err => console.error('全螢幕錯誤:', err));
     }
-    if (!document.fullscreenElement) {
-        const elem = document.documentElement;
-        if (elem.requestFullscreen) {
-            elem.requestFullscreen().catch(err => {
-                console.error('全螢幕錯誤:', err);
-            });
-        } else if (elem.webkitRequestFullscreen) { // Safari 專用
-            elem.webkitRequestFullscreen();
-        }
-        this.states.isFullscreen = true;
-    } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) { // Safari 專用
-            document.webkitExitFullscreen();
-        }
-        this.states.isFullscreen = false;
-    }
+} else {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    if (exit) exit.call(document);
+    this.states.isFullscreen = false;
     this.toggleButtonVisibility();
+    }    
 },
 
     toggleButtonVisibility() {
