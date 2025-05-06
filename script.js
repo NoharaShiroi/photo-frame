@@ -388,14 +388,20 @@ const app = {
             },
             body: JSON.stringify(body)
         });
-           let data = null;
-           if (!response.ok) {
-               const error = await response.json().catch(() => ({}));
-               error.status = response.status;
-              throw error;
-           } else {
-              data = await response.json();
+               if (!response.ok) {
+             const error = await response.json().catch(() => ({}));
+             error.status = response.status;
+             throw error;
         }
+            } catch (error) {
+               if (this.states.photos.length === 0) {
+               this.handleAuthError(error);
+               } else {
+                  console.warn("後續加載失敗，但略過", error);
+               }
+        }
+
+        const data = await response.json();
      
         if (requestId !== this.states.currentRequestId) return;
 
