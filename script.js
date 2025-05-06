@@ -346,102 +346,107 @@ const app = {
         });
     },
 
-    async loadPhotos() {
-        if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
-        return;
-    }
-
+   async loadPhotos() {
+    if (!this.states.hasMorePhotos && this.states.photos.length > 0) return;
     if (this.states.isFetching) return;
 
     const requestId = ++this.states.currentRequestId;
     this.states.isFetching = true;
-    document.getElementById("loading-indicator").style.display = "block";
+    this.showLoadingIndicator(true);
 
     try {
-        const body = {
-            pageSize: 50, //減少初始載入延遲和記憶體佔用
-            pageToken: this.states.nextPageToken || undefined
-        };
+        const response = await this.fetchPhotoData();
 
-        if (this.states.albumId !== "all") {
-            body.albumId = this.states.albumId;
-        } else {
-            body.filters = { includeArchivedMedia: true };
-        }
-
-        const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${this.states.accessToken}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(body)
-        });
-                 
-               if (!response.ok) {
-             const error = await response.json().catch(() => ({}));
-             error.status = response.status;
-             throw error;
-        }
-            } catch (error) {
-               if (this.states.photos.length === 0) {
-               this.handleAuthError(error);
-               } else {
-                  console.warn("後續加載失敗，但略過", error);
-               }
+        if (!response.ok) {
+            const error = await this.parseError(response);
+            throw error;
         }
 
         const data = await response.json();
-     
         if (requestId !== this.states.currentRequestId) return;
 
-        const existingIds = new Set(this.states.photos.map(p => p.id));
-        const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
-
-        // 如果沒有新照片，標記為沒有更多照片
-        if (newPhotos.length === 0 && data.nextPageToken) {
-            this.states.nextPageToken = null;
-            this.states.hasMorePhotos = false;
-        } else {
-            this.states.photos = [...this.states.photos, ...newPhotos];
-            this.states.nextPageToken = data.nextPageToken || null;
-            this.states.hasMorePhotos = !!this.states.nextPageToken;
-        }
-
+        this.processNewPhotos(data);
         this.renderPhotos();
+        this.scheduleNextLoad();
 
-        // 自動加載策略：
-        // 1. 如果還沒達到預載數量，繼續快速加載
-        // 2. 如果已達預載數量，改用較慢速度繼續加載剩餘照片
-        // 3. 如果正在幻燈片播放，確保有足夠緩衝照片
-        if (this.states.hasMorePhotos) {
-            let delay = 300; // 預設加載間隔
-            
-            if (this.states.photos.length >= this.states.preloadCount) {
-                delay = 1000; // 預載完成後改用較慢速度加載
-            }
-            
-            if (this.states.slideshowInterval && 
-                this.states.photos.length - this.states.loadedForSlideshow < 50) {
-                delay = 300; // 幻燈片播放時需要更快加載
-            }
-            
-            setTimeout(() => this.loadPhotos(), delay);
-        }
     } catch (error) {
-        // 只在第一次失敗時顯示錯誤訊息
         if (this.states.photos.length === 0) {
             console.error("照片加載失敗:", error);
             this.showMessage("加載失敗，請檢查網路連線", true);
+        } else {
+            console.warn("後續加載失敗，但略過", error);
         }
     } finally {
         if (requestId === this.states.currentRequestId) {
             this.states.isFetching = false;
-            document.getElementById("loading-indicator").style.display = "none";
+            this.showLoadingIndicator(false);
         }
     }
 },
 
+// 👇 新增輔助函式：fetchPhotoData
+async fetchPhotoData() {
+    const body = {
+        pageSize: 50,
+        pageToken: this.states.nextPageToken || undefined
+    };
+
+    if (this.states.albumId !== "all") {
+        body.albumId = this.states.albumId;
+    } else {
+        body.filters = { includeArchivedMedia: true };
+    }
+
+    return await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
+        method: "POST",
+        headers: {
+            "Authorization": `Bearer ${this.states.accessToken}`,
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+    });
+},
+
+// 👇 新增輔助函式：處理錯誤
+async parseError(response) {
+    const error = await response.json().catch(() => ({}));
+    error.status = response.status;
+    return error;
+},
+
+// 👇 新增輔助函式：處理並加入新照片
+processNewPhotos(data) {
+    const existingIds = new Set(this.states.photos.map(p => p.id));
+    const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
+
+    if (newPhotos.length === 0 && data.nextPageToken) {
+        this.states.nextPageToken = null;
+        this.states.hasMorePhotos = false;
+    } else {
+        this.states.photos = [...this.states.photos, ...newPhotos];
+        this.states.nextPageToken = data.nextPageToken || null;
+        this.states.hasMorePhotos = !!this.states.nextPageToken;
+    }
+},
+
+// 👇 新增輔助函式：下一次自動加載策略
+scheduleNextLoad() {
+    if (!this.states.hasMorePhotos) return;
+
+    let delay = 300;
+    if (this.states.photos.length >= this.states.preloadCount) delay = 1000;
+    if (this.states.slideshowInterval &&
+        this.states.photos.length - this.states.loadedForSlideshow < 50) delay = 300;
+
+    setTimeout(() => this.loadPhotos(), delay);
+},
+
+// 👇 新增輔助函式：顯示 / 隱藏 loading 指示器
+showLoadingIndicator(show) {
+    const el = document.getElementById("loading-indicator");
+    if (el) el.style.display = show ? "block" : "none";
+},
+    
     renderPhotos() {
        const container = document.getElementById("photo-container");
     container.style.display = "grid";
