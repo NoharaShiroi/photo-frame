@@ -383,7 +383,14 @@ const app = {
             body: JSON.stringify(body)
         });
        
-           const response = await fetch(...);
+           const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
+            method: "POST",
+            headers: {
+                "Authorization": Bearer ${this.states.accessToken},
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
+        });
            let data = null;
            if (!response.ok) {
                const error = await response.json().catch(() => ({}));
