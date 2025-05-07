@@ -131,6 +131,8 @@ const app = {
     handleAuthFlow() {
         const authEndpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
         const params = {
+            include_granted_scopes: 'false', // ❗很重要
+             prompt: 'consent',               // ❗強制跳授權畫面
             client_id: this.CLIENT_ID,
             redirect_uri: this.REDIRECT_URI,
             response_type: 'token',
