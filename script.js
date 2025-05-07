@@ -148,6 +148,7 @@ const app = {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         if (hashParams.has("access_token")) {
             this.states.accessToken = hashParams.get("access_token");
+            this.states.accessToken = token;
             sessionStorage.setItem("access_token", this.states.accessToken);
             window.history.replaceState({}, "", window.location.pathname);
             this.showApp();
