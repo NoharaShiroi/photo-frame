@@ -164,7 +164,7 @@ const app = {
     }
 
     return false;
-}
+},
 
 
     showApp() {
