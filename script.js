@@ -5,6 +5,7 @@ const app = {
 
     states: {
         accessToken: null,
+        tokenChecked: false,
         albumId: "all",
         photos: [],
         currentIndex: 0,
@@ -32,7 +33,49 @@ const app = {
             useHoliday: true,
         }
     },
+async validateAccessToken(token) {
+        try {
+            const res = await fetch(`https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${token}`);
+            return res.ok;
+        } catch (e) {
+            return false;
+        }
+    },
 
+    checkAuth() {
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        if (hashParams.has("access_token")) {
+            const token = hashParams.get("access_token");
+            sessionStorage.setItem("access_token", token);
+            window.history.replaceState({}, "", window.location.pathname);
+            this.states.accessToken = token;
+
+            this.validateAccessToken(token).then(valid => {
+                if (valid) {
+                    this.states.tokenChecked = true;
+                    this.showApp();
+                } else {
+                    this.handleAuthError();
+                }
+            });
+            return true;
+        }
+        const stored = sessionStorage.getItem("access_token");
+        if (stored) {
+            this.states.accessToken = stored;
+            this.validateAccessToken(stored).then(valid => {
+                if (valid) {
+                    this.states.tokenChecked = true;
+                    this.showApp();
+                } else {
+                    this.handleAuthError();
+                }
+            });
+            return true;
+        }
+        return false;
+    },
+    
     init() {
     this.states.isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
                      !window.MSStream && 
@@ -129,6 +172,7 @@ const app = {
     },
 
     handleAuthFlow() {
+        const popup = window.open("", "authPopup", "width=500,height=600");
         const authEndpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
         const params = {
             client_id: this.CLIENT_ID,
@@ -136,22 +180,36 @@ const app = {
             response_type: 'token',
             scope: this.SCOPES,
             include_granted_scopes: 'true',
-            state: 'pass-through-value',
+            state: 'auth-popup',
             prompt: 'consent'
         };
-        window.location.href = authEndpoint + '?' + new URLSearchParams(params);
+        popup.location.href = authEndpoint + '?' + new URLSearchParams(params);
+
+        const interval = setInterval(() => {
+            try {
+                if (popup.closed) clearInterval(interval);
+                const popupHash = popup.location.hash;
+                if (popupHash && popupHash.includes("access_token")) {
+                    const params = new URLSearchParams(popupHash.substring(1));
+                    const token = params.get("access_token");
+                    if (token) {
+                        sessionStorage.setItem("access_token", token);
+                        this.states.accessToken = token;
+                        window.location.hash = "";
+                        popup.close();
+                        this.showApp();
+                        clearInterval(interval);
+                    }
+                }
+            } catch (e) {}
+        }, 500);
     },
 
-    checkAuth() {
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        if (hashParams.has("access_token")) {
-            this.states.accessToken = hashParams.get("access_token");
-            sessionStorage.setItem("access_token", this.states.accessToken);
-            window.history.replaceState({}, "", window.location.pathname);
-            this.showApp();
-            return true;
-        }
-        return false;
+    handleAuthError() {
+        alert("授權已過期或權限不足，請重新登入");
+        sessionStorage.removeItem("access_token");
+        window.location.hash = "";
+        window.location.reload();
     },
 
     showApp() {
@@ -321,12 +379,15 @@ const app = {
         }
     }, // <-- 這裡必須加上逗號
 
-        async fetchAlbums() {
+async fetchAlbums() {
         try {
             const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
                 headers: { "Authorization": `Bearer ${this.states.accessToken}` }
             });
-            if (!response.ok) throw new Error('無法取得相簿');
+            if (!response.ok) {
+                if ([401, 403].includes(response.status)) throw new Error("unauthorized");
+                throw new Error('無法取得相簿');
+            }
             const data = await response.json();
             this.renderAlbumSelect(data.albums || []);
             this.loadPhotos();
@@ -347,95 +408,80 @@ const app = {
     },
 
     async loadPhotos() {
-        if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
-        return;
-    }
+        if (!this.states.hasMorePhotos && this.states.photos.length > 0) return;
+        if (this.states.isFetching) return;
 
-    if (this.states.isFetching) return;
+        const requestId = ++this.states.currentRequestId;
+        this.states.isFetching = true;
+        document.getElementById("loading-indicator").style.display = "block";
 
-    const requestId = ++this.states.currentRequestId;
-    this.states.isFetching = true;
-    document.getElementById("loading-indicator").style.display = "block";
-
-    try {
-        const body = {
-            pageSize: 100,
-            pageToken: this.states.nextPageToken || undefined
-        };
-
-        if (this.states.albumId !== "all") {
-            body.albumId = this.states.albumId;
-        } else {
-            body.filters = { includeArchivedMedia: true };
-        }
-
-        const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
-            method: "POST",
-            headers: {
-                "Authorization": `Bearer ${this.states.accessToken}`,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(body)
-        });
-
-        if (!response.ok) {
-            // 只在第一次失敗時顯示錯誤訊息
-            if (this.states.photos.length === 0) {
-                throw new Error('照片加載失敗');
+        try {
+            const body = {
+                pageSize: 100,
+                pageToken: this.states.nextPageToken || undefined
+            };
+            if (this.states.albumId !== "all") {
+                body.albumId = this.states.albumId;
+            } else {
+                body.filters = { includeArchivedMedia: true };
             }
-            return;
-        }
 
-        const data = await response.json();
+            const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${this.states.accessToken}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(body)
+            });
 
-        if (requestId !== this.states.currentRequestId) return;
-
-        const existingIds = new Set(this.states.photos.map(p => p.id));
-        const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
-
-        // 如果沒有新照片，標記為沒有更多照片
-        if (newPhotos.length === 0 && data.nextPageToken) {
-            this.states.nextPageToken = null;
-            this.states.hasMorePhotos = false;
-        } else {
-            this.states.photos = [...this.states.photos, ...newPhotos];
-            this.states.nextPageToken = data.nextPageToken || null;
-            this.states.hasMorePhotos = !!this.states.nextPageToken;
-        }
-
-        this.renderPhotos();
-
-        // 自動加載策略：
-        // 1. 如果還沒達到預載數量，繼續快速加載
-        // 2. 如果已達預載數量，改用較慢速度繼續加載剩餘照片
-        // 3. 如果正在幻燈片播放，確保有足夠緩衝照片
-        if (this.states.hasMorePhotos) {
-            let delay = 300; // 預設加載間隔
-            
-            if (this.states.photos.length >= this.states.preloadCount) {
-                delay = 1000; // 預載完成後改用較慢速度加載
+            if (!response.ok) {
+                if ([401, 403].includes(response.status)) throw new Error("unauthorized");
+                throw new Error("加載照片失敗");
             }
-            
-            if (this.states.slideshowInterval && 
-                this.states.photos.length - this.states.loadedForSlideshow < 50) {
-                delay = 300; // 幻燈片播放時需要更快加載
+
+            const data = await response.json();
+            if (requestId !== this.states.currentRequestId) return;
+
+            const existingIds = new Set(this.states.photos.map(p => p.id));
+            const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
+
+            if (newPhotos.length === 0 && data.nextPageToken) {
+                this.states.nextPageToken = null;
+                this.states.hasMorePhotos = false;
+            } else {
+                this.states.photos = [...this.states.photos, ...newPhotos];
+                this.states.nextPageToken = data.nextPageToken || null;
+                this.states.hasMorePhotos = !!this.states.nextPageToken;
             }
-            
-            setTimeout(() => this.loadPhotos(), delay);
+
+            this.renderPhotos();
+
+            if (this.states.hasMorePhotos) {
+                let delay = 300;
+                if (this.states.photos.length >= this.states.preloadCount) {
+                    delay = 1000;
+                }
+                if (this.states.slideshowInterval && this.states.photos.length - this.states.loadedForSlideshow < 50) {
+                    delay = 300;
+                }
+                setTimeout(() => this.loadPhotos(), delay);
+            }
+
+        } catch (error) {
+            if (error.message === "unauthorized") {
+                this.handleAuthError();
+            } else {
+                console.error("照片加載失敗:", error);
+                this.showMessage("加載失敗，請檢查網路連線", true);
+            }
+        } finally {
+            if (requestId === this.states.currentRequestId) {
+                this.states.isFetching = false;
+                document.getElementById("loading-indicator").style.display = "none";
+            }
         }
-    } catch (error) {
-        // 只在第一次失敗時顯示錯誤訊息
-        if (this.states.photos.length === 0) {
-            console.error("照片加載失敗:", error);
-            this.showMessage("加載失敗，請檢查網路連線", true);
-        }
-    } finally {
-        if (requestId === this.states.currentRequestId) {
-            this.states.isFetching = false;
-            document.getElementById("loading-indicator").style.display = "none";
-        }
-    }
-},
+    },
 
     renderPhotos() {
        const container = document.getElementById("photo-container");
