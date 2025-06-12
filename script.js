@@ -68,7 +68,14 @@ const app = {
      });
    },
 
-    saveSchedule() {
+loadSchedule() {
+        const schedule = JSON.parse(localStorage.getItem("schedule"));
+        if (schedule) {
+            this.states.schedule = schedule;
+        }
+    },
+
+      saveSchedule() {
         localStorage.setItem("schedule", JSON.stringify(this.states.schedule));
     },
 
