@@ -41,6 +41,7 @@ const app = {
      if (!ok) {
        document.getElementById("auth-container").style.display = "flex";
      } else {
+       this.showApp();
        this.loadSchedule();
        this.checkSchedule();
        setInterval(() => this.checkSchedule(), 60000);
