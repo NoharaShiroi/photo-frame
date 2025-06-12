@@ -86,45 +86,67 @@ const app = {
         return hours * 60 + minutes;
     },
 
-    handleAuthFlow() {
-        const authEndpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
-        const params = {
-            client_id: this.CLIENT_ID,
-            redirect_uri: this.REDIRECT_URI,
-            response_type: 'token',
-            scope: this.SCOPES,
-            include_granted_scopes: 'false',
-            state: 'pass-through-value',
-            prompt: 'consent'
-        };
-        window.location.href = authEndpoint + '?' + new URLSearchParams(params);
-    },
+ async handleAuthFlow() {
+  // 1. 清除舊的 access token，確保這次能拿到新的 scope
+  sessionStorage.removeItem("access_token");
+  this.states.accessToken = null;
 
-    checkAuth() {
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    
-    // 如果網址帶有 access_token，從 hash 儲存到 sessionStorage
-    if (hashParams.has("access_token")) {
-        const token = hashParams.get("access_token");
-        console.log("[OAuth] 從網址 hash 中取得 token：", token);
-        this.states.accessToken = token;
-        sessionStorage.setItem("access_token", token);
-        window.history.replaceState({}, "", window.location.pathname); // 清除 hash
-        this.showApp();
-        return true;
+  // 2. 組出 OAuth2 授權 URL
+  const authEndpoint = "https://accounts.google.com/o/oauth2/v2/auth";
+  const params = new URLSearchParams({
+    client_id: this.CLIENT_ID,
+    redirect_uri: this.REDIRECT_URI,
+    response_type: "token",
+    scope: this.SCOPES,                // 空格分隔的多個 scope
+    include_granted_scopes: "true",    // 保留使用者先前已授權的其他 scope
+    state: "pass-through-value",
+    prompt: "consent"                  // 每次都要求 consent，保證 scope 更新生效
+  });
+
+  // 3. (除錯用) 印出這次要請求的 scope
+  console.log("[OAuth] 導向 Google 取得新 token，scope =", this.SCOPES);
+
+  // 4. 跳轉到 Google OAuth 頁面
+  window.location.href = `${authEndpoint}?${params.toString()}`;
+},
+
+   async checkAuth() {
+  // 1. 如果 URL Hash 含有 access_token，優先拿來使用並儲存
+  const hashParams = new URLSearchParams(window.location.hash.substring(1));
+  if (hashParams.has("access_token")) {
+    const token = hashParams.get("access_token");
+    console.log("[OAuth] 從網址 hash 中取得 token：", token);
+    this.states.accessToken = token;
+    sessionStorage.setItem("access_token", token);
+    window.history.replaceState({}, "", window.location.pathname); // 清除 hash
+    return true;
+  }
+
+  // 2. 嘗試從 sessionStorage 讀取已儲存的 token
+  const storedToken = sessionStorage.getItem("access_token");
+  if (storedToken) {
+    console.log("[OAuth] 從 sessionStorage 讀取 token：", storedToken);
+    this.states.accessToken = storedToken;
+
+    // 3. 設定 gapi client 並驗證 scope／token 有效性
+    gapi.client.setToken({ access_token: storedToken });
+    try {
+      await gapi.client.load("photoslibrary", "v1");
+      return true;
+    } catch (err) {
+      // 4. 若 load 或呼叫 API 時拋出 403／401，就清除並重新授權
+      console.warn("[API] 授權範圍不足或 token 已失效，需重新授權", err);
+      sessionStorage.removeItem("access_token");
+      this.states.accessToken = null;
+      this.handleAuthFlow();
+      return false;
     }
+  }
 
-    // 嘗試從 sessionStorage 讀取已儲存的 access_token
-    const storedToken = sessionStorage.getItem("access_token");
-    if (storedToken) {
-        console.log("[OAuth] 從 sessionStorage 讀取 token：", storedToken);
-        this.states.accessToken = storedToken;
-        this.showApp();
-        return true;
-    }
-
-    console.warn("[OAuth] 未發現有效 token，需登入");
-    return false;
+  // 5. 沒有任何有效 token，需進入授權流程
+  console.warn("[OAuth] 未發現有效 token，需登入");
+  this.handleAuthFlow();
+  return false;
 },
 
     showApp() {
