@@ -98,15 +98,30 @@ const app = {
 
     checkAuth() {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        if (hashParams.has("access_token")) {
-            this.states.accessToken = hashParams.get("access_token");
-            sessionStorage.setItem("access_token", this.states.accessToken);
-            window.history.replaceState({}, "", window.location.pathname);
-            this.showApp();
-            return true;
-        }
-        return false;
-    },
+    
+    // 如果網址帶有 access_token，從 hash 儲存到 sessionStorage
+    if (hashParams.has("access_token")) {
+        const token = hashParams.get("access_token");
+        console.log("[OAuth] 從網址 hash 中取得 token：", token);
+        this.states.accessToken = token;
+        sessionStorage.setItem("access_token", token);
+        window.history.replaceState({}, "", window.location.pathname); // 清除 hash
+        this.showApp();
+        return true;
+    }
+
+    // 嘗試從 sessionStorage 讀取已儲存的 access_token
+    const storedToken = sessionStorage.getItem("access_token");
+    if (storedToken) {
+        console.log("[OAuth] 從 sessionStorage 讀取 token：", storedToken);
+        this.states.accessToken = storedToken;
+        this.showApp();
+        return true;
+    }
+
+    console.warn("[OAuth] 未發現有效 token，需登入");
+    return false;
+},
 
     showApp() {
         document.getElementById("auth-container").style.display = "none";
@@ -201,18 +216,39 @@ lightbox.addEventListener("mousedown", (event) => {
 },
 
     async fetchAlbums() {
-        try {
-            const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
-                headers: { "Authorization": `Bearer ${this.states.accessToken}` }
-            });
-            if (!response.ok) throw new Error('無法取得相簿');
-            const data = await response.json();
-            this.renderAlbumSelect(data.albums || []);
-            this.loadPhotos();
-        } catch (error) {
-            this.handleAuthError();
+        const token = this.states.accessToken;
+    console.log("[API] 準備使用 token 呼叫 API:", token?.substring(0, 20) + "...");
+
+    try {
+        const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
+            headers: {
+                "Authorization": `Bearer ${token}`
+            }
+        });
+
+        const responseText = await response.text();
+
+        if (!response.ok) {
+            console.error("[API] Google Photos 回應錯誤，狀態碼:", response.status);
+            console.error("[API] 回應內容:", responseText);
+
+            if (response.status === 401 || response.status === 403) {
+                console.warn("[API] 可能是 token 過期或無效");
+            }
+
+            throw new Error("無法取得相簿資料");
         }
-    },
+
+        console.log("[API] 成功取得相簿 JSON：", responseText);
+        const data = JSON.parse(responseText);
+        this.renderAlbumSelect(data.albums || []);
+        this.loadPhotos();
+
+    } catch (error) {
+        console.error("[API] fetchAlbums 發生錯誤:", error);
+        this.handleAuthError();
+    }
+},
 
     renderAlbumSelect(albums) {
         const select = document.getElementById("album-select");
