@@ -141,21 +141,22 @@ async handleAuthFlow() {
 },
 
 async checkAuth() {
-  // a. URL Hash 取 token
   const hashParams = new URLSearchParams(window.location.hash.substring(1));
   if (hashParams.has("access_token")) {
     const token = hashParams.get("access_token");
-    console.log("[OAuth] 從網址 hash 中取得 token：", token);
     this.states.accessToken = token;
     sessionStorage.setItem("access_token", token);
+
+    // 一定要讓 gapi.client 帶上這個 token，才能用 gapi.client.* 系列呼叫 API
+    gapi.client.setToken({ access_token: token });
+
+    // 清掉 URL hash，避免重複處理
     window.history.replaceState({}, "", window.location.pathname);
     return true;
   }
 
-  // b. sessionStorage 取 token
   const storedToken = sessionStorage.getItem("access_token");
   if (storedToken) {
-    console.log("[OAuth] 從 sessionStorage 讀取 token：", storedToken);
     this.states.accessToken = storedToken;
     gapi.client.setToken({ access_token: storedToken });
 
@@ -163,20 +164,15 @@ async checkAuth() {
       await gapi.client.load("photoslibrary", "v1");
       return true;
     } catch (err) {
-      console.warn("[API] 授權範圍不足或 token 已失效，重新授權", err);
       sessionStorage.removeItem("access_token");
-      this.states.accessToken = null;
-      this.handleAuthFlow();
       return false;
     }
   }
 
-  // c. 無 token → 進授權
-  console.warn("[OAuth] 未發現有效 token，需登入");
+  // 沒 token → 開始 OAuth 流程
   this.handleAuthFlow();
   return false;
 },
-
     showApp() {
         document.getElementById("auth-container").style.display = "none";
         document.getElementById("app-container").style.display = "block";
