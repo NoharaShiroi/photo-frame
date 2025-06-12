@@ -30,24 +30,43 @@ const app = {
         }
     },
 
-async init() {
-  this.states.accessToken = sessionStorage.getItem("access_token");
-  this.setupEventListeners();
-  const ok = await this.checkAuth();
-  if (!ok) {
-    document.getElementById("auth-container").style.display = "flex";
-  } else {
-    this.loadSchedule();
-    this.checkSchedule();
-    setInterval(() => this.checkSchedule(), 60000);
-  }
-},
-    loadSchedule() {
-        const schedule = JSON.parse(localStorage.getItem("schedule"));
-        if (schedule) {
-            this.states.schedule = schedule;
-        }
-    },
+ // 1. 改為 async init，並先載入 gapi client
+   async init() {
+     // 等 gapi 程式庫載完並初始化 client
+     await this.loadGapiClient();
+
+     this.states.accessToken = sessionStorage.getItem("access_token");
+     this.setupEventListeners();
+     const ok = await this.checkAuth();     // 等 checkAuth 完成
+     if (!ok) {
+       document.getElementById("auth-container").style.display = "flex";
+     } else {
+       this.loadSchedule();
+       this.checkSchedule();
+       setInterval(() => this.checkSchedule(), 60000);
+     }
+   },
+
+   // 2. 新增 method：載入並初始化 gapi client
+   async loadGapiClient() {
+     return new Promise((resolve, reject) => {
+       // 載入 client library
+       gapi.load('client', async () => {
+         try {
+           // 初始化 client，告訴它要用哪個 API
+           await gapi.client.init({
+             discoveryDocs: [
+              'https://photoslibrary.googleapis.com/$discovery/rest?version=v1'
+             ]
+           });
+           resolve();
+         } catch (err) {
+           console.error('[gapi] init 錯誤', err);
+           reject(err);
+         }
+       });
+     });
+   },
 
     saveSchedule() {
         localStorage.setItem("schedule", JSON.stringify(this.states.schedule));
