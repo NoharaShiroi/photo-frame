@@ -31,22 +31,27 @@ const app = {
     },
 
  // 1. 改為 async init，並先載入 gapi client
-   async init() {
-     // 等 gapi 程式庫載完並初始化 client
-     await this.loadGapiClient();
+async init() {
+  await this.loadGapiClient();
 
-     this.states.accessToken = sessionStorage.getItem("access_token");
-     this.setupEventListeners();
-     const ok = await this.checkAuth();     // 等 checkAuth 完成
-     if (!ok) {
-       document.getElementById("auth-container").style.display = "flex";
-     } else {
-       this.showApp();
-       this.loadSchedule();
-       this.checkSchedule();
-       setInterval(() => this.checkSchedule(), 60000);
-     }
-   },
+  // 優先從 sessionStorage 或 hash 取 token
+  this.states.accessToken = sessionStorage.getItem("access_token");
+  this.setupEventListeners();
+  const ok = await this.checkAuth();
+  if (!ok) {
+    // 尚未授權：顯示登入按鈕
+    document.getElementById("auth-container").style.display = "flex";
+    document.getElementById("app-container").style.display = "none";
+  } else {
+    // 已授權：隱藏授權區，顯示主畫面
+    this.showApp();  // <— 一定要呼叫它，才會 hide auth-container, show app-container :contentReference[oaicite:0]{index=0}
+
+    // 其餘初始化如排程檢查也可放到 showApp 裡
+    this.loadSchedule();
+    this.checkSchedule();
+    setInterval(() => this.checkSchedule(), 60000);
+  }
+},
 
    // 2. 新增 method：載入並初始化 gapi client
    async loadGapiClient() {
@@ -175,6 +180,8 @@ async checkAuth() {
     showApp() {
         document.getElementById("auth-container").style.display = "none";
         document.getElementById("app-container").style.display = "block";
+        this.loadSchedule();
+        this.checkSchedule();
         this.fetchAlbums();
     },
 
