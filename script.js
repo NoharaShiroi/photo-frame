@@ -131,8 +131,6 @@ const app = {
     handleAuthFlow() {
         const authEndpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
         const params = {
-            include_granted_scopes: 'false', // ❗很重要
-             prompt: 'consent',               // ❗強制跳授權畫面
             client_id: this.CLIENT_ID,
             redirect_uri: this.REDIRECT_URI,
             response_type: 'token',
@@ -145,27 +143,16 @@ const app = {
     },
 
     checkAuth() {
-    const hashParams = new URLSearchParams(window.location.hash.substring(1));
-    if (hashParams.has("access_token")) {
-        const token = hashParams.get("access_token"); // ✅ 先取得 token
-        sessionStorage.setItem("access_token", token);
-        this.states.accessToken = token;
-        window.history.replaceState({}, "", window.location.pathname);
-        this.showApp();
-        return true;
-    }
-
-    // ✅ 從 sessionStorage 還原 token
-    const storedToken = sessionStorage.getItem("access_token");
-    if (storedToken) {
-        this.states.accessToken = storedToken;
-        this.showApp();
-        return true;
-    }
-
-    return false;
-},
-
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        if (hashParams.has("access_token")) {
+            this.states.accessToken = hashParams.get("access_token");
+            sessionStorage.setItem("access_token", this.states.accessToken);
+            window.history.replaceState({}, "", window.location.pathname);
+            this.showApp();
+            return true;
+        }
+        return false;
+    },
 
     showApp() {
         document.getElementById("auth-container").style.display = "none";
