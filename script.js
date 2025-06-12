@@ -131,7 +131,7 @@ async handleAuthFlow() {
     redirect_uri: this.REDIRECT_URI,
     response_type: "token",
     scope: this.SCOPES,
-    include_granted_scopes: "false", // 不延續舊授權
+    include_granted_scopes: "true", // 不延續舊授權
     prompt: "consent",               // 每次都跳出勾選視窗
     state: "pass-through-value"
   });
