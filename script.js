@@ -89,7 +89,7 @@ const app = {
             redirect_uri: this.REDIRECT_URI,
             response_type: 'token',
             scope: this.SCOPES,
-            include_granted_scopes: 'true',
+            include_granted_scopes: 'false',
             state: 'pass-through-value',
             prompt: 'consent'
         };
