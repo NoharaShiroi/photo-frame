@@ -30,17 +30,18 @@ const app = {
         }
     },
 
-    init() {
-        this.states.accessToken = sessionStorage.getItem("access_token");
-        this.setupEventListeners();
-        if (!this.checkAuth()) {
-            document.getElementById("auth-container").style.display = "flex";
-        } else {
-            this.loadSchedule();
-            this.checkSchedule();
-            setInterval(() => this.checkSchedule(), 60000);
-        }
-    },
+async init() {
+  this.states.accessToken = sessionStorage.getItem("access_token");
+  this.setupEventListeners();
+  const ok = await this.checkAuth();
+  if (!ok) {
+    document.getElementById("auth-container").style.display = "flex";
+  } else {
+    this.loadSchedule();
+    this.checkSchedule();
+    setInterval(() => this.checkSchedule(), 60000);
+  }
+},
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
         if (schedule) {
@@ -250,21 +251,21 @@ lightbox.addEventListener("mousedown", (event) => {
         const responseText = await response.text();
 
         if (!response.ok) {
-+            console.error("[API] Google Photos 回應錯誤，狀態碼:", response.status);
-+            console.error("[API] 回應內容:", responseText);
-+
-+            if (response.status === 401) {
-+                // Token 真正過期
-+                return this.handleAuthFlow();
-+            }
-+            if (response.status === 403) {
-+                // 權限不足，強制重新授權
-+                alert("授權範圍不足，請重新登入並確認 Photos Library 權限");
-+                sessionStorage.removeItem("access_token");
-+                return this.handleAuthFlow();
-+            }
-+            throw new Error("無法取得相簿資料");
-+        }
+            console.error("[API] Google Photos 回應錯誤，狀態碼:", response.status);
+            console.error("[API] 回應內容:", responseText);
+
+            if (response.status === 401) {
+                // Token 真正過期
+                return this.handleAuthFlow();
+            }
+            if (response.status === 403) {
+                // 權限不足，強制重新授權
+                alert("授權範圍不足，請重新登入並確認 Photos Library 權限");
+                sessionStorage.removeItem("access_token");
+                return this.handleAuthFlow();
+            }
+            throw new Error("無法取得相簿資料");
+        }
 
         console.log("[API] 成功取得相簿 JSON：", responseText);
         const data = JSON.parse(responseText);
@@ -540,3 +541,4 @@ handleAuthError() {
 };
 
 document.addEventListener("DOMContentLoaded", () => app.init());
+
