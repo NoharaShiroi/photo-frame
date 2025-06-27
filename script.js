@@ -41,13 +41,7 @@ async init() {
   if (!ok) {
   document.getElementById("auth-container").style.display = "flex";
 } else {
-  const grantedScopes = this.authInstance.currentUser.get().getGrantedScopes();
-  if (!grantedScopes.includes('https://www.googleapis.com/auth/photoslibrary.readonly')) {
-    alert('目前授權範圍不足，請重新登入以取得完整權限');
-    sessionStorage.removeItem("access_token");
-    return this.handleAuthFlow();
-  }
-
+  
   this.loadSchedule();
   this.checkSchedule();
   setInterval(() => this.checkSchedule(), 60000);
@@ -66,10 +60,6 @@ async init() {
               'https://photoslibrary.googleapis.com/$discovery/rest?version=v1'
              ]
            });
-           await gapi.auth2.init({
-  client_id: this.CLIENT_ID
-});
-           this.authInstance = gapi.auth2.getAuthInstance();
            resolve();
          } catch (err) {
            console.error('[gapi] init 錯誤', err);
