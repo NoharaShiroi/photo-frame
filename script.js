@@ -1,6 +1,7 @@
 // 完整整合後的 script.js
 const SCOPES = [
   'https://www.googleapis.com/auth/photoslibrary.readonly',
+  'https://www.googleapis.com/auth/photoslibrary.readonly.appcreateddata',
   'https://www.googleapis.com/auth/photoslibrary.sharing'
 ].join(' ');
 
