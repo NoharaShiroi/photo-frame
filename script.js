@@ -144,6 +144,7 @@ async checkAuth() {
   const hashParams = new URLSearchParams(window.location.hash.substring(1));
   if (hashParams.has("access_token")) {
     const token = hashParams.get("access_token");
+    console.log("獲得新 Token:", token);  // 日誌獲得的新Token
     this.states.accessToken = token;
     sessionStorage.setItem("access_token", token);
 
@@ -156,6 +157,7 @@ async checkAuth() {
   }
 
   const storedToken = sessionStorage.getItem("access_token");
+  console.log("使用儲存的 Token:", storedToken);
   if (storedToken) {
     this.states.accessToken = storedToken;
     gapi.client.setToken({ access_token: storedToken });
