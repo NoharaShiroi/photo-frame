@@ -36,7 +36,7 @@ async init() {
 
   // 優先從 sessionStorage 或 hash 取 token
   this.states.accessToken = sessionStorage.getItem("access_token");
-  this.setupEventListeners();
+  this.;
   const ok = await this.checkAuth();
   if (!ok) {
   document.getElementById("auth-container").style.display = "flex";
@@ -219,6 +219,7 @@ lightbox.addEventListener("mousedown", (event) => {
             lastTouchTime = currentTime;
         }
     });
+      
 
     document.getElementById("prev-photo").addEventListener("click", () => this.navigate(-1));
     document.getElementById("next-photo").addEventListener("click", () => this.navigate(1));
@@ -266,6 +267,30 @@ lightbox.addEventListener("mousedown", (event) => {
         document.getElementById("schedule-modal").style.display = "none";
         this.checkSchedule();
     });
+
+     document.getElementById("check-token-btn").addEventListener("click", async () => {
+  const token = sessionStorage.getItem("access_token");
+  if (!token) {
+    alert("⚠️ 沒有找到 access_token，請先登入");
+    return;
+  }
+
+  try {
+    const res = await fetch(`https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${token}`);
+    const data = await res.json();
+    if (data.error_description || data.error) {
+      alert("❌ Token 無效或已過期，請重新登入");
+      console.log("[Token Info] 錯誤：", data);
+    } else {
+      alert(`✅ 授權範圍：\n\n${data.scope}`);
+      console.log("[Token Info] 完整資訊：", data);
+    }
+  } catch (err) {
+    console.error("[Token Info] 無法檢查 token", err);
+    alert("🚫 檢查失敗，請查看 Console");
+  }
+});
+ 
 },
 
     async fetchAlbums() {
