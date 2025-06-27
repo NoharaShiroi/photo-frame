@@ -41,7 +41,7 @@ async init() {
   if (!ok) {
   document.getElementById("auth-container").style.display = "flex";
 } else {
-  const grantedScopes = gapi.auth2.getAuthInstance().currentUser.get().getGrantedScopes();
+  const grantedScopes = this.authInstance.currentUser.get().getGrantedScopes();
   if (!grantedScopes.includes('https://www.googleapis.com/auth/photoslibrary.readonly')) {
     alert('目前授權範圍不足，請重新登入以取得完整權限');
     sessionStorage.removeItem("access_token");
@@ -69,6 +69,7 @@ async init() {
            await gapi.auth2.init({
   client_id: this.CLIENT_ID
 });
+           this.authInstance = gapi.auth2.getAuthInstance();
            resolve();
          } catch (err) {
            console.error('[gapi] init 錯誤', err);
@@ -135,7 +136,7 @@ async handleAuthFlow() {
     redirect_uri: this.REDIRECT_URI,
     response_type: "token",
     scope: this.SCOPES,
-    include_granted_scopes: "true", // 不延續舊授權
+    include_granted_scopes: "false", // 不延續舊授權
     prompt: "consent",               // 每次都跳出勾選視窗
     state: "pass-through-value"
   });
@@ -192,7 +193,11 @@ async checkAuth() {
             e.preventDefault();
             this.handleAuthFlow();
         });
-
+        document.getElementById("clear-token-btn").addEventListener("click", () => {
+    sessionStorage.clear();
+    alert("已清除登入資訊，請重新登入");
+    location.reload();
+});
         document.getElementById("album-select").addEventListener("change", (e) => {
             this.states.albumId = e.target.value;
             this.resetPhotoData();
