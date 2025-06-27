@@ -1,3 +1,10 @@
+const SCOPES = [
+  'https://www.googleapis.com/auth/photoslibrary.readonly',
+  'https://www.googleapis.com/auth/photoslibrary.readonly.appcreateddata',
+  'https://www.googleapis.com/auth/photoslibrary.sharing',
+].join(' ');
+
+
 const app = {
     CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
     TOKEN_CLIENT: null,
