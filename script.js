@@ -41,10 +41,10 @@ async init() {
   if (!ok) {
   document.getElementById("auth-container").style.display = "flex";
 } else {
-  
   this.loadSchedule();
   this.checkSchedule();
   setInterval(() => this.checkSchedule(), 60000);
+  this.showApp();
   }
 },
 
