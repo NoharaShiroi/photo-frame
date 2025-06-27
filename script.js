@@ -36,7 +36,7 @@ async init() {
 
   // 優先從 sessionStorage 或 hash 取 token
   this.states.accessToken = sessionStorage.getItem("access_token");
-  this..setupEventListeners();
+  this.setupEventListeners();
   const ok = await this.checkAuth();
  
   if (!ok) {
