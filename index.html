@@ -1,117 +1,117 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="referrer" content="no-referrer-when-downgrade">
-    <meta http-equiv="Content-Security-Policy"
-  content="
-    default-src   'self' https://*.googleapis.com https://*.google.com;
-    script-src    'self' https://*.googleapis.com https://*.google.com 'unsafe-inline';
-    style-src     'self' 'unsafe-inline';
-    img-src       'self' data: https://*.googleusercontent.com https://content-photoslibrary.googleapis.com https://*.gstatic.com;
-    connect-src   'self' https://*.googleapis.com https://photoslibrary.googleapis.com;
-    frame-src     https://accounts.google.com https://content-photoslibrary.googleapis.com;
-  ">
-    <title>Google 相簿數位相框</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    <script src="script.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="referrer" content="no-referrer-when-downgrade" />
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self' https://*.googleapis.com https://*.google.com;
+    script-src 'self' https://*.googleapis.com https://*.google.com 'unsafe-inline';
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data: https://*.googleusercontent.com https://content-photoslibrary.googleapis.com https://*.gstatic.com;
+    connect-src 'self' https://*.googleapis.com https://photoslibrary.googleapis.com;
+    frame-src https://accounts.google.com https://content-photoslibrary.googleapis.com;">
+  <title>Google 相簿數位相框</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
-    <!-- 時鐘 -->
-<div id="clock" style="display: none;"></div>
 <body>
-    <!-- 授權登入 -->
-    <div id="auth-container">
-        <h1>Google 相簿 數位相框</h1>
-        <button id="authorize-btn">使用 Google 帳戶登入</button>
-         <button id="clear-token-btn" class="styled-button" style="margin-top: 10px;">清除登入資訊</button>
-        <button id="check-token-btn" class="styled-button" style="margin-top: 10px;">檢查目前授權範圍</button>
+  <!-- 時鐘 -->
+  <div id="clock" style="display: none;"></div>
+
+  <!-- 授權登入 -->
+  <div id="auth-container">
+    <h1>Google 相簿 數位相框</h1>
+    <button id="authorize-btn">使用 Google 帳戶登入</button>
+    <button id="clear-token-btn" class="styled-button" style="margin-top: 10px;">清除登入資訊</button>
+    <button id="check-token-btn" class="styled-button" style="margin-top: 10px;">檢查目前授權範圍</button>
+  </div>
+
+  <!-- 主應用界面 -->
+  <div id="app-container">
+    <!-- 相簿選擇和播放控制區域 -->
+    <div id="album-selection-container">
+      <div>
+        <label for="album-select">相簿:</label>
+        <select id="album-select">
+          <option value="all">所有相片</option>
+        </select>
+      </div>
+      <div>
+        <label for="slideshow-speed">速度(S):</label>
+        <input type="number" id="slideshow-speed" min="1" value="5" />
+      </div>
+      <div>
+        <label for="play-mode">模式:</label>
+        <select id="play-mode">
+          <option value="sequential">順序</option>
+          <option value="random">隨機</option>
+        </select>
+      </div>
+      <div>
+        <button id="schedule-settings-btn" class="styled-button">設定暫停時段</button>
+      </div>
     </div>
 
-    <!-- 主應用界面 -->
-    <div id="app-container">
-        <!-- 修改相簿选择和播放控制区域 -->
-        <div id="album-selection-container">
-            <div>
-                <label for="album-select">相簿:</label>
-                <select id="album-select">
-                    <option value="all">所有相片</option>
-                </select>
-            </div>
-            <div>
-                <label for="slideshow-speed">速度(S):</label>
-                <input type="number" id="slideshow-speed" min="1" value="5">
-            </div>
-            <div>
-                <label for="play-mode">模式:</label>
-                <select id="play-mode">
-                    <option value="sequential">順序</option>
-                    <option value="random">隨機</option>
-                </select>
-            </div>
-            <div>
-                <button id="schedule-settings-btn" class="styled-button">設定暫停時段</button>
-            </div>
-        </div>
-
-        <!-- 滾動容器 -->
-        <div id="scroll-container">
-            <div id="photo-container"></div>
-            <div id="loading-indicator">
-                <div class="loader"></div>
-                <p>加載更多照片中...</p>
-            </div>
-        </div>
+    <!-- 滾動容器 -->
+    <div id="scroll-container">
+      <div id="photo-container"></div>
+      <div id="loading-indicator">
+        <div class="loader"></div>
+        <p>加載更多照片中...</p>
+      </div>
     </div>
+  </div>
 
-    <!-- Lightbox -->
-    <div id="lightbox">
-        <img id="lightbox-image" alt="Lightbox Image">
-        <div class="lightbox-buttons">
-            <button id="prev-photo" class="nav-button">&#10094;</button>
-            <button id="next-photo" class="nav-button">&#10095;</button>
-            <button id="start-slideshow-btn" class="nav-button">幻燈片</button>
-            <button id="fullscreen-toggle-btn" class="nav-button">全螢幕</button>
-        </div>
+  <!-- Lightbox -->
+  <div id="lightbox">
+    <img id="lightbox-image" alt="Lightbox Image" />
+    <div class="lightbox-buttons">
+      <button id="prev-photo" class="nav-button">&#10094;</button>
+      <button id="next-photo" class="nav-button">&#10095;</button>
+      <button id="start-slideshow-btn" class="nav-button">幻燈片</button>
+      <button id="fullscreen-toggle-btn" class="nav-button">全螢幕</button>
     </div>
+  </div>
 
-    <!-- 閒置遮罩 -->
-    <div id="screenOverlay" style="display: none;"></div>
+  <!-- 閒置遮罩 -->
+  <div id="screenOverlay" style="display: none;"></div>
 
-    <!-- 時間排程設定彈窗 -->
-    <div id="schedule-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-modal">&times;</span>
-            <h2>設定暫停時段</h2>
-            <div>
-                <label for="sleep-start">就寢時間:</label>
-                <input type="time" id="sleep-start" value="22:00">
-            </div>
-            <div>
-                <label for="sleep-end">醒寤時間:</label>
-                <input type="time" id="sleep-end" value="07:00">
-            </div>
-            <div>
-                <label for="class-start">外出時間:</label>
-                <input type="time" id="class-start" value="08:00">
-            </div>
-            <div>
-                <label for="class-end">返家時間:</label>
-                <input type="time" id="class-end" value="17:00">
-            </div>
-            <div>
-                <label><input type="checkbox" id="is-enabled"> 啟用暫停時段</label>
-                <br>
-                <label><input type="checkbox" id="use-holiday"> 假日自動停用</label>
-            </div>
-            <button id="save-schedule" class="styled-button">儲存設定</button>
-            <button id="cancel-schedule" class="styled-button">關閉</button>
-        </div>
+  <!-- 時間排程設定彈窗 -->
+  <div id="schedule-modal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal">&times;</span>
+      <h2>設定暫停時段</h2>
+      <div>
+        <label for="sleep-start">就寢時間:</label>
+        <input type="time" id="sleep-start" value="22:00" />
+      </div>
+      <div>
+        <label for="sleep-end">醒懠時間:</label>
+        <input type="time" id="sleep-end" value="07:00" />
+      </div>
+      <div>
+        <label for="class-start">外出時間:</label>
+        <input type="time" id="class-start" value="08:00" />
+      </div>
+      <div>
+        <label for="class-end">返家時間:</label>
+        <input type="time" id="class-end" value="17:00" />
+      </div>
+      <div>
+        <label><input type="checkbox" id="is-enabled" /> 啟用暫停時段</label>
+        <br />
+        <label><input type="checkbox" id="use-holiday" /> 假日自動停用</label>
+      </div>
+      <button id="save-schedule" class="styled-button">儲存設定</button>
+      <button id="cancel-schedule" class="styled-button">關閉</button>
     </div>
-    
+  </div>
+
+  <!-- JS 應改為 defer 否則改置到 body 最後 -->
+  <script src="script.js" defer></script>
 </body>
 </html>
