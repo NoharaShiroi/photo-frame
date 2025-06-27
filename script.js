@@ -5,8 +5,7 @@ const SCOPES = [
 
 const app = {
     CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
-    REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
-    SCOPES,
+    TOKEN_CLIENT: null,
     states: {
         accessToken: null,
         albumId: "all",
@@ -30,45 +29,70 @@ const app = {
         }
     },
 
- // 1. 改為 async init，並先載入 gapi client
-async init() {
-  await this.loadGapiClient();
+    async init() {
+        await this.loadGapiClient();
+        this.setupEventListeners();
 
-  // 優先從 sessionStorage 或 hash 取 token
-  this.states.accessToken = sessionStorage.getItem("access_token");
-  this.setupEventListeners();
-  const ok = await this.checkAuth();
- 
-  if (!ok) {
-  document.getElementById("auth-container").style.display = "flex";
-} else {
-  this.loadSchedule();
-  this.checkSchedule();
-  setInterval(() => this.checkSchedule(), 60000);
-  this.showApp();
-  }
-},
+        const token = sessionStorage.getItem("access_token");
+        if (token) {
+            this.states.accessToken = token;
+            gapi.client.setToken({ access_token: token });
+            this.loadSchedule();
+            this.checkSchedule();
+            setInterval(() => this.checkSchedule(), 60000);
+            this.showApp();
+        } else {
+            document.getElementById("auth-container").style.display = "flex";
+        }
+    },
 
-   // 2. 新增 method：載入並初始化 gapi client
-   async loadGapiClient() {
-     return new Promise((resolve, reject) => {
-       // 載入 client library
-       gapi.load('client', async () => {
-         try {
-           // 初始化 client，告訴它要用哪個 API
-           await gapi.client.init({
-             discoveryDocs: [
-              'https://photoslibrary.googleapis.com/$discovery/rest?version=v1'
-             ]
-           });
-           resolve();
-         } catch (err) {
-           console.error('[gapi] init 錯誤', err);
-           reject(err);
-         }
-       });
-     });
-   },
+    async loadGapiClient() {
+        return new Promise((resolve, reject) => {
+            gapi.load('client', async () => {
+                try {
+                    await gapi.client.init({
+                        discoveryDocs: ['https://photoslibrary.googleapis.com/$discovery/rest?version=v1']
+                    });
+                    resolve();
+                } catch (err) {
+                    console.error('[gapi] init error', err);
+                    reject(err);
+                }
+            });
+        });
+    },
+
+    requestAccessToken() {
+        this.TOKEN_CLIENT = google.accounts.oauth2.initTokenClient({
+            client_id: this.CLIENT_ID,
+            scope: SCOPES,
+            prompt: 'consent',
+            callback: (response) => {
+                if (response && response.access_token) {
+                    console.log('[GIS] Received access token');
+                    this.states.accessToken = response.access_token;
+                    sessionStorage.setItem("access_token", response.access_token);
+                    gapi.client.setToken({ access_token: response.access_token });
+                    this.loadSchedule();
+                    this.checkSchedule();
+                    setInterval(() => this.checkSchedule(), 60000);
+                    this.showApp();
+                } else {
+                    alert('未取得有效授權，請再試一次');
+                }
+            }
+        });
+
+        this.TOKEN_CLIENT.requestAccessToken();
+    },
+
+    handleAuthError() {
+        alert("⚠️ Token 無效或已過期，請重新登入");
+        sessionStorage.removeItem("access_token");
+        document.getElementById("auth-container").style.display = "flex";
+        document.getElementById("app-container").style.display = "none";
+    },
+
 
 loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
@@ -182,13 +206,27 @@ async checkAuth() {
     setupEventListeners() {
         document.getElementById("authorize-btn").addEventListener("click", (e) => {
             e.preventDefault();
-            this.handleAuthFlow();
+            this.requestAccessToken();
         });
+
         document.getElementById("clear-token-btn").addEventListener("click", () => {
-    sessionStorage.clear();
-    alert("已清除登入資訊，請重新登入");
-    location.reload();
-});
+            sessionStorage.clear();
+            alert("已清除登入資訊，請重新登入");
+            location.reload();
+        });
+
+        document.getElementById("check-token-btn").addEventListener("click", async () => {
+            const token = sessionStorage.getItem("access_token");
+            if (!token) return alert("⚠️ 沒有 token，請先登入");
+            const res = await fetch(`https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${token}`);
+            const data = await res.json();
+            if (data.scope) {
+                alert(`✅ scope: \n${data.scope}`);
+                console.log("[Token Info]", data);
+            } else {
+                alert("❌ token 無效或已過期");
+            }
+        });
         document.getElementById("album-select").addEventListener("change", (e) => {
             this.states.albumId = e.target.value;
             this.resetPhotoData();
