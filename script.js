@@ -1,6 +1,8 @@
 const SCOPES = [
   'https://www.googleapis.com/auth/photoslibrary.readonly',
+  'https://www.googleapis.com/auth/photoslibrary.readonly.appcreateddata',
   'https://www.googleapis.com/auth/photoslibrary.sharing'
+  
 ].join(' ');
 
 const app = {
