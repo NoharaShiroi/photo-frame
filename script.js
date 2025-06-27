@@ -39,17 +39,18 @@ async init() {
   this.setupEventListeners();
   const ok = await this.checkAuth();
   if (!ok) {
-    // 尚未授權：顯示登入按鈕
-    document.getElementById("auth-container").style.display = "flex";
-    document.getElementById("app-container").style.display = "none";
-  } else {
-    // 已授權：隱藏授權區，顯示主畫面
-    this.showApp();  // <— 一定要呼叫它，才會 hide auth-container, show app-container :contentReference[oaicite:0]{index=0}
+  document.getElementById("auth-container").style.display = "flex";
+} else {
+  const grantedScopes = gapi.auth2.getAuthInstance().currentUser.get().getGrantedScopes();
+  if (!grantedScopes.includes('https://www.googleapis.com/auth/photoslibrary.readonly')) {
+    alert('目前授權範圍不足，請重新登入以取得完整權限');
+    sessionStorage.removeItem("access_token");
+    return this.handleAuthFlow();
+  }
 
-    // 其餘初始化如排程檢查也可放到 showApp 裡
-    this.loadSchedule();
-    this.checkSchedule();
-    setInterval(() => this.checkSchedule(), 60000);
+  this.loadSchedule();
+  this.checkSchedule();
+  setInterval(() => this.checkSchedule(), 60000);
   }
 },
 
@@ -65,6 +66,9 @@ async init() {
               'https://photoslibrary.googleapis.com/$discovery/rest?version=v1'
              ]
            });
+           await gapi.auth2.init({
+  client_id: this.CLIENT_ID
+});
            resolve();
          } catch (err) {
            console.error('[gapi] init 錯誤', err);
