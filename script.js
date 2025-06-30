@@ -309,7 +309,7 @@ lightbox.addEventListener("mousedown", (event) => {
                 // 權限不足，強制重新授權
                 alert("授權範圍不足，請重新登入並確認 Photos Library 權限");
                 sessionStorage.removeItem("access_token");
-                return this.handleAuthFlow();
+                return this.requestAccessToken();
             }
             throw new Error("無法取得相簿資料");
         }
