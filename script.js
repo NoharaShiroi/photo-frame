@@ -111,6 +111,8 @@ loadSchedule() {
     },
 
     checkSchedule() {
+       console.log("🕒 檢查排程中，目前時間 =", new Date().toLocaleTimeString());
+      this.states.schedule.isEnabled = false; // ⚠️暫時停用排程防遮罩 
         const now = new Date();
         const currentTime = now.getHours() * 60 + now.getMinutes();
         const sleepStart = this.getTimeInMinutes(this.states.schedule.sleepStart);
@@ -370,7 +372,8 @@ lightbox.addEventListener("mousedown", (event) => {
             const mediaItems = Array.isArray(data.mediaItems) ? data.mediaItems : [];
             if (!mediaItems.length) {
              console.warn("⚠️ Google Photos API 回傳空的 mediaItems：", data);
-             }
+            this.states.hasMorePhotos = false; // 🔴 強制終止滾動載入
+            }
 
             const newPhotos = mediaItems.filter(item => item && !existingIds.has(item.id));
             this.states.photos = [...this.states.photos, ...newPhotos];
