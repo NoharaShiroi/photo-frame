@@ -88,13 +88,16 @@ const app = {
         this.TOKEN_CLIENT.requestAccessToken();
     },
 
-    handleAuthError() {
-        alert("⚠️ Token 無效或已過期，請重新登入");
-        sessionStorage.removeItem("access_token");
-        document.getElementById("auth-container").style.display = "flex";
-        document.getElementById("app-container").style.display = "none";
-    },
-
+  handleAuthError() {
+  const retry = confirm("授權已過期，是否重新登入？");
+  if (retry) {
+    sessionStorage.removeItem("access_token");
+    this.requestAccessToken(); // ✅ 改為 GIS 登入方式
+  } else {
+    document.getElementById("auth-container").style.display = "flex";
+    document.getElementById("app-container").style.display = "none";
+  }
+},
 
 loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
@@ -141,62 +144,6 @@ loadSchedule() {
         return hours * 60 + minutes;
     },
 
-async handleAuthFlow() {
-  // 1. 清除舊 token
-  sessionStorage.removeItem("access_token");
-  this.states.accessToken = null;
-
-  // 2. 組成 OAuth2 授權 URL
-  const authEndpoint = "https://accounts.google.com/o/oauth2/v2/auth";
-  const params = new URLSearchParams({
-    client_id: this.CLIENT_ID,
-    redirect_uri: this.REDIRECT_URI,
-    response_type: "token",
-    scope: this.SCOPES,
-    include_granted_scopes: "false", // 不延續舊授權
-    prompt: "consent",               // 每次都跳出勾選視窗
-    state: "pass-through-value"
-  });
-
-  console.log("[OAuth] 導向 Google 取得新 token，scope =", this.SCOPES);
-  window.location.href = `${authEndpoint}?${params.toString()}`;
-},
-
-async checkAuth() {
-  const hashParams = new URLSearchParams(window.location.hash.substring(1));
-  if (hashParams.has("access_token")) {
-    const token = hashParams.get("access_token");
-    console.log("獲得新 Token:", token);  // 日誌獲得的新Token
-    this.states.accessToken = token;
-    sessionStorage.setItem("access_token", token);
-
-    // 一定要讓 gapi.client 帶上這個 token，才能用 gapi.client.* 系列呼叫 API
-    gapi.client.setToken({ access_token: token });
-
-    // 清掉 URL hash，避免重複處理
-    window.history.replaceState({}, "", window.location.pathname);
-    return true;
-  }
-
-  const storedToken = sessionStorage.getItem("access_token");
-  console.log("使用儲存的 Token:", storedToken);
-  if (storedToken) {
-    this.states.accessToken = storedToken;
-    gapi.client.setToken({ access_token: storedToken });
-
-    try {
-      await gapi.client.load("photoslibrary", "v1");
-      return true;
-    } catch (err) {
-      sessionStorage.removeItem("access_token");
-      return false;
-    }
-  }
-
-  // 沒 token → 開始 OAuth 流程
-  this.handleAuthFlow();
-  return false;
-},
     showApp() {
         document.getElementById("auth-container").style.display = "none";
         document.getElementById("app-container").style.display = "block";
@@ -420,8 +367,12 @@ lightbox.addEventListener("mousedown", (event) => {
             if (requestId !== this.states.currentRequestId) return;
 
             const existingIds = new Set(this.states.photos.map(p => p.id));
-            const newPhotos = data.mediaItems.filter(item => item && !existingIds.has(item.id));
+            const mediaItems = Array.isArray(data.mediaItems) ? data.mediaItems : [];
+            if (!mediaItems.length) {
+             console.warn("⚠️ Google Photos API 回傳空的 mediaItems：", data);
+             }
 
+            const newPhotos = mediaItems.filter(item => item && !existingIds.has(item.id));
             this.states.photos = [...this.states.photos, ...newPhotos];
             this.states.nextPageToken = data.nextPageToken || null;
             this.states.hasMorePhotos = !!this.states.nextPageToken;
@@ -617,17 +568,6 @@ lightbox.addEventListener("mousedown", (event) => {
         this.setupScrollObserver();
     },
 
-handleAuthError() {
-  const retry = confirm("授權已過期，是否重新登入？");
-  if (retry) {
-    sessionStorage.removeItem("access_token");
-    this.handleAuthFlow();
-  } else {
-    document.getElementById("auth-container").style.display = "flex";
-    document.getElementById("app-container").style.display = "none";
-  }
-},
-
     showMessage(message) {
         const container = document.getElementById("photo-container");
         const messageElement = document.createElement("p");
@@ -636,7 +576,5 @@ handleAuthError() {
         container.appendChild(messageElement);
     }
 };
-
-document.addEventListener
 
 document.addEventListener("DOMContentLoaded", () => app.init());
