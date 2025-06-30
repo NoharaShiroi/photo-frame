@@ -315,8 +315,7 @@ lightbox.addEventListener("mousedown", (event) => {
         }
 
         console.log("[API] 成功取得相簿 JSON：", responseText);
-        const data = JSON.parse(responseText);
-        const data = await response.json();
+                const data = await response.json();
         console.log("[API] 相簿資料 JSON 解析：", data);
         this.renderAlbumSelect(data.albums || []);
         this.loadPhotos();
