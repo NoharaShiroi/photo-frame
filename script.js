@@ -396,16 +396,24 @@ lightbox.addEventListener("mousedown", (event) => {
     renderPhotos() {
         const container = document.getElementById("photo-container");
         container.style.display = "grid";
-        container.innerHTML = this.states.photos.map(photo => `
-            <img class="photo" 
-                 src="${photo.baseUrl}=w150-h150"
-                 data-src="${photo.baseUrl}=w800-h600"
-                 alt="相片" 
-                 data-id="${photo.id}"
-                 onclick="app.openLightbox('${photo.id}')">
-        `).join("");
-
-        if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
+  container.innerHTML = this.states.photos.map(photo => {
+    if (!photo.baseUrl) {
+        console.warn("⚠️ 忽略無效相片（缺少 baseUrl）：", photo);
+        return ''; // 跳過這張圖
+    }
+    return `
+        <img class="photo" 
+             src="${this.getImageUrl(photo, 150, 150)}"
+             data-src="${this.getImageUrl(photo, 800, 600)}"
+             alt="相片" 
+             data-id="${photo.id}"
+             onclick="app.openLightbox('${photo.id}')">
+    `;
+}).join("");
+       console.log("📸 載入照片數量：", this.states.photos.length);
+       console.log("📸 第 1 張：", this.states.photos[0]);
+        
+      if (!this.states.hasMorePhotos && this.states.photos.length > 0) {
             container.insertAdjacentHTML("beforeend", `<p class="empty-state">已無更多相片</p>`);
         }
 
@@ -467,12 +475,17 @@ lightbox.addEventListener("mousedown", (event) => {
     },
 
     getImageUrl(photo, width = 1920, height = 1080) {
-        if (!photo || !photo.baseUrl) {
-            console.error("无效的照片对象:", photo);
-            return "";
-        }
-        return `${photo.baseUrl}=w${width}-h${height}`;
-    },
+    if (!photo || !photo.baseUrl) {
+        console.warn("⚠️ 無效的照片物件：", photo);
+        return "";
+    }
+
+    const url = photo.baseUrl;
+    const hasQuery = url.includes("?");
+    const delimiter = hasQuery ? "&" : "=";
+
+    return `${url}${delimiter}w${width}-h${height}`;
+},
 
     openLightbox(photoId) {
         this.states.currentIndex = this.states.photos.findIndex(p => p.id === photoId);
