@@ -55,6 +55,7 @@ const app = {
                     await gapi.client.init({
                         discoveryDocs: ['https://photoslibrary.googleapis.com/$discovery/rest?version=v1']
                     });
+                  await gapi.client.load('photoslibrary', 'v1');
                     resolve();
                 } catch (err) {
                     console.error('[gapi] init error', err);
@@ -301,8 +302,8 @@ lightbox.addEventListener("mousedown", (event) => {
             console.error("[API] 回應內容:", responseText);
 
             if (response.status === 401) {
-                // Token 真正過期
-                return this.handleAuthFlow();
+                alert("Token 已過期，請重新登入");
+                return this.requestAccessToken();
             }
             if (response.status === 403) {
                 // 權限不足，強制重新授權
@@ -315,6 +316,8 @@ lightbox.addEventListener("mousedown", (event) => {
 
         console.log("[API] 成功取得相簿 JSON：", responseText);
         const data = JSON.parse(responseText);
+        const data = await response.json();
+        console.log("[API] 相簿資料 JSON 解析：", data);
         this.renderAlbumSelect(data.albums || []);
         this.loadPhotos();
 
