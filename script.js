@@ -156,10 +156,9 @@ loadSchedule() {
     },
 
     setupEventListeners() {
-        document.getElementById("authorize-btn").addEventListener("click", (e) => {
-            e.preventDefault();
-            this.requestAccessToken();
-        });
+        document.getElementById("authorize-btn").addEventListener("click", () => {
+  app.requestAccessToken(); // ✅ 在 click 事件中呼叫 GIS 授權
+});
 
         document.getElementById("clear-token-btn").addEventListener("click", () => {
             sessionStorage.clear();
