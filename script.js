@@ -327,62 +327,78 @@ async fetchAlbums() {
     },
 
     async loadPhotos() {
-        if (this.states.isFetching || !this.states.hasMorePhotos) return;
+    if (this.states.isFetching || !this.states.hasMorePhotos) return;
 
-        const requestId = ++this.states.currentRequestId;
-        this.states.isFetching = true;
-        document.getElementById("loading-indicator").style.display = "block";
+    const requestId = ++this.states.currentRequestId;
+    this.states.isFetching = true;
+    document.getElementById("loading-indicator").style.display = "block";
 
-        try {
-            const body = {
-                pageSize: 100,
-                pageToken: this.states.nextPageToken || undefined
-            };
+    try {
+        const body = {
+            pageSize: 100,
+            pageToken: this.states.nextPageToken || undefined
+        };
 
-            if (this.states.albumId !== "all") {
-                body.albumId = this.states.albumId;
-            } else {
-                body.filters = { includeArchivedMedia: true };
-            }
+        if (this.states.albumId !== "all") {
+            body.albumId = this.states.albumId;
+        } else {
+            body.filters = { includeArchivedMedia: true };
+        }
 
-            const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${this.states.accessToken}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(body)
-            });
+        const response = await fetch("https://photoslibrary.googleapis.com/v1/mediaItems:search", {
+            method: "POST",
+            headers: {
+                "Authorization": `Bearer ${this.states.accessToken}`,
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
+        });
 
-            if (!response.ok) throw new Error('照片加載失敗');
-            const data = await response.json();
+        if (!response.ok) throw new Error('照片加載失敗');
 
-            if (requestId !== this.states.currentRequestId) return;
+        const data = await response.json();
 
-            const existingIds = new Set(this.states.photos.map(p => p.id));
-            const mediaItems = Array.isArray(data.mediaItems) ? data.mediaItems : [];
-            if (!mediaItems.length) {
-             console.warn("⚠️ Google Photos API 回傳空的 mediaItems：", data);
-            this.states.hasMorePhotos = false; // 🔴 強制終止滾動載入
-            }
+        if (requestId !== this.states.currentRequestId) return;
 
-            const newPhotos = mediaItems.filter(item => item && !existingIds.has(item.id));
-            this.states.photos = [...this.states.photos, ...newPhotos];
-            this.states.nextPageToken = data.nextPageToken || null;
-            this.states.hasMorePhotos = !!this.states.nextPageToken;
+        const existingIds = new Set(this.states.photos.map(p => p.id));
+        const mediaItems = Array.isArray(data.mediaItems) ? data.mediaItems : [];
 
-            this.renderPhotos();
-        } catch (error) {
-            console.error("照片加載失敗:", error);
-            this.showMessage("加載失敗，請檢查網路連線");
-        } finally {
-            if (requestId === this.states.currentRequestId) {
+        if (!mediaItems.length) {
+            console.warn("⚠️ Google Photos API 回傳空的 mediaItems：", data);
+
+            if (data.nextPageToken) {
+                // 有下一頁 → 嘗試自動載入下一頁
+                this.states.nextPageToken = data.nextPageToken;
+                this.states.hasMorePhotos = true;
                 this.states.isFetching = false;
-                document.getElementById("loading-indicator").style.display = "none";
-                this.setupScrollObserver();
+                setTimeout(() => this.loadPhotos(), 300); // 延遲避免堆疊請求
+                return;
+            } else {
+                // 沒有照片，也沒有下一頁 → 停止
+                this.states.hasMorePhotos = false;
+                this.showMessage("目前沒有可顯示的照片。");
+                return;
             }
         }
-    },
+
+        const newPhotos = mediaItems.filter(item => item && !existingIds.has(item.id));
+        this.states.photos = [...this.states.photos, ...newPhotos];
+        this.states.nextPageToken = data.nextPageToken || null;
+        this.states.hasMorePhotos = !!this.states.nextPageToken;
+
+        this.renderPhotos();
+    } catch (error) {
+        console.error("照片加載失敗:", error);
+        this.showMessage("加載失敗，請檢查網路連線");
+    } finally {
+        if (requestId === this.states.currentRequestId) {
+            this.states.isFetching = false;
+            document.getElementById("loading-indicator").style.display = "none";
+            this.setupScrollObserver();
+        }
+    }
+},
+
 
     renderPhotos() {
         const container = document.getElementById("photo-container");
