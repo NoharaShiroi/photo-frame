@@ -295,36 +295,54 @@ async fetchAlbums() {
     });
 
     if (!response.ok) {
-      const responseText = await response.text();
-      console.error("[API] 錯誤回應：", responseText);
+      const errorText = await response.text();
+      console.error("[API] 相簿 API 回傳錯誤：", errorText);
+
       if (response.status === 401 || response.status === 403) {
         sessionStorage.removeItem("access_token");
-        return this.requestAccessToken(); // ✅ 替代 handleAuthFlow
+        return this.requestAccessToken(); // ✅ 使用 GIS 流程
       }
+
       throw new Error("無法取得相簿資料");
     }
 
-    const data = await response.json(); // ✅ 正確解析 JSON
-    console.log("[API] 相簿 JSON：", data);
+    const data = await response.json();
+    console.log("[API] 相簿 JSON 回應：", data);
 
-    this.renderAlbumSelect(data.albums || []);
+    const albums = Array.isArray(data.albums) ? data.albums : [];
+    if (albums.length === 0) {
+      console.warn("⚠️ API 回傳 0 個相簿。請確認您的 Google 帳戶中是否有已建立的相簿。");
+    }
+
+    this.renderAlbumSelect(albums);
     this.loadPhotos();
   } catch (error) {
-    console.error("[API] fetchAlbums 發生錯誤:", error);
+    console.error("[API] fetchAlbums 發生例外錯誤：", error);
     this.handleAuthError();
   }
 },
+  
+  renderAlbumSelect(albums) {
+  const select = document.getElementById("album-select");
+  select.innerHTML = '<option value="all">所有相片</option>';
 
-    renderAlbumSelect(albums) {
-        const select = document.getElementById("album-select");
-        select.innerHTML = '<option value="all">所有相片</option>';
-        albums.forEach(album => {
-            const option = document.createElement("option");
-            option.value = album.id;
-            option.textContent = album.title;
-            select.appendChild(option);
-        });
-    },
+  if (!Array.isArray(albums) || albums.length === 0) {
+    console.warn("⚠️ 未取得任何可選相簿");
+    const msg = document.createElement("option");
+    msg.textContent = "（尚無可選相簿）";
+    msg.disabled = true;
+    select.appendChild(msg);
+    return;
+  }
+
+  albums.forEach(album => {
+    const option = document.createElement("option");
+    option.value = album.id || "";
+    option.textContent = album.title || "(未命名相簿)";
+    select.appendChild(option);
+  });
+},
+
 
     async loadPhotos() {
     if (this.states.isFetching || !this.states.hasMorePhotos) return;
