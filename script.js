@@ -283,46 +283,36 @@ lightbox.addEventListener("mousedown", (event) => {
  
 },
 
-    async fetchAlbums() {
-        const token = this.states.accessToken;
-    console.log("[API] 準備使用 token 呼叫 API:", token?.substring(0, 20) + "...");
+async fetchAlbums() {
+  const token = this.states.accessToken;
+  console.log("[API] 準備使用 token 呼叫 API:", token?.substring(0, 20) + "...");
 
-    try {
-        const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
-            headers: {
-                "Authorization": `Bearer ${token}`
-            }
-        });
+  try {
+    const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
 
-        const responseText = await response.text();
-
-        if (!response.ok) {
-            console.error("[API] Google Photos 回應錯誤，狀態碼:", response.status);
-            console.error("[API] 回應內容:", responseText);
-
-            if (response.status === 401) {
-                alert("Token 已過期，請重新登入");
-                return this.requestAccessToken();
-            }
-            if (response.status === 403) {
-                // 權限不足，強制重新授權
-                alert("授權範圍不足，請重新登入並確認 Photos Library 權限");
-                sessionStorage.removeItem("access_token");
-                return this.requestAccessToken();
-            }
-            throw new Error("無法取得相簿資料");
-        }
-
-        console.log("[API] 成功取得相簿 JSON：", responseText);
-                const data = await response.json();
-        console.log("[API] 相簿資料 JSON 解析：", data);
-        this.renderAlbumSelect(data.albums || []);
-        this.loadPhotos();
-
-    } catch (error) {
-        console.error("[API] fetchAlbums 發生錯誤:", error);
-        this.handleAuthError();
+    if (!response.ok) {
+      const responseText = await response.text();
+      console.error("[API] 錯誤回應：", responseText);
+      if (response.status === 401 || response.status === 403) {
+        sessionStorage.removeItem("access_token");
+        return this.requestAccessToken(); // ✅ 替代 handleAuthFlow
+      }
+      throw new Error("無法取得相簿資料");
     }
+
+    const data = await response.json(); // ✅ 正確解析 JSON
+    console.log("[API] 相簿 JSON：", data);
+
+    this.renderAlbumSelect(data.albums || []);
+    this.loadPhotos();
+  } catch (error) {
+    console.error("[API] fetchAlbums 發生錯誤:", error);
+    this.handleAuthError();
+  }
 },
 
     renderAlbumSelect(albums) {
