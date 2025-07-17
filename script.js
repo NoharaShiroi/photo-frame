@@ -39,11 +39,10 @@ const app = {
         scope: this.SCOPES,
         prompt: 'consent', // 每次都選帳號，可改為 '' 表示靜默授權
         callback: (response) => {
-            if (response && response.access_token) {
-                console.log("[TokenClient] 取得 access token:", response.access_token);
-                this.states.accessToken = response.access_token;
-                sessionStorage.setItem("access_token", response.access_token);
-                this.showApp();
+            if (response.access_token) {
+            this.states.accessToken = response.access_token;
+            sessionStorage.setItem("access_token", response.access_token);
+            this.showApp();
             } else {
                 alert("登入失敗，請再試一次");
             }
