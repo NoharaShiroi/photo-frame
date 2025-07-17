@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Google Photos Token Test</title>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body style="font-family: sans-serif; padding: 2rem;">
+  <h2>📷 Google Photos Token 測試頁</h2>
+  <button id="authorize-btn">🔐 登入 Google 並取得 Token</button>
+  <pre id="output" style="white-space: pre-wrap; background: #f4f4f4; padding: 1rem; margin-top: 1rem;"></pre>
+
+  <script>
+    const CLIENT_ID = "1004388657829-e1ppkmbn2o3f1i18ea4r420tdio3m01l.apps.googleusercontent.com";
+    const SCOPES = "https://www.googleapis.com/auth/photoslibrary.readonly";
+    let tokenClient = null;
+
+    function log(msg) {
+      const el = document.getElementById("output");
+      el.textContent += `\n${msg}`;
+    }
+
+    function initTokenClient() {
+      tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        prompt: 'consent',
+        callback: async (response) => {
+          if (response.access_token) {
+            log("✅ 已取得 access_token：\n" + response.access_token);
+            await checkTokenScope(response.access_token);
+            await tryPhotosAPI(response.access_token);
+          } else {
+            log("❌ 沒有取得 access_token");
+          }
+        }
+      });
+    }
+
+    async function checkTokenScope(token) {
+      const res = await fetch(`https://www.googleapis.com/oauth2/v3/tokeninfo?access_token=${token}`);
+      const data = await res.json();
+      log("\n📜 Token info: \n" + JSON.stringify(data, null, 2));
+    }
+
+    async function tryPhotosAPI(token) {
+      log("\n🚀 嘗試呼叫 Google Photos API...");
+      const res = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=1", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const text = await res.text();
+      log("\n📦 API 回應：\n" + text);
+    }
+
+    document.getElementById("authorize-btn").addEventListener("click", () => {
+      if (!tokenClient) {
+        log("❗️ 尚未初始化 token client");
+      } else {
+        tokenClient.requestAccessToken();
+      }
+    });
+
+    window.onload = () => {
+      const wait = () => {
+        if (window.google && google.accounts && google.accounts.oauth2) {
+          initTokenClient();
+        } else {
+          setTimeout(wait, 100);
+        }
+      };
+      wait();
+    };
+  </script>
+</body>
+</html>
