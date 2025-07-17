@@ -51,27 +51,21 @@ const app = {
 },
     
     init() {
-    this.states.isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
-                     !window.MSStream && 
-                     /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
-    const waitForGoogle = () => {
+  this.states.isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+                         !window.MSStream && 
+                         /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
+
+  const waitForGoogle = () => {
     if (window.google && google.accounts && google.accounts.oauth2) {
-        this.initTokenClient();
+      this.initTokenClient();
+      document.getElementById("auth-container").style.display = "flex";
     } else {
-        setTimeout(waitForGoogle, 100); // 每 100ms 檢查一次
+      setTimeout(waitForGoogle, 100);
     }
-};
-waitForGoogle();
+  };
+  waitForGoogle();
 
-    this.states.accessToken = sessionStorage.getItem("access_token");
-
-    if (this.states.accessToken) {
-        this.showApp(); // ✅ 如果有 token，直接進入主頁面
-    } else {
-        document.getElementById("auth-container").style.display = "flex";
-    }
-
-    this.setupEventListeners();       
+  this.setupEventListeners();
 },
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
@@ -323,7 +317,8 @@ waitForGoogle();
     }, // <-- 這裡必須加上逗號
 
         async fetchAlbums() {
-        try {
+       console.log("[fetchAlbums] 使用的 token =", this.states.accessToken);
+            try {
             const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
                 headers: { "Authorization": `Bearer ${this.states.accessToken}` }
             });
