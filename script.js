@@ -184,7 +184,7 @@ const app = {
     setupEventListeners() {
         document.getElementById("authorize-btn").addEventListener("click", (e) => {
             e.preventDefault();
-            tif (this.tokenClient) {
+            if (this.tokenClient) {
         this.tokenClient.requestAccessToken();  // ✅ 呼叫新版登入流程
     } else {
         alert("Google 授權模組尚未載入");
