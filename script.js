@@ -55,7 +55,14 @@ const app = {
     this.states.isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
                      !window.MSStream && 
                      /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
-    this.initTokenClient(); 
+    const waitForGoogle = () => {
+    if (window.google && google.accounts && google.accounts.oauth2) {
+        this.initTokenClient();
+    } else {
+        setTimeout(waitForGoogle, 100); // 每 100ms 檢查一次
+    }
+};
+waitForGoogle(); 
     this.states.accessToken = sessionStorage.getItem("access_token");
     this.setupEventListeners();
     
