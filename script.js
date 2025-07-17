@@ -61,25 +61,17 @@ const app = {
         setTimeout(waitForGoogle, 100); // 每 100ms 檢查一次
     }
 };
-waitForGoogle(); 
+waitForGoogle();
+
     this.states.accessToken = sessionStorage.getItem("access_token");
-    this.setupEventListeners();
-    
-    if (!this.checkAuth()) {
-        // 未授權：顯示登入介面
-        document.getElementById("auth-container").style.display = "flex";
-        if (this.states.isOldiOS) {
-            document.getElementById("screenOverlay").style.display = "none";
-        }
+
+    if (this.states.accessToken) {
+        this.showApp(); // ✅ 如果有 token，直接進入主頁面
     } else {
-        // 已授權：初始化應用程式
-        this.loadSchedule();
-        this.checkSchedule();
-        setInterval(() => {
-            console.log('執行定期排程檢查');
-            this.checkSchedule();
-        }, this.states.isOldiOS ? 300000 : 60000);
+        document.getElementById("auth-container").style.display = "flex";
     }
+
+    this.setupEventListeners();       
 },
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
@@ -152,39 +144,20 @@ waitForGoogle();
         return hours * 60 + minutes;
     },
 
-    handleAuthFlow() {
-        const authEndpoint = 'https://accounts.google.com/o/oauth2/v2/auth';
-        const params = {
-            client_id: this.CLIENT_ID,
-            redirect_uri: this.REDIRECT_URI,
-            response_type: 'token',
-            scope: this.SCOPES,
-            include_granted_scopes: 'true',
-            state: 'pass-through-value',
-            prompt: 'consent'
-        };
-        window.location.href = authEndpoint + '?' + new URLSearchParams(params);
-    },
-
-    checkAuth() {
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        if (hashParams.has("access_token")) {
-            this.states.accessToken = hashParams.get("access_token");
-            sessionStorage.setItem("access_token", this.states.accessToken);
-            window.history.replaceState({}, "", window.location.pathname);
-            this.showApp();
-            return true;
-        }
-        return false;
-    },
-
+    
     showApp() {
         document.getElementById("auth-container").style.display = "none";
         document.getElementById("app-container").style.display = "block";
         if (this.states.isOldiOS) {
         document.getElementById("screenOverlay").style.display = "none";
      }
-     this.fetchAlbums();
+     setInterval(() => {
+        if (this.tokenClient) {
+            console.log("[TokenClient] 自動續期中...");
+            this.tokenClient.requestAccessToken();
+        }
+    }, 50 * 60 * 1000); // 50 分鐘
+        this.fetchAlbums();
      },
 
     setupEventListeners() {
