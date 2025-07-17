@@ -1,8 +1,8 @@
 const app = {
-    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
+    CLIENT_ID: "1004388657829-e1ppkmbn2o3f1i18ea4r420tdio3m01l.apps.googleusercontent.com",
     REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
-
+    tokenClient: null,
     states: {
         accessToken: null,
         albumId: "all",
@@ -33,11 +33,29 @@ const app = {
         }
     },
 
+    initTokenClient() {
+    this.tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: this.CLIENT_ID,
+        scope: this.SCOPES,
+        prompt: 'consent', // 每次都選帳號，可改為 '' 表示靜默授權
+        callback: (response) => {
+            if (response && response.access_token) {
+                console.log("[TokenClient] 取得 access token:", response.access_token);
+                this.states.accessToken = response.access_token;
+                sessionStorage.setItem("access_token", response.access_token);
+                this.showApp();
+            } else {
+                alert("登入失敗，請再試一次");
+            }
+        }
+    });
+},
+    
     init() {
     this.states.isOldiOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
                      !window.MSStream && 
                      /OS [1-9]_.* like Mac OS X/.test(navigator.userAgent);
-
+    this.initTokenClient(); 
     this.states.accessToken = sessionStorage.getItem("access_token");
     this.setupEventListeners();
     
@@ -166,8 +184,12 @@ const app = {
     setupEventListeners() {
         document.getElementById("authorize-btn").addEventListener("click", (e) => {
             e.preventDefault();
-            this.handleAuthFlow();
-        });
+            tif (this.tokenClient) {
+        this.tokenClient.requestAccessToken();  // ✅ 呼叫新版登入流程
+    } else {
+        alert("Google 授權模組尚未載入");
+    }
+});
 
         document.getElementById("album-select").addEventListener("change", (e) => {
             this.states.albumId = e.target.value;
