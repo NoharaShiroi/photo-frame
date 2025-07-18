@@ -1,5 +1,5 @@
 const app = {
-    CLIENT_ID: "1004388657829-e1ppkmbn2o3f1i18ea4r420tdio3m01l.apps.googleusercontent.com",
+    CLIENT_ID: "1044785155578-1aqpbh9dqec1pauvo046no4k1qoffceo.apps.googleusercontent.com",
     REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
     tokenClient: null,
