@@ -328,7 +328,7 @@ const app = {
             headers: { "Authorization": `Bearer ${this.states.accessToken}` }
         });
 
-        if (response.status === 401) {
+        if (response.status === 401 || response.status === 403) {
             // Token 過期，重新請求授權
             this.handleAuthError();
             return;
@@ -739,7 +739,7 @@ const app = {
     },
 
     handleAuthError() {
-        const retry = confirm("授權已過期，是否重新登入？");
+        const retry = confirm("授權已過期或無權限，是否重新登入？");
         if (retry) {
             sessionStorage.removeItem("access_token");
             this.tokenClient.requestAccessToken();
