@@ -146,11 +146,11 @@ const app = {
         document.getElementById("screenOverlay").style.display = "none";
      }
      setInterval(() => {
-        if (this.tokenClient) {
-            console.log("[TokenClient] 自動續期中...");
-            this.tokenClient.requestAccessToken();
-        }
-    }, 50 * 60 * 1000); // 50 分鐘
+        if (this.tokenClient && this.states.accessToken) {
+        console.log("[TokenClient] 正在自動更新...");
+        this.tokenClient.requestAccessToken();
+    }
+}, 50 * 60 * 1000); // 50 分鐘更新一次
         this.fetchAlbums();
      },
 
@@ -317,19 +317,32 @@ const app = {
     }, // <-- 這裡必須加上逗號
 
         async fetchAlbums() {
-       console.log("[fetchAlbums] 使用的 token =", this.states.accessToken);
-            try {
-            const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
-                headers: { "Authorization": `Bearer ${this.states.accessToken}` }
-            });
-            if (!response.ok) throw new Error('無法取得相簿');
-            const data = await response.json();
-            this.renderAlbumSelect(data.albums || []);
-            this.loadPhotos();
-        } catch (error) {
+       if (!this.states.accessToken) {
+        alert("授權已過期，請重新登入");
+        return;
+    }
+    
+    console.log("[fetchAlbums] 使用的 token =", this.states.accessToken);
+    try {
+        const response = await fetch("https://photoslibrary.googleapis.com/v1/albums?pageSize=50", {
+            headers: { "Authorization": `Bearer ${this.states.accessToken}` }
+        });
+
+        if (response.status === 401) {
+            // Token 過期，重新請求授權
             this.handleAuthError();
+            return;
         }
-    },
+        
+        if (!response.ok) throw new Error('無法取得相簿');
+        const data = await response.json();
+        this.renderAlbumSelect(data.albums || []);
+        this.loadPhotos();
+    } catch (error) {
+        console.error(error);
+        this.handleAuthError();
+    }
+},
 
     renderAlbumSelect(albums) {
         const select = document.getElementById("album-select");
@@ -729,7 +742,7 @@ const app = {
         const retry = confirm("授權已過期，是否重新登入？");
         if (retry) {
             sessionStorage.removeItem("access_token");
-            window.location.reload();
+            this.tokenClient.requestAccessToken();
         } else {
             document.getElementById("auth-container").style.display = "flex";
             document.getElementById("app-container").style.display = "none";
