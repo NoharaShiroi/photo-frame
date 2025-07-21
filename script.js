@@ -1,5 +1,5 @@
 const app = {
-    CLIENT_ID: "1004388657829-e1ppkmbn2o3f1i18ea4r420tdio3m01l.apps.googleusercontent.com",
+    CLIENT_ID: "1004388657829-mvpott95dsl5bapu40vi2n5li7i7t7d1.apps.googleusercontent.com",
     REDIRECT_URI: "https://noharashiroi.github.io/photo-frame/",
     SCOPES: "https://www.googleapis.com/auth/photoslibrary.readonly",
     tokenClient: null,
@@ -33,21 +33,29 @@ const app = {
         }
     },
 
-    initTokenClient() {
-    this.tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: this.CLIENT_ID,
-        scope: this.SCOPES,
-        prompt: 'consent', // 每次都選帳號，可改為 '' 表示靜默授權
-        callback: (response) => {
-            if (response.access_token) {
-            this.states.accessToken = response.access_token;
-            sessionStorage.setItem("access_token", response.access_token);
-            this.showApp();
-            } else {
-                alert("登入失敗，請再試一次");
-            }
-        }
-    });
+  initAuthFlow() {
+  // ✅ 如果使用者已登入，就直接啟動 app
+  if (this.checkLoginStatus()) return;
+
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
+
+  if (code) {
+    console.log("[OAuth] 偵測到 code，開始交換 token...");
+    this.exchangeCodeForToken(code);
+    return;
+  }
+
+  // 初始化 redirect 授權流程
+  this.codeClient = google.accounts.oauth2.initCodeClient({
+    client_id: this.CLIENT_ID,
+    scope: this.SCOPES,
+    redirect_uri: this.REDIRECT_URI,
+    ux_mode: "redirect",
+    state: "photo-frame-auth"
+  });
+
+  document.getElementById("auth-container").style.display = "flex";
 },
     
     init() {
@@ -57,8 +65,7 @@ const app = {
 
   const waitForGoogle = () => {
     if (window.google && google.accounts && google.accounts.oauth2) {
-      this.initTokenClient();
-      document.getElementById("auth-container").style.display = "flex";
+      this.initAuthFlow(); // ✅ 新增這行，取代 initTokenClient()
     } else {
       setTimeout(waitForGoogle, 100);
     }
@@ -67,6 +74,43 @@ const app = {
 
   this.setupEventListeners();
 },
+checkLoginStatus() {
+  const token = sessionStorage.getItem("access_token");
+  if (token) {
+    console.log("[UX] 偵測到 access_token，直接進入 app");
+    this.states.accessToken = token;
+    this.showApp();
+    return true;
+  }
+  return false;
+},
+async exchangeCodeForToken(code) {
+  try {
+    const response = await fetch("https://photoforipadmini.n16961801.workers.dev/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        code,
+        redirect_uri: this.REDIRECT_URI
+      })
+    });
+
+    const data = await response.json();
+    if (data.access_token) {
+      this.states.accessToken = data.access_token;
+      sessionStorage.setItem("access_token", data.access_token);
+      window.history.replaceState({}, document.title, this.REDIRECT_URI);
+      this.showApp();
+    } else {
+      alert("Token 交換失敗，請重新登入");
+      console.error(data);
+    }
+  } catch (error) {
+    console.error("交換 access token 錯誤:", error);
+    alert("無法交換 access token");
+  }
+},
+    
     loadSchedule() {
         const schedule = JSON.parse(localStorage.getItem("schedule"));
         if (schedule) {
@@ -157,11 +201,11 @@ const app = {
     setupEventListeners() {
         document.getElementById("authorize-btn").addEventListener("click", (e) => {
             e.preventDefault();
-            if (this.tokenClient) {
-        this.tokenClient.requestAccessToken();  // ✅ 呼叫新版登入流程
-    } else {
-        alert("Google 授權模組尚未載入");
-    }
+            iif (this.codeClient) {
+    this.codeClient.requestCode(); // 🔁 走 redirect flow
+  } else {
+    alert("Google 授權模組尚未載入");
+  }
 });
 
         document.getElementById("album-select").addEventListener("change", (e) => {
