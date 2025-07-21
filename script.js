@@ -786,7 +786,11 @@ async exchangeCodeForToken(code) {
         const retry = confirm("授權已過期或無權限，是否重新登入？");
         if (retry) {
             sessionStorage.removeItem("access_token");
-            this.tokenClient.requestAccessToken();
+            if (this.codeClient) {
+  this.codeClient.requestCode();
+} else {
+  alert("Google 授權模組未載入");
+}
         } else {
             document.getElementById("auth-container").style.display = "flex";
             document.getElementById("app-container").style.display = "none";
