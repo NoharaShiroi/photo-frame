@@ -183,20 +183,22 @@ async exchangeCodeForToken(code) {
     },
 
     
-    showApp() {
-        document.getElementById("auth-container").style.display = "none";
-        document.getElementById("app-container").style.display = "block";
-        if (this.states.isOldiOS) {
+   showApp() {
+    document.getElementById("auth-container").style.display = "none";
+    document.getElementById("app-container").style.display = "block";
+
+    if (this.states.isOldiOS) {
         document.getElementById("screenOverlay").style.display = "none";
-     }
-     setInterval(() => {
-        if (this.tokenClient && this.states.accessToken) {
-        console.log("[TokenClient] 正在自動更新...");
-        this.tokenClient.requestAccessToken();
     }
-}, 50 * 60 * 1000); // 50 分鐘更新一次
-        this.fetchAlbums();
-     },
+
+    // ✅ 自動在 55 分鐘後提示 token 可能過期，使用者需重新登入
+    setTimeout(() => {
+        console.warn("[Token] 已達 55 分鐘，請重新登入避免 token 過期");
+        this.showTemporaryMessage("⚠️ Token 即將過期，請重新登入以繼續播放");
+    }, 55 * 60 * 1000);
+
+    this.fetchAlbums();
+   },
 
     setupEventListeners() {
         document.getElementById("authorize-btn").addEventListener("click", (e) => {
@@ -782,20 +784,24 @@ async exchangeCodeForToken(code) {
         document.getElementById("photo-container").innerHTML = '';
     },
 
-    handleAuthError() {
-        const retry = confirm("授權已過期或無權限，是否重新登入？");
-        if (retry) {
-            sessionStorage.removeItem("access_token");
-            if (this.codeClient) {
-  this.codeClient.requestCode();
-} else {
-  alert("Google 授權模組未載入");
-}
+   handleAuthError() {
+    const retry = confirm("授權已過期或無權限，是否重新登入？");
+
+    if (retry) {
+        sessionStorage.removeItem("access_token");
+
+        if (this.codeClient && typeof this.codeClient.requestCode === 'function') {
+            this.codeClient.requestCode(); // ✅ 使用 redirect flow
         } else {
-            document.getElementById("auth-container").style.display = "flex";
-            document.getElementById("app-container").style.display = "none";
+            alert("Google 授權模組未正確載入，將重新初始化...");
+            this.initAuthFlow(); // ⛑️ 嘗試重新初始化授權流程
         }
-    },
+    } else {
+        // 顯示登入畫面，隱藏主畫面
+        document.getElementById("auth-container").style.display = "flex";
+        document.getElementById("app-container").style.display = "none";
+    }
+},
 
     updateClock() {
     const now = new Date();
