@@ -201,7 +201,7 @@ async exchangeCodeForToken(code) {
     setupEventListeners() {
         document.getElementById("authorize-btn").addEventListener("click", (e) => {
             e.preventDefault();
-            iif (this.codeClient) {
+            if (this.codeClient) 
     this.codeClient.requestCode(); // 🔁 走 redirect flow
   } else {
     alert("Google 授權模組尚未載入");
